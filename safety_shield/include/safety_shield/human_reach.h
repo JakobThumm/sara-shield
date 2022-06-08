@@ -163,7 +163,43 @@ public:
    * @return std::vector<std::vector<reach_lib::Capsule>> 
    */
   inline std::vector<std::vector<reach_lib::Capsule>> getAllCapsules() {
-      return {getArticulatedPosCapsules(), getArticulatedVelCapsules(), getArticulatedAccelCapsules()};
+    return {getArticulatedPosCapsules(), getArticulatedVelCapsules(), getArticulatedAccelCapsules()};
+  }
+
+  /**
+   * @brief Get the Last Meas Timestep object
+   * 
+   * @return double 
+   */
+  inline double getLastMeasTimestep() {
+    return last_meas_timestep_;
+  }
+
+  /**
+   * @brief Get the Joint Pos object
+   * 
+   * @return std::vector<reach_lib::Point> 
+   */
+  inline std::vector<reach_lib::Point> getJointPos() {
+    return joint_pos_;
+  }
+
+  /**
+   * @brief Get the Joint Vel object
+   * 
+   * @return std::vector<reach_lib::Point> 
+   */
+  inline std::vector<reach_lib::Point> getJointVel() {
+    return joint_vel_;
+  }
+  
+  /**
+   * @brief Get the Body Link Joints object
+   * 
+   * @return std::map<std::string, reach_lib::jointPair> 
+   */
+  inline std::map<std::string, reach_lib::jointPair> getBodyLinkJoints() {
+    return body_link_joints_;
   }
 };
 } // namespace safety_shield
