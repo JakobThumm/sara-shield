@@ -10,3 +10,4 @@
 [submodule "safety_shield/external/SaRA"]
 	path = safety_shield/external/SaRA
 	url = https://github.com/Sven-Schepp/SaRA.git
+	branch = main
