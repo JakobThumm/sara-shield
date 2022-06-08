@@ -1,0 +1,12 @@
+[submodule "safety_shield/external/pybind11"]
+	path = safety_shield/external/pybind11
+	url = https://github.com/pybind/pybind11.git
+[submodule "safety_shield/external/spdlog"]
+	path = safety_shield/external/spdlog
+	url = https://github.com/gabime/spdlog.git
+[submodule "safety_shield/external/yaml-cpp"]
+	path = safety_shield/external/yaml-cpp
+	url = https://github.com/jbeder/yaml-cpp.git
+[submodule "safety_shield/external/SaRA"]
+	path = safety_shield/external/SaRA
+	url = https://github.com/Sven-Schepp/SaRA.git
