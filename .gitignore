@@ -30,3 +30,12 @@
 *.exe
 *.out
 *.app
+
+.vscode/
+devel/
+build/
+__pycache__/
+*.py[cod]
+*.egg-info/
+*.egg
+.gittoken
