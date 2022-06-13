@@ -79,6 +79,24 @@ class HumanReach {
    * @brief We need two measurements for velocity calculation.
    */
   bool has_second_meas_ = false;
+
+  /**
+   * @brief Maximal positional measurement error
+   * 
+   */
+  double measurement_error_pos_;
+
+  /**
+   * @brief Maximal velocity measurement error
+   * 
+   */
+  double measurement_error_vel_;
+
+  /**
+   * @brief Delay in measurement processing pipeline
+   * 
+   */
+  double delay_;
   
 public:
   /**
@@ -200,6 +218,33 @@ public:
    */
   inline std::map<std::string, reach_lib::jointPair> getBodyLinkJoints() {
     return body_link_joints_;
+  }
+
+  /**
+   * @brief Get the Measurement Error Pos object
+   * 
+   * @return double 
+   */
+  inline double getMeasurementErrorPos() {
+    return measurement_error_pos_;
+  }
+
+  /**
+   * @brief Get the Measurement Error Vel object
+   * 
+   * @return double 
+   */
+  inline double getMeasurementErrorVel() {
+    return measurement_error_vel_;
+  }
+
+  /**
+   * @brief Get the Delay object
+   * 
+   * @return double 
+   */
+  inline double getDelay() {
+    return delay_;
   }
 };
 } // namespace safety_shield

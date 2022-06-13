@@ -13,7 +13,10 @@ HumanReach::HumanReach(int n_joints_meas,
       double measurement_error_pos, 
       double measurement_error_vel, 
       double delay):
-  body_link_joints_(body_link_joints)
+  body_link_joints_(body_link_joints),
+  measurement_error_pos_(measurement_error_pos),
+  measurement_error_vel_(measurement_error_vel),
+  delay_(delay)
 {
   reach_lib::System system(measurement_error_pos, measurement_error_vel, delay);
   human_v_ = reach_lib::ArticulatedVel(system, body_link_joints, thickness, max_v);
