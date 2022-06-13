@@ -179,6 +179,36 @@ TEST_F(HumanReachTestError, HumanReachAnalysisAccTestError){
   EXPECT_DOUBLE_EQ(a_cap[0].r_, r);
 }
 
+TEST_F(HumanReachTestPos, HumanReachAnalysisPos){
+  reach_lib::Point p1(0, 0, 0);
+  reach_lib::Point p2(0.2, 0.2, 0.2);
+  reach_lib::Point p3(0.4, 0.4, 0.4);
+  std::vector<reach_lib::Point> human_joint_pos;
+  human_joint_pos.push_back(p1); human_joint_pos.push_back(p2); human_joint_pos.push_back(p3);
+  double t_meas = 1.0;
+  human_reach_->measurement(human_joint_pos, t_meas);
+  double t_command = 1.01;
+  double t_break = 0.1;
+  human_reach_->humanReachabilityAnalysis(t_command, t_break);
+  double t = (t_command - t_meas) + t_break + human_reach_->getDelay();
+  double length = 0.725;
+  double thickness = 0.208;
+  double v_max = 2;
+  double r = length + 
+      thickness +
+      human_reach_->getMeasurementErrorPos() +
+      v_max*t;
+  reach_lib::Point next_pos = p1;
+  std::vector<reach_lib::Capsule> p_cap = human_reach_->getArticulatedPosCapsules();
+  EXPECT_DOUBLE_EQ(p_cap[0].p1_.x, next_pos.x);
+  EXPECT_DOUBLE_EQ(p_cap[0].p1_.y, next_pos.y);
+  EXPECT_DOUBLE_EQ(p_cap[0].p1_.z, next_pos.z);
+  EXPECT_DOUBLE_EQ(p_cap[0].p2_.x, next_pos.x);
+  EXPECT_DOUBLE_EQ(p_cap[0].p2_.y, next_pos.y);
+  EXPECT_DOUBLE_EQ(p_cap[0].p2_.z, next_pos.z);
+  EXPECT_DOUBLE_EQ(p_cap[0].r_, r);
+}
+
 } // namespace safety_shield
 
 int main(int argc, char **argv){
