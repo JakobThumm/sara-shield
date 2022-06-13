@@ -26,17 +26,17 @@ joint_a_max: [
   30, 50, 50, 30, 50, 
   30
 ]
-
+# All values are in the 95% Quantiles defined in DIN 33402-2
 bodies:
   - name: "lUpperArm" 
     proximal: "lShldr"
     distal: "lForeArm"
-    thickness: 0.1
+    thickness: 0.108
 
   - name: "lLowerArm"
     proximal: "lForeArm"
     distal: "lHand"
-    thickness: 0.1
+    thickness: 0.068
 
   - name: "lHand"
     proximal: "lHand"
@@ -46,22 +46,22 @@ bodies:
   - name: "rUpperArm" 
     proximal: "rShldr"
     distal: "rForeArm"
-    thickness: 0.1
+    thickness: 0.108
 
   - name: "rLowerArm"
     proximal: "rForeArm"
     distal: "rHand"
-    thickness: 0.1
+    thickness: 0.068
 
   - name: "rHand"
     proximal: "rHand"
     distal: "rHand"
-    thickness: 0.205
+    thickness: 0.208
 
   - name: "torso"
     proximal: "hip"
     distal: "neck"
-    thickness: 0.2 # Lays in 97% quantile according to https://www.rki.de/DE/Content/Gesundheitsmonitoring/Gesundheitsberichterstattung/GBEDownloadsB/KiGGS_Referenzperzentile.pdf?__blob=publicationFile
+    thickness: 0.193
   
   - name: "head"
     proximal: "head"
@@ -72,9 +72,9 @@ extremities:
   - name: "lArm"
     base: "lShldr"
     end: "lHand"
-    length: 0.8
+    length: 0.825
     
   - name: "rArm"
     base: "rShldr"
     end: "rHand"
-    length: 0.8
+    length: 0.825
