@@ -9,6 +9,60 @@
 
 namespace safety_shield {
 
+TEST_F(LongTermTrajTestIdx, GetLengthTest){
+  EXPECT_EQ(long_term_trajectory_.getLength(), 4);
+}
+
+TEST_F(LongTermTrajTestIdx, GetCurrentPosTest){
+  EXPECT_EQ(long_term_trajectory_.getCurrentPos(), 0);
+  long_term_trajectory_.increasePosition();
+  EXPECT_EQ(long_term_trajectory_.getCurrentPos(), 1);
+  long_term_trajectory_.increasePosition();
+  EXPECT_EQ(long_term_trajectory_.getCurrentPos(), 2);
+  long_term_trajectory_.increasePosition();
+  EXPECT_EQ(long_term_trajectory_.getCurrentPos(), 3);
+  long_term_trajectory_.increasePosition();
+  EXPECT_EQ(long_term_trajectory_.getCurrentPos(), 3);
+  long_term_trajectory_.increasePosition();
+  EXPECT_EQ(long_term_trajectory_.getCurrentPos(), 3);
+}
+
+TEST_F(LongTermTrajTestIdx, GetMotionTest){
+  Motion mo = long_term_trajectory_.getCurrentMotion();
+  for (int i = 0; i < 2; i++) {
+    EXPECT_DOUBLE_EQ(mo.getAngle()[i], 0.0);
+    EXPECT_DOUBLE_EQ(mo.getVelocity()[i], 0.0);
+    EXPECT_DOUBLE_EQ(mo.getJerk()[i], 0.0);
+  }
+  EXPECT_DOUBLE_EQ(mo.getAcceleration()[0], 12.0);
+  EXPECT_DOUBLE_EQ(mo.getAcceleration()[1], 13.0);
+  mo = long_term_trajectory_.getNextMotion();
+  for (int i = 0; i < 2; i++) {
+    EXPECT_DOUBLE_EQ(mo.getAngle()[i], 0.0);
+    EXPECT_DOUBLE_EQ(mo.getVelocity()[i], 0.0);
+    EXPECT_DOUBLE_EQ(mo.getJerk()[i], 0.0);
+  }
+  EXPECT_DOUBLE_EQ(mo.getAcceleration()[0], 1.0);
+  EXPECT_DOUBLE_EQ(mo.getAcceleration()[1], 2.0);
+  mo = long_term_trajectory_.getNextMotionAtIndex(5);
+  for (int i = 0; i < 2; i++) {
+    EXPECT_DOUBLE_EQ(mo.getAngle()[i], 0.0);
+    EXPECT_DOUBLE_EQ(mo.getVelocity()[i], 0.0);
+    EXPECT_DOUBLE_EQ(mo.getJerk()[i], 0.0);
+  }
+  EXPECT_DOUBLE_EQ(mo.getAcceleration()[0], 78.0);
+  EXPECT_DOUBLE_EQ(mo.getAcceleration()[1], 79.0);
+}
+
+TEST_F(LongTermTrajTestIdx, GetTrajectoryIndexTest){
+  EXPECT_EQ(long_term_trajectory_.getTrajectoryIndex(-1), 0);
+  EXPECT_EQ(long_term_trajectory_.getTrajectoryIndex(3), 0);
+  EXPECT_EQ(long_term_trajectory_.getTrajectoryIndex(4), 1);
+  EXPECT_EQ(long_term_trajectory_.getTrajectoryIndex(5), 2);
+  EXPECT_EQ(long_term_trajectory_.getTrajectoryIndex(6), 3);
+  EXPECT_EQ(long_term_trajectory_.getTrajectoryIndex(10), 3);
+}
+
 TEST_F(LongTermTrajTest, MaxAccWindowTest){
   std::vector<Motion> mo_vec;
   int n_joints = 2;

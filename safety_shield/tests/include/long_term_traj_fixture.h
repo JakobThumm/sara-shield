@@ -38,7 +38,55 @@ class LongTermTrajTest : public ::testing::Test {
    * @brief Create the LTT object
    */
   void SetUp() override {
-      long_term_trajectory_ = LongTermTraj();
+    long_term_trajectory_ = LongTermTraj();
+  }
+};
+
+/**
+ * @brief Test fixture for verify long term trajectory class with starting index
+ */
+class LongTermTrajTestIdx : public ::testing::Test {
+ protected:
+  /**
+   * @brief The LTT object
+   */
+  LongTermTraj long_term_trajectory_;
+
+  /**
+   * @brief Create the LTT object
+   */
+  void SetUp() override {
+    std::vector<Motion> mo_vec;
+    int n_joints = 2;
+    std::vector<double> p0;
+    std::vector<double> v0;
+    std::vector<double> j0;
+    for (int i = 0; i < n_joints; i++) {
+        p0.push_back(0.0);
+        v0.push_back(0.0);
+        j0.push_back(0.0);
+    }
+    std::vector<double> a0;
+    a0.push_back(12);
+    a0.push_back(13);
+    Motion m0(0, p0, v0, a0, j0);
+    mo_vec.push_back(m0);
+    std::vector<double> a1;
+    a1.push_back(1);
+    a1.push_back(2);
+    Motion m1(1, p0, v0, a1, j0);
+    mo_vec.push_back(m1);
+    std::vector<double> a2;
+    a2.push_back(78);
+    a2.push_back(79);
+    Motion m2(2, p0, v0, a2, j0);
+    mo_vec.push_back(m2);
+    std::vector<double> a3;
+    a3.push_back(90);
+    a3.push_back(91);
+    Motion m3(3, p0, v0, a3, j0);
+    mo_vec.push_back(m3);
+    long_term_trajectory_ = LongTermTraj(mo_vec, 3);
   }
 };
 } // namespace safety_shield
