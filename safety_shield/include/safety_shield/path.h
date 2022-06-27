@@ -94,7 +94,7 @@ public:
    * @param phase the phase number
    * @return the associated jerk
    */
-  inline double getJerk(int phase) { return phases_[phase+2]; }
+  inline double getJerk(int phase) { return phases_[phase+3]; }
 
   /**
    * @brief Returns the path starting position
