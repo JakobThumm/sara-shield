@@ -18,8 +18,8 @@
 
 #include "safety_shield/path.h"
 
-#ifndef MOTION_FIXTURE_H
-#define MOTION_FIXTURE_H
+#ifndef PATH_FIXTURE_H
+#define PATH_FIXTURE_H
 
 namespace safety_shield {
 
@@ -44,4 +44,4 @@ class PathTest : public ::testing::Test {
 };
 } // namespace safety_shield
 
-#endif // MOTION_FIXTURE_H
+#endif // PATH_FIXTURE_H
