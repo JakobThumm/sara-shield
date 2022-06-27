@@ -4,7 +4,8 @@ namespace safety_shield {
 
 Motion::Motion(int nb_modules):
     nb_modules_(nb_modules),
-    time_(0)
+    time_(0),
+    s_(0)
 {
   for (int i = 0; i < nb_modules_; i++){
     q_.push_back(0.0);

@@ -73,8 +73,12 @@ target_link_libraries(long_term_traj_tests ${PROJECT_NAME} GTest::GTest GTest::M
 add_executable(human_reach_tests tests/src/human_reach_tests.cc)
 target_include_directories(human_reach_tests PUBLIC tests/include)
 target_link_libraries(human_reach_tests ${PROJECT_NAME} GTest::GTest GTest::Main)
+add_executable(motion_tests tests/src/motion_tests.cc)
+target_include_directories(motion_tests PUBLIC tests/include)
+target_link_libraries(motion_tests ${PROJECT_NAME} GTest::GTest GTest::Main)
 gtest_discover_tests(long_term_traj_tests)
 gtest_discover_tests(human_reach_tests)
+gtest_discover_tests(motion_tests)
 
 #catkin_add_gtest(verify_iso_test tests/capsule_tests.cc tests/verify_iso_fixture.h)
 #target_link_libraries(verify_iso_test ${catkin_LIBRARIES} ${PROJECT_NAME}_lib)
