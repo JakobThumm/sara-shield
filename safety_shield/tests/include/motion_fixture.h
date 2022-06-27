@@ -63,7 +63,7 @@ class MotionTest : public ::testing::Test {
     p0.push_back(0); p0.push_back(1); p0.push_back(2);
     v0.push_back(1); v0.push_back(1); v0.push_back(1);
     a0.push_back(10); a0.push_back(10); a0.push_back(10);
-    j0.push_back(0); j0.push_back(100); j0.push_back(0);
+    j0.push_back(0); j0.push_back(5); j0.push_back(0);
     motion_ = Motion(0, p0, v0, a0, j0);
   }
 };
