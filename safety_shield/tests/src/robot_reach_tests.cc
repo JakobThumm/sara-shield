@@ -10,17 +10,28 @@
 namespace safety_shield {
 
 TEST_F(RobotReachTest, InitializationTest){
-  EXPECT_DOUBLE_EQ(0, 0);
+  EXPECT_DOUBLE_EQ(0, 0.0);
 }
 
-TEST_F(RobotReachTest, ForwardKinematicTest){
+TEST_F(RobotReachTest, ForwardKinematicTest0){
   Eigen::Matrix4d result = Eigen::Matrix4d::Identity();
-  robot_reach_->forwardKinematic(0.0, 0, result);
+  robot_reach_->forwardKinematic(0.0, 0.0, result);
   Eigen::Matrix4d expect;
-  expect << 0, -1, 0, 0,
-            1, 0 , 0, 0,
-            0, 0 , 1, 0.1,
-            0, 0 , 0, 1;
+  expect <<   1, 0, 0, 0, 
+              0, 0, -1, 0, 
+              0, 1, 0, 0.1, 
+              0, 0, 0, 1;
+  EXPECT_TRUE(result.isApprox(expect));
+}
+
+TEST_F(RobotReachTest, ForwardKinematicTest1){
+  Eigen::Matrix4d result = Eigen::Matrix4d::Identity();
+  robot_reach_->forwardKinematic(M_PI/2, 0.0, result);
+  Eigen::Matrix4d expect;
+  expect << 0.0, -1.0, 0.0, 0.0, 
+            0.0, 0.0, -1.0, 0.0, 
+            1.0, 0.0, 0.0, 0.1, 
+            0.0, 0.0, 0.0, 1.0;
   EXPECT_TRUE(result.isApprox(expect));
 }
 

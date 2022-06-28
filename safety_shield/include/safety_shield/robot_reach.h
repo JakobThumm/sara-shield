@@ -120,7 +120,7 @@ public:
 
   /**
    * @brief Transform the capsule of joint n by the transformation matrix T.
-   * @return a custom robot msg capsule
+   * @return the transformed capsule
    */
   reach_lib::Capsule transformCapsule(const int& n_joint, const Eigen::Matrix4d &T);
 
