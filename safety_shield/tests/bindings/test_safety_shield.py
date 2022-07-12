@@ -98,7 +98,8 @@ class TestSafetyShield:
                      init_roll=0.0,
                      init_pitch=0.0,
                      init_yaw=0.0,
-                     init_qpos=[0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+                     init_qpos=[0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+                     current_time=0.0
                     )
         assert shield is not None   
 
@@ -111,8 +112,9 @@ class TestSafetyShield:
 
     def test_newLTT(self, shield):
         """Test the newLongTermTrajectory() function."""
-        motion = Motion(6)
-        shield.newLongTermTrajectory(motion)
+        pos = [0.0 for i in range(6)]
+        vel = [0.0 for i in range(6)]
+        shield.newLongTermTrajectory(pos, vel)
 
     def test_setLTT(self, shield):
         """Test the setLongTermTrajectory() function."""
@@ -143,16 +145,18 @@ class TestSafetyShield:
         for i in range(21):
             dummy_meas.append([0.0, 0.0, 0.0])
         shield.humanMeasurement(dummy_meas, 0.0)
-        motion = Motion(6)
-        shield.newLongTermTrajectory(motion)
+        pos = [0.0 for i in range(6)]
+        vel = [0.0 for i in range(6)]
+        shield.newLongTermTrajectory(pos, vel)
         motion = shield.step(0.004)
         is_safe = shield.getSafety()
         assert is_safe is False
 
     def test_getRobotReachCapsules(self, shield):
         """Test the getRobotReachCapsules() function for the modrob1 test fixture."""
-        motion = Motion(6)
-        shield.newLongTermTrajectory(motion)
+        pos = [0.0 for i in range(6)]
+        vel = [0.0 for i in range(6)]
+        shield.newLongTermTrajectory(pos, vel)
         dummy_meas = []
         for i in range(21):
             dummy_meas.append([0.0, 0.0, 0.0])
@@ -225,8 +229,9 @@ class TestSafetyShield:
     # ---------------- Schunk -------------------
     def test_getRobotReachCapsulesSchunk(self, shield_schunk):
         """Test the getRobotReachCapsules() function for the Schunk test fixture."""
-        motion = Motion(6)
-        shield_schunk.newLongTermTrajectory(motion)
+        pos = [0.0 for i in range(6)]
+        vel = [0.0 for i in range(6)]
+        shield_schunk.newLongTermTrajectory(pos, vel)
         dummy_meas = []
         for i in range(21):
             dummy_meas.append([0.0, 0.0, 0.0])
