@@ -88,6 +88,19 @@ class TestSafetyShield:
     def test_safety_shield(self, shield):
         """Test the safety shield constructor."""
         assert shield is not None
+        
+    def test_reset_safety_shield(self, shield):
+        """Test the reset function."""
+        shield.reset(activate_shield=True,
+                     init_x=0.0,
+                     init_y=0.0,
+                     init_z=0.0,
+                     init_roll=0.0,
+                     init_pitch=0.0,
+                     init_yaw=0.0,
+                     init_qpos=[0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+                    )
+        assert shield is not None   
 
     def test_humanMeasurement(self, shield):
         """Test the humanMeasurement() function."""
