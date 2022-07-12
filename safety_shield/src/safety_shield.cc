@@ -169,7 +169,8 @@ void SafetyShield::reset(bool activate_shield,
       double init_roll, 
       double init_pitch, 
       double init_yaw,
-      const std::vector<double> &init_qpos) {
+      const std::vector<double> &init_qpos,
+      double current_time) {
   robot_reach_->reset(init_x, init_y, init_z, init_roll, init_pitch, init_yaw);
   human_reach_->reset();
   std::vector<double> prev_dq;
@@ -185,6 +186,7 @@ void SafetyShield::reset(bool activate_shield,
   recovery_path_correct_ = false;
   path_s_ = 0;
   path_s_discrete_ = 0;
+  cycle_begin_time_ = current_time;
   recovery_path_ = Path();
   failsafe_path_ = Path();
   // Initialize the long term trajectory

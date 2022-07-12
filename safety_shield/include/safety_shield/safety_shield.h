@@ -478,6 +478,7 @@ class SafetyShield {
    * @param init_pitch Base pitch
    * @param init_yaw Base yaw
    * @param init_qpos Initial joint position of the robot
+   * @param current_time Initial time
    */
   void reset(bool activate_shield,
       double init_x, 
@@ -486,7 +487,8 @@ class SafetyShield {
       double init_roll, 
       double init_pitch, 
       double init_yaw,
-      const std::vector<double> &init_qpos);
+      const std::vector<double> &init_qpos,
+      double current_time);
 
   /**
    * @brief Computes the new trajectory depending on dq and if the previous path is safe and publishes it
