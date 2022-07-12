@@ -179,6 +179,10 @@ void SafetyShield::reset(bool activate_shield,
   }
   alpha_i_.push_back(1.0);
   is_safe_ = !activate_shield_;
+  new_ltt_ = false;
+  new_goal_ = false;
+  new_ltt_processed_ = false;
+  recovery_path_correct_ = false;
   computesPotentialTrajectory(is_safe_, prev_dq);
   next_motion_ = determineNextMotion(is_safe_);
   spdlog::info("Safety shield created.");
