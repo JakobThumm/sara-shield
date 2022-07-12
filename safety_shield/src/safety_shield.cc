@@ -183,6 +183,14 @@ void SafetyShield::reset(bool activate_shield,
   new_goal_ = false;
   new_ltt_processed_ = false;
   recovery_path_correct_ = false;
+  path_s_ = 0;
+  path_s_discrete_ = 0;
+  recovery_path_ = Path();
+  failsafe_path_ = Path();
+  // Initialize the long term trajectory
+  std::vector<Motion> long_term_traj;
+  long_term_traj.push_back(Motion(0.0, init_qpos));
+  long_term_trajectory_ = LongTermTraj(long_term_traj);
   computesPotentialTrajectory(is_safe_, prev_dq);
   next_motion_ = determineNextMotion(is_safe_);
   spdlog::info("Safety shield created.");
@@ -384,9 +392,9 @@ Motion SafetyShield::computesPotentialTrajectory(bool v, const std::vector<doubl
     double a_max_manoeuvre, j_max_manoeuvre;
     // One could use new_long_term_trajectory_.getMaxAccelerationWindow(path_s_discrete_) instead of a_max_ltt but there are many bugs to be solved before.
     if (!new_ltt_) {
-      calculateMaxAccJerk(prev_speed, a_max_ltt_, j_max_ltt_,a_max_manoeuvre, j_max_manoeuvre);
+      calculateMaxAccJerk(prev_speed, a_max_ltt_, j_max_ltt_, a_max_manoeuvre, j_max_manoeuvre);
     } else {
-      calculateMaxAccJerk(prev_speed, a_max_ltt_, j_max_ltt_,a_max_manoeuvre, j_max_manoeuvre);
+      calculateMaxAccJerk(prev_speed, a_max_ltt_, j_max_ltt_, a_max_manoeuvre, j_max_manoeuvre);
     }
     
     //Desired movement, one timestep
