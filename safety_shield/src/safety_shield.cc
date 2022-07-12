@@ -162,6 +162,32 @@ SafetyShield::SafetyShield(bool activate_shield,
     spdlog::info("Safety shield created.");
   }
 
+void SafetyShield::reset(bool activate_shield,
+      double init_x, 
+      double init_y, 
+      double init_z, 
+      double init_roll, 
+      double init_pitch, 
+      double init_yaw,
+      const std::vector<double> &init_qpos) {
+  robot_reach_->reset(init_x, init_y, init_z, init_roll, init_pitch, init_yaw);
+  human_reach_->reset();
+  std::vector<double> prev_dq;
+  for(int i = 0; i < 6; i++) {
+      prev_dq.push_back(0.0);
+      alpha_i_.push_back(1.0);
+  }
+  alpha_i_.push_back(1.0);
+  is_safe_ = !activate_shield_;
+  new_ltt_ = false;
+  new_goal_ = false;
+  new_ltt_processed_ = false;
+  recovery_path_correct_ = false;
+  computesPotentialTrajectory(is_safe_, prev_dq);
+  next_motion_ = determineNextMotion(is_safe_);
+  spdlog::info("Safety shield created.");
+}
+
 bool SafetyShield::planSafetyShield(double pos, double vel, double acc, double ve, double a_max, double j_max, Path &path) {
   if (a_max < 0 || fabs(acc) > a_max) {
     return false;

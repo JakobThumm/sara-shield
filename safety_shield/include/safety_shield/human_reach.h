@@ -46,6 +46,11 @@ class HumanReach {
   double last_meas_timestep_ = -1;
 
   /**
+   * @brief Number of joint measurements.
+   */
+  int n_joints_meas_;
+
+  /**
    * @brief Joint position measurements
    */
   std::vector<reach_lib::Point> joint_pos_;
@@ -135,6 +140,12 @@ public:
    * @brief Destructor
    */
   ~HumanReach() {}
+
+  /**
+   * @brief Reset the human reach object.
+   * 
+   */
+  void reset();
 
   /**
    * @brief Update the joint measurements.

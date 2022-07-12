@@ -89,6 +89,19 @@ public:
    *  @brief A robot destructor
    */
   ~RobotReach() {}
+
+  /**
+   * @brief Reset the robot reach object.
+   * 
+   * @param x initial x position of base
+   * @param y initial y position of base
+   * @param z initial z position of base
+   * @param roll initial roll of base
+   * @param pitch initial pitch of base
+   * @param yaw initial yaw of base
+   */
+  void reset(double x, double y, double z, 
+      double roll, double pitch, double yaw);
     
   /**
    * @brief Computes the global transformation matrix of a given joint.

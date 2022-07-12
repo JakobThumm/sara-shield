@@ -86,6 +86,15 @@ PYBIND11_MODULE(safety_shield_py, handle) {
       py::arg("init_pitch"),
       py::arg("init_yaw"),
       py::arg("init_qpos"))
+    .def("reset", &safety_shield::SafetyShield::reset, 
+      py::arg("activate_shield"),
+      py::arg("init_x"),
+      py::arg("init_y"),
+      py::arg("init_z"),
+      py::arg("init_roll"),
+      py::arg("init_pitch"),
+      py::arg("init_yaw"),
+      py::arg("init_qpos"))
     .def("step", &safety_shield::SafetyShield::step, py::arg("cycle_begin_time"))
     .def("newLongTermTrajectory", &safety_shield::SafetyShield::newLongTermTrajectory, py::arg("goal_motion"))
     .def("setLongTermTrajectory", &safety_shield::SafetyShield::setLongTermTrajectory, py::arg("traj"))

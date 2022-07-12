@@ -468,6 +468,27 @@ class SafetyShield {
   ~SafetyShield() {};
 
   /**
+   * @brief Resets the safety shield completely.
+   * 
+   * @param activate_shield If the safety function should be active or not.
+   * @param init_x Base x pos
+   * @param init_y Base y pos
+   * @param init_z Base z pos 
+   * @param init_roll Base roll
+   * @param init_pitch Base pitch
+   * @param init_yaw Base yaw
+   * @param init_qpos Initial joint position of the robot
+   */
+  void reset(bool activate_shield,
+      double init_x, 
+      double init_y, 
+      double init_z, 
+      double init_roll, 
+      double init_pitch, 
+      double init_yaw,
+      const std::vector<double> &init_qpos);
+
+  /**
    * @brief Computes the new trajectory depending on dq and if the previous path is safe and publishes it
    * @param v is the previous path safe
    * @param prev_speed the velocity of the previous point
