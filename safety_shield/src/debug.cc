@@ -15,9 +15,9 @@
 int main () {
     bool activate_shield = true;
     double sample_time = 0.001; 
-    std::string trajectory_config_file = std::string("../../safety_shield/config/trajectory_parameters_modrob1.yaml");
-    std::string robot_config_file = std::string("../../safety_shield/config/robot_parameters_modrob1.yaml");
-    std::string mocap_config_file = std::string("../../safety_shield/config/cmu_mocap_no_hand.yaml");
+    std::string trajectory_config_file = std::string("../safety_shield/config/trajectory_parameters_schunk.yaml");
+    std::string robot_config_file = std::string("../safety_shield/config/robot_parameters_schunk.yaml");
+    std::string mocap_config_file = std::string("../safety_shield/config/cmu_mocap_no_hand.yaml");
     double init_x = 0.0;
     double init_y = 0.0;
     double init_z = 0.0;
@@ -48,7 +48,7 @@ int main () {
     //auto start_time = std::chrono::system_clock::now();
     //double t = std::chrono::duration<double>(std::chrono::system_clock::now()-start_time).count();
     double t = 0.0;
-    for (int i=0; i<10000; i++) {
+    for (int i=0; i<2000; i++) {
       t += 0.001;
       shield.humanMeasurement(dummy_human_meas, t);
       t += 0.003;
@@ -57,7 +57,12 @@ int main () {
         safety_shield::Motion goal_motion(t, motion_vec);
         shield.newLongTermTrajectory(goal_motion);
       }
-      shield.step(t);
+      if (i == 1000) {
+        t = 0.0;
+        shield.reset(true, init_x, init_y, init_z, init_roll, init_pitch, init_yaw, init_qpos, t);
+      }
+      safety_shield::Motion next_motion = shield.step(t);
+      spdlog::info(next_motion.getAngle()[0]);
     }
     return 0;
 }

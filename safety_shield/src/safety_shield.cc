@@ -189,13 +189,15 @@ void SafetyShield::reset(bool activate_shield,
   cycle_begin_time_ = current_time;
   recovery_path_ = Path();
   failsafe_path_ = Path();
+  failsafe_path_2_ = Path();
+  safe_path_ = Path();
   // Initialize the long term trajectory
   std::vector<Motion> long_term_traj;
   long_term_traj.push_back(Motion(0.0, init_qpos));
   long_term_trajectory_ = LongTermTraj(long_term_traj);
   computesPotentialTrajectory(is_safe_, prev_dq);
   next_motion_ = determineNextMotion(is_safe_);
-  spdlog::info("Safety shield created.");
+  spdlog::info("Safety shield resetted.");
 }
 
 bool SafetyShield::planSafetyShield(double pos, double vel, double acc, double ve, double a_max, double j_max, Path &path) {
