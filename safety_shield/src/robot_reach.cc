@@ -39,6 +39,18 @@ RobotReach::RobotReach(std::vector<double> transformation_matrices, int nb_joint
   }
 }
 
+void RobotReach::reset(double x, double y, double z, 
+      double roll, double pitch, double yaw) {
+  Eigen::Matrix4d transformation_matrix;
+  double cr = cos(roll); double sr = sin(roll);
+  double cp = cos(pitch); double sp = sin(pitch);
+  double cy = cos(yaw); double sy = sin(yaw);
+  transformation_matrix << cr*cp, cr*sp*sy-sr*cy, cr*sp*cy+sr*sy, x,
+            sr*cp, sr*sp*sy+cr*cy, sr*sp*cy-cr*sy, y,
+            -sp, cp*sy, cp*cy, z,
+            0, 0, 0, 1;
+  transformation_matrices_[0] = transformation_matrix;
+}
 
 reach_lib::Capsule RobotReach::transformCapsule(const int& n_joint, const Eigen::Matrix4d &T) {
   Eigen::Vector4d p1 = T * pointToVector(robot_capsules_[n_joint].p1_);

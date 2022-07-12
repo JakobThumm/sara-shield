@@ -13,6 +13,7 @@ HumanReach::HumanReach(int n_joints_meas,
       double measurement_error_pos, 
       double measurement_error_vel, 
       double delay):
+  n_joints_meas_(n_joints_meas),
   body_link_joints_(body_link_joints),
   measurement_error_pos_(measurement_error_pos),
   measurement_error_vel_(measurement_error_vel),
@@ -36,6 +37,14 @@ HumanReach::HumanReach(int n_joints_meas,
   human_p_ = reach_lib::ArticulatedPos(system, extremity_base_joints, extremity_thickness, extremity_max_v, extremity_length);
 
   for (int i = 0; i < n_joints_meas; i++) {
+    joint_pos_.push_back(reach_lib::Point(0.0, 0.0, 0.0));
+    joint_vel_.push_back(reach_lib::Point(0.0, 0.0, 0.0));
+  }
+}
+
+void HumanReach::reset() {
+  last_meas_timestep_ = -1;
+  for (int i = 0; i < n_joints_meas_; i++) {
     joint_pos_.push_back(reach_lib::Point(0.0, 0.0, 0.0));
     joint_vel_.push_back(reach_lib::Point(0.0, 0.0, 0.0));
   }

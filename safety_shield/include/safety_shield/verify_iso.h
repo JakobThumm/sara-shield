@@ -37,6 +37,7 @@ class VerifyISO : public Verify {
    * @brief A basic VerifyISO constructor
    */
   VerifyISO() : Verify() {}
+
   /**
    * @brief Check a set of robot capsules if they collide with a set of human capsules
    * 
