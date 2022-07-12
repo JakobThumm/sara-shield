@@ -562,6 +562,7 @@ Motion SafetyShield::step(double cycle_begin_time) {
         long_term_trajectory_ = new_long_term_trajectory_;
         new_ltt_ = false;
         new_goal_ = false;
+        spdlog::info("New LTT accepted");
       }
     }
     // Check if there is a new goal motion
