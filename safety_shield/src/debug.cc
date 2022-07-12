@@ -48,21 +48,21 @@ int main () {
     //auto start_time = std::chrono::system_clock::now();
     //double t = std::chrono::duration<double>(std::chrono::system_clock::now()-start_time).count();
     double t = 0.0;
-    for (int i=0; i<2000; i++) {
+    for (int i=0; i<100000; i++) {
       t += 0.001;
       shield.humanMeasurement(dummy_human_meas, t);
       t += 0.003;
       if (i % 100 == 0) {
-        std::vector<double> motion_vec{0.2*t, 0.0, 0.0, 0.0, 0.0, std::min(t, 3.1)};
-        safety_shield::Motion goal_motion(t, motion_vec);
-        shield.newLongTermTrajectory(goal_motion);
+        std::vector<double> qpos{0.2*t, 0.0, 0.0, 0.0, 0.0, std::min(t, 3.1)};
+        std::vector<double> qvel{0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+        shield.newLongTermTrajectory(qpos, qvel);
       }
-      if (i == 1000) {
+      if (i % 10000) {
         t = 0.0;
         shield.reset(true, init_x, init_y, init_z, init_roll, init_pitch, init_yaw, init_qpos, t);
       }
       safety_shield::Motion next_motion = shield.step(t);
-      spdlog::info(next_motion.getAngle()[0]);
+      //spdlog::info(next_motion.getAngle()[0]);
     }
     return 0;
 }

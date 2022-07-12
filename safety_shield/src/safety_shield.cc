@@ -647,7 +647,8 @@ bool SafetyShield::checkCurrentMotionForReplanning(Motion& current_motion) {
   return true;
 }
 
-void SafetyShield::newLongTermTrajectory(Motion& goal_motion) {
+void SafetyShield::newLongTermTrajectory(const std::vector<double> &goal_position,
+                                         const std::vector<double> &goal_velocity) {
   try { 
     std::vector<double> motion_q;
     motion_q.reserve(nb_joints_); 
@@ -655,8 +656,8 @@ void SafetyShield::newLongTermTrajectory(Motion& goal_motion) {
     motion_dq.reserve(nb_joints_); 
     for (int i = 0; i < nb_joints_; i++) {
       // TODO: replace with config max min values
-      motion_q.push_back(std::clamp(goal_motion.getAngle()[i], q_min_allowed_[i], q_max_allowed_[i]));
-      motion_dq.push_back(std::clamp(goal_motion.getVelocity()[i], -v_max_allowed_[i], v_max_allowed_[i]));
+      motion_q.push_back(std::clamp(goal_position[i], q_min_allowed_[i], q_max_allowed_[i]));
+      motion_dq.push_back(std::clamp(goal_velocity[i], -v_max_allowed_[i], v_max_allowed_[i]));
     }
     new_goal_motion_ = Motion(cycle_begin_time_, motion_q, motion_dq);
     new_goal_ = true;

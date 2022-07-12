@@ -509,9 +509,11 @@ class SafetyShield {
   /**
    * @brief Calculates a new trajectory from current joint state to desired goal state.
    * Sets new trajectory as desired new long term trajectory.
-   * @param goal_motion Desired joint angles and velocities
+   * @param goal_position Desired joint angles to move to
+   * @param goal_velocity Desired joint velocities at the goal position
    */
-  void newLongTermTrajectory(Motion& goal_motion);
+  void newLongTermTrajectory(const std::vector<double> &goal_position,
+                             const std::vector<double> &goal_velocity);
 
   /**
    * @brief Overrides the current long-term trajectory.
