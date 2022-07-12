@@ -562,7 +562,6 @@ Motion SafetyShield::step(double cycle_begin_time) {
         long_term_trajectory_ = new_long_term_trajectory_;
         new_ltt_ = false;
         new_goal_ = false;
-        spdlog::info("New LTT accepted");
       }
     }
     // Check if there is a new goal motion
@@ -586,7 +585,6 @@ Motion SafetyShield::step(double cycle_begin_time) {
         if (!last_close) {
           new_long_term_trajectory_ = calculateLongTermTrajectory(current_motion.getAngle(), current_motion.getVelocity(), 
             current_motion.getAcceleration(), new_goal_motion_.getAngle(), new_goal_motion_.getVelocity());
-          spdlog::info("New LTT planned");
           last_replan_start_motion_ = current_motion;
         }
         new_ltt_ = true;
