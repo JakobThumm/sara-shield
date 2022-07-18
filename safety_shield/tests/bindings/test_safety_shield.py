@@ -131,7 +131,7 @@ class TestSafetyShield:
         motions.append(Motion(
             3.0, [1.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 0.0, 0.0], 0.0
         ))
-        ltt = LongTermTraj(motions)
+        ltt = LongTermTraj(motions, 1.0)
         shield.setLongTermTrajectory(ltt)
 
     def test_step(self, shield):

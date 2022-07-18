@@ -13,31 +13,28 @@ Motion LongTermTraj::interpolate(double s, double ds, double dds, std::vector<do
   int ind1 = static_cast<int>(intpart);
   // ceil(s/sample_time) + 1 ==> upper index
   int ind2 = static_cast<int>(ceil(ind));
+  // time from first index to interpolation point
+  double dt = ind_mod * sample_time_;
   std::vector<double> q1 = getNextMotionAtIndex(ind1).getAngle();
-  std::vector<double> q2 = getNextMotionAtIndex(ind2).getAngle();
-  std::vector<double> q;
-  std::vector<double> dq;
-  std::vector<double> ddq;
-  std::vector<double> dddq = getNextMotionAtIndex(ind1).getJerk();
+  std::vector<double> dq1 = getNextMotionAtIndex(ind1).getVelocity();
+  std::vector<double> ddq1 = getNextMotionAtIndex(ind1).getAcceleration();
+  std::vector<double> dddq1 = getNextMotionAtIndex(ind1).getJerk();
+  std::vector<double> q(q1.size());
+  std::vector<double> dq(q1.size());
+  std::vector<double> ddq(q1.size());
   for (int i = 0 ; i < q1.size(); i++) {
       // Linearly interpolate between lower and upper index of position
-      double q_clamped = q1[i] + ind_mod * (q2[i] - q1[i]);
-      q.push_back(q_clamped);
+      q[i] = q1[i] + dt * dq1[i] + 1.0/2 *dt*dt * ddq1[i] + 1.0/6 * dt*dt*dt * dddq1[i];
       // Calculate LTT velocity
-      double v_max_int = (q2[i] - q1[i])/sample_time_;
+      double v_max_int = dq1[i] + dt * ddq1[i] + 1.0/2 * dt*dt * dddq1[i];
       double v_int = v_max_int * ds;
-      if (std::abs(v_int) > v_max_allowed[i]) {
-      v_int = std::clamp(v_int, -v_max_allowed[i], v_max_allowed[i]);
-      }
-      dq.push_back(v_int);
+      dq[i] = std::clamp(v_int, -v_max_allowed[i], v_max_allowed[i]);
       // Calculate Acceleration
-      double a_int = v_max_int*dds;
-      if (std::abs(a_int) > a_max_allowed[i]) {
-      a_int = std::clamp(a_int, -a_max_allowed[i], a_max_allowed[i]);
-      }
-      ddq.push_back(a_int);
+      double a_max_int = ddq1[i] + dt * dddq1[i];
+      double a_int = v_max_int * dds + ds * ds * a_max_int;
+      ddq[i] = std::clamp(a_int, -a_max_allowed[i], a_max_allowed[i]);
   }
-  return Motion(0.0, q, dq, ddq, dddq, s);
+  return Motion(0.0, q, dq, ddq, getNextMotionAtIndex(ind1).getJerk(), s);
 }
 
 void LongTermTraj::calculate_max_acc_jerk_window(std::vector<Motion> &long_term_traj, int k) {
