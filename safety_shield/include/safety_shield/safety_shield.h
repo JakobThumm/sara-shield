@@ -273,18 +273,7 @@ class SafetyShield {
    */
   RMLPositionFlags reflexxes_flags_;
 
-  /**
-   * @brief Extracts the point of time s (or interpolates it) from the buffer
-   *
-   * @param s the point's time
-   * @param ds the percentage of the maximum path velocity, 0 = stand still, 1 = full velocity
-   * @param dds the derivative of ds, 1 = accelerate from v=0 to full velocity in 1 second
-   * @param trajectory the long term trajectory to interpolate from
-   * @return the motion at point s in trajectory
-   */
-  Motion interpolateFromTrajectory(double s, double ds, double dds, 
-      const LongTermTraj& trajectory) const;
-  
+protected:
   /**
    * @brief Calculate max acceleration and jerk based on previous velocity
    * 

@@ -86,7 +86,7 @@ class LongTermTrajTestIdx : public ::testing::Test {
     a3.push_back(91);
     Motion m3(3, p0, v0, a3, j0);
     mo_vec.push_back(m3);
-    long_term_trajectory_ = LongTermTraj(mo_vec, 3);
+    long_term_trajectory_ = LongTermTraj(mo_vec, 0.001, 3);
   }
 };
 } // namespace safety_shield

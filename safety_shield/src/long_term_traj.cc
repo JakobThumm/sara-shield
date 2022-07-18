@@ -2,6 +2,44 @@
 
 namespace safety_shield {
 
+Motion LongTermTraj::interpolate(double s, double ds, double dds, std::vector<double>& v_max_allowed, std::vector<double>& a_max_allowed) {
+  // Example: s=2.465, sample_time = 0.004 --> ind = 616.25
+  assert(sample_time_ != 0);
+  double ind = s/sample_time_;
+  double intpart;
+  // Example: intpart = 616.0, ind_mod = 0.25
+  double ind_mod = modf(ind, &intpart);
+  // floor(s/sample_time) + 1 ==> lower index
+  int ind1 = static_cast<int>(intpart);
+  // ceil(s/sample_time) + 1 ==> upper index
+  int ind2 = static_cast<int>(ceil(ind));
+  std::vector<double> q1 = getNextMotionAtIndex(ind1).getAngle();
+  std::vector<double> q2 = getNextMotionAtIndex(ind2).getAngle();
+  std::vector<double> q;
+  std::vector<double> dq;
+  std::vector<double> ddq;
+  std::vector<double> dddq = getNextMotionAtIndex(ind1).getJerk();
+  for (int i = 0 ; i < q1.size(); i++) {
+      // Linearly interpolate between lower and upper index of position
+      double q_clamped = q1[i] + ind_mod * (q2[i] - q1[i]);
+      q.push_back(q_clamped);
+      // Calculate LTT velocity
+      double v_max_int = (q2[i] - q1[i])/sample_time_;
+      double v_int = v_max_int * ds;
+      if (std::abs(v_int) > v_max_allowed[i]) {
+      v_int = std::clamp(v_int, -v_max_allowed[i], v_max_allowed[i]);
+      }
+      dq.push_back(v_int);
+      // Calculate Acceleration
+      double a_int = v_max_int*dds;
+      if (std::abs(a_int) > a_max_allowed[i]) {
+      a_int = std::clamp(a_int, -a_max_allowed[i], a_max_allowed[i]);
+      }
+      ddq.push_back(a_int);
+  }
+  return Motion(0.0, q, dq, ddq, dddq, s);
+}
+
 void LongTermTraj::calculate_max_acc_jerk_window(std::vector<Motion> &long_term_traj, int k) {
   int traj_length = long_term_traj.size();
   // It must be k <= trajectory length.
