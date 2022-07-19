@@ -430,26 +430,20 @@ Motion SafetyShield::computesPotentialTrajectory(bool v, const std::vector<doubl
     }
 
     //// Calculate start and goal pos of intended motion
-    // Calculate start
     // Fill potential buffer with position and velocity from last failsafe path. This value is not really used.
     double s_d = failsafe_path_.getPosition();
     double ds_d = failsafe_path_.getVelocity();
     double dds_d = failsafe_path_.getAcceleration();
-    // Always interpolate from current long term buffer
-    Motion start_motion = long_term_trajectory_.interpolate(s_d, ds_d, dds_d, v_max_allowed_, a_max_allowed_);
+    double ddds_d = failsafe_path_.getJerk();
     // Calculate goal
     potential_path_.getFinalMotion(s_d, ds_d, dds_d);
     Motion goal_motion;
     if (new_ltt_) {
-      goal_motion = new_long_term_trajectory_.interpolate(s_d, ds_d, dds_d, v_max_allowed_, a_max_allowed_);
+      goal_motion = new_long_term_trajectory_.interpolate(s_d, ds_d, dds_d, ddds_d, v_max_allowed_, a_max_allowed_, j_max_allowed_);
     } else {
-      goal_motion = long_term_trajectory_.interpolate(s_d, ds_d, dds_d, v_max_allowed_, a_max_allowed_);
+      goal_motion = long_term_trajectory_.interpolate(s_d, ds_d, dds_d, ddds_d, v_max_allowed_, a_max_allowed_, j_max_allowed_);
     } 
     goal_motion.setTime(potential_path_.getPhase(3));
-    //s_g_motion.header.stamp = cycle_begin_time_;
-    //s_g_motion.start_motion = start_motion;
-    //s_g_motion.goal_motion = goal_motion;
-    //s_g_motion.duration = potential_path_.getPhase(3);
     return goal_motion;
   } catch (const std::exception &exc) {
     spdlog::error("Exception in SafetyShield::computesPotentialTrajectory: {}", exc.what());
@@ -469,26 +463,28 @@ bool SafetyShield::checkMotionForJointLimits(Motion& motion) {
 
 Motion SafetyShield::determineNextMotion(bool is_safe) {
   Motion next_motion;
-  double s_d, ds_d, dds_d;
+  double s_d, ds_d, dds_d, ddds_d;
   if (is_safe) {
     // Fill potential buffer with position and velocity from recovery path
     if (recovery_path_.getPosition() >= failsafe_path_.getPosition()) {
       s_d = recovery_path_.getPosition();
       ds_d = recovery_path_.getVelocity();
       dds_d = recovery_path_.getAcceleration();
+      ddds_d = recovery_path_.getJerk();
     }
     else {
       potential_path_.increment(sample_time_);
       s_d = potential_path_.getPosition();
       ds_d = potential_path_.getVelocity();
       dds_d = potential_path_.getAcceleration();
+      ddds_d = potential_path_.getJerk();
     }
 
     // Interpolate from new long term buffer
     if (new_ltt_) {
-      next_motion = new_long_term_trajectory_.interpolate(s_d, ds_d, dds_d, v_max_allowed_, a_max_allowed_);
+      next_motion = new_long_term_trajectory_.interpolate(s_d, ds_d, dds_d, ddds_d, v_max_allowed_, a_max_allowed_, j_max_allowed_);
     } else {
-      next_motion = long_term_trajectory_.interpolate(s_d, ds_d, dds_d, v_max_allowed_, a_max_allowed_);
+      next_motion = long_term_trajectory_.interpolate(s_d, ds_d, dds_d, ddds_d, v_max_allowed_, a_max_allowed_, j_max_allowed_);
     }
     // Set potential path as new verified safe path
     safe_path_ = potential_path_;
@@ -498,7 +494,8 @@ Motion SafetyShield::determineNextMotion(bool is_safe) {
     s_d = safe_path_.getPosition();
     ds_d = safe_path_.getVelocity();
     dds_d = safe_path_.getAcceleration();
-    next_motion = long_term_trajectory_.interpolate(s_d, ds_d, dds_d, v_max_allowed_, a_max_allowed_);
+    ddds_d = safe_path_.getJerk();
+    next_motion = long_term_trajectory_.interpolate(s_d, ds_d, dds_d, ddds_d, v_max_allowed_, a_max_allowed_, j_max_allowed_);
   }
   /// !!! Set s to the new path position !!!
   path_s_ = s_d;
@@ -584,9 +581,21 @@ Motion SafetyShield::step(double cycle_begin_time) {
 Motion SafetyShield::getCurrentMotion() {
   Motion current_pos;
   if (!recovery_path_.isCurrent()) {
-    current_pos = long_term_trajectory_.interpolate(failsafe_path_.getPosition(), failsafe_path_.getVelocity(), failsafe_path_.getAcceleration(), v_max_allowed_, a_max_allowed_);
+    current_pos = long_term_trajectory_.interpolate(failsafe_path_.getPosition(), 
+                                                    failsafe_path_.getVelocity(), 
+                                                    failsafe_path_.getAcceleration(),
+                                                    failsafe_path_.getJerk(), 
+                                                    v_max_allowed_, 
+                                                    a_max_allowed_,
+                                                    j_max_allowed_);
   } else {
-    current_pos = long_term_trajectory_.interpolate(recovery_path_.getPosition(), recovery_path_.getVelocity(), recovery_path_.getAcceleration(), v_max_allowed_, a_max_allowed_); 
+    current_pos = long_term_trajectory_.interpolate(recovery_path_.getPosition(), 
+                                                    recovery_path_.getVelocity(), 
+                                                    recovery_path_.getAcceleration(), 
+                                                    recovery_path_.getJerk(), 
+                                                    v_max_allowed_, 
+                                                    a_max_allowed_,
+                                                    j_max_allowed_); 
   }
   return current_pos;
 }

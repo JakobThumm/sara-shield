@@ -67,7 +67,7 @@ class TestLTTFunctions:
     
     def test_interpolate_ds1(self, full_ltt):
         """Test the interpolation function for ds=1."""
-        motion = full_ltt.interpolate(1.5, 1.0, 0.0, [10, 10, 10], [10, 10, 10])
+        motion = full_ltt.interpolate(1.5, 1.0, 0.0, 0.0, [10, 10, 10], [10, 10, 10], [100, 100, 100])
         assert motion.getAngle()[0] == 0.125
         assert motion.getAngle()[1] == 0
         assert motion.getAngle()[2] == 0
@@ -80,7 +80,7 @@ class TestLTTFunctions:
         
     def test_interpolate_ds05(self, full_ltt):
         """Test the interpolation function."""
-        motion = full_ltt.interpolate(1.5, 0.5, 1.0, [10, 10, 10], [10, 10, 10])
+        motion = full_ltt.interpolate(1.5, 0.5, 1.0, 0.0, [10, 10, 10], [10, 10, 10], [100, 100, 100])
         assert motion.getAngle()[0] == 0.125
         assert motion.getAngle()[1] == 0
         assert motion.getAngle()[2] == 0

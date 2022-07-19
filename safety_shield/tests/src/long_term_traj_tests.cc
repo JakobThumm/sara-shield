@@ -211,21 +211,22 @@ TEST_F(LongTermTrajTest, InterpolateTest) {
     long_term_trajectory_.setLongTermTrajectory(motions, 0.1);
     std::vector<double> v_max = {10.0, 10.0};
     std::vector<double> a_max = {10.0, 10.0};
-    Motion motion_int = long_term_trajectory_.interpolate(0.01, 1.0, 0.0, v_max, a_max);
+    std::vector<double> j_max = {100.0, 100.0};
+    Motion motion_int = long_term_trajectory_.interpolate(0.01, 1.0, 0.0, 0.0, v_max, a_max, j_max);
     EXPECT_NEAR(motion_int.getAngle()[0], 0.010049833333333, 1e-5);
     EXPECT_NEAR(motion_int.getVelocity()[0], 1.00995, 1e-5);
     EXPECT_NEAR(motion_int.getAcceleration()[0], 0.99, 1e-5);
     EXPECT_NEAR(motion_int.getJerk()[0], -1.0, 1e-5);
-    Motion motion_int2 = long_term_trajectory_.interpolate(0.01, 0.5, 0.0, v_max, a_max);
+    Motion motion_int2 = long_term_trajectory_.interpolate(0.01, 0.5, 0.0, 0.0, v_max, a_max, j_max);
     EXPECT_NEAR(motion_int2.getAngle()[0], 0.010049833333333, 1e-5);
     EXPECT_NEAR(motion_int2.getVelocity()[0], 0.504975, 1e-5);
     EXPECT_NEAR(motion_int2.getAcceleration()[0], 0.2475, 1e-5);
-    EXPECT_NEAR(motion_int2.getJerk()[0], -1.0, 1e-5);
-    Motion motion_int3 = long_term_trajectory_.interpolate(0.01, 0.5, 1.0, v_max, a_max);
+    EXPECT_NEAR(motion_int2.getJerk()[0], -0.1250, 1e-5);
+    Motion motion_int3 = long_term_trajectory_.interpolate(0.01, 0.5, 1.0, 0.2, v_max, a_max, j_max);
     EXPECT_NEAR(motion_int3.getAngle()[0], 0.010049833333333, 1e-5);
     EXPECT_NEAR(motion_int3.getVelocity()[0], 0.504975, 1e-5);
     EXPECT_NEAR(motion_int3.getAcceleration()[0], 1.25745, 1e-5);
-    EXPECT_NEAR(motion_int3.getJerk()[0], -1.0, 1e-5);
+    EXPECT_NEAR(motion_int3.getJerk()[0], 1.561990000000000, 1e-5);
 }
 
 } // namespace safety_shield

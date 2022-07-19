@@ -2,7 +2,8 @@
 
 namespace safety_shield {
 
-Motion LongTermTraj::interpolate(double s, double ds, double dds, std::vector<double>& v_max_allowed, std::vector<double>& a_max_allowed) {
+Motion LongTermTraj::interpolate(double s, double ds, double dds, double ddds, 
+        std::vector<double>& v_max_allowed, std::vector<double>& a_max_allowed, std::vector<double>& j_max_allowed) {
   // Example: s=2.465, sample_time = 0.004 --> ind = 616.25
   assert(sample_time_ != 0);
   double ind = s/sample_time_;
@@ -22,6 +23,7 @@ Motion LongTermTraj::interpolate(double s, double ds, double dds, std::vector<do
   std::vector<double> q(q1.size());
   std::vector<double> dq(q1.size());
   std::vector<double> ddq(q1.size());
+  std::vector<double> dddq(q1.size());
   for (int i = 0 ; i < q1.size(); i++) {
       // Linearly interpolate between lower and upper index of position
       q[i] = q1[i] + dt * dq1[i] + 1.0/2 *dt*dt * ddq1[i] + 1.0/6 * dt*dt*dt * dddq1[i];
@@ -33,8 +35,9 @@ Motion LongTermTraj::interpolate(double s, double ds, double dds, std::vector<do
       double a_max_int = ddq1[i] + dt * dddq1[i];
       double a_int = v_max_int * dds + ds * ds * a_max_int;
       ddq[i] = std::clamp(a_int, -a_max_allowed[i], a_max_allowed[i]);
+      dddq[i] = dddq1[i] * ds * ds * ds + 3.0 * a_max_int * dds * ds + v_max_int * ddds;
   }
-  return Motion(0.0, q, dq, ddq, getNextMotionAtIndex(ind1).getJerk(), s);
+  return Motion(0.0, q, dq, ddq, dddq, s);
 }
 
 void LongTermTraj::calculate_max_acc_jerk_window(std::vector<Motion> &long_term_traj, int k) {

@@ -107,15 +107,19 @@ class LongTermTraj {
 
   /**
    * @brief Interpolates the position, velocity, and acceleration from the trajectory at the given s position.
+   * @details Mathematical explanation in http://mediatum.ub.tum.de/doc/1443612/652879.pdf eq. 2.4a and b (P.19).
    * 
    * @param s the point's time
    * @param ds the percentage of the maximum path velocity, 0 = stand still, 1 = full velocity
-   * @param dds the derivative of ds, 1 = accelerate from v=0 to full velocity in 1 second
+   * @param dds the derivative of ds to time, 1 = accelerate from v=0 to full velocity in 1 second
+   * @param ddds the derivative of dds to time
    * @param v_max_allowed vector of maximum allowed velocities
    * @param a_max_allowed vector of maximum allowed accelerations
+   * @param j_max_allowed vector of maximum allowed jerks
    * @return Motion 
    */
-  Motion interpolate(double s, double ds, double dds, std::vector<double>& v_max_allowed, std::vector<double>& a_max_allowed);
+  Motion interpolate(double s, double ds, double dds, double ddds, 
+        std::vector<double>& v_max_allowed, std::vector<double>& a_max_allowed, std::vector<double>& j_max_allowed);
 
   /**
    * @brief Set the Long Term Trajectory object
