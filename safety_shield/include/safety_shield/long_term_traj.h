@@ -18,6 +18,7 @@
 #include <deque>
 #include <utility>
 #include <vector>
+#include <assert.h>
 
 #include "spdlog/spdlog.h" // https://github.com/gabime/spdlog
 
@@ -39,6 +40,11 @@ class LongTermTraj {
    * @brief Trajectory length.
    */
   int length_;
+
+  /**
+   * @brief Time between two timesteps.
+   */
+  double sample_time_;
 
   /**
    * @brief The long term trajectory.
@@ -72,7 +78,8 @@ class LongTermTraj {
   LongTermTraj():
     current_pos_(0),
     starting_index_(0),
-    length_(1)
+    length_(1),
+    sample_time_(0.01)
   {
       long_term_traj_.push_back(Motion(1));
   }
@@ -83,8 +90,9 @@ class LongTermTraj {
    * @param long_term_traj Vector of motions that make up the LTT.
    * @param sliding_window_k Size of sliding window for max acc and jerk calculationa
    */
-  LongTermTraj(const std::vector<Motion> &long_term_traj, int starting_index=0, int sliding_window_k=10):
+  LongTermTraj(const std::vector<Motion> &long_term_traj, double sample_time, int starting_index=0, int sliding_window_k=10):
     long_term_traj_(long_term_traj),
+    sample_time_(sample_time),
     current_pos_(0),
     starting_index_(starting_index)
   {
@@ -97,9 +105,42 @@ class LongTermTraj {
    */
   ~LongTermTraj() {}
 
+  /**
+   * @brief Interpolates the position, velocity, and acceleration from the trajectory at the given s position.
+   * @details Mathematical explanation in http://mediatum.ub.tum.de/doc/1443612/652879.pdf eq. 2.4a and b (P.19).
+   * 
+   * @param s the point's time
+   * @param ds the percentage of the maximum path velocity, 0 = stand still, 1 = full velocity
+   * @param dds the derivative of ds to time, 1 = accelerate from v=0 to full velocity in 1 second
+   * @param ddds the derivative of dds to time
+   * @param v_max_allowed vector of maximum allowed velocities
+   * @param a_max_allowed vector of maximum allowed accelerations
+   * @param j_max_allowed vector of maximum allowed jerks
+   * @return Motion 
+   */
+  Motion interpolate(double s, double ds, double dds, double ddds, 
+        std::vector<double>& v_max_allowed, std::vector<double>& a_max_allowed, std::vector<double>& j_max_allowed);
+
+  /**
+   * @brief Set the Long Term Trajectory object
+   * 
+   * @param long_term_traj vector of motions to form the new long-term trajectory 
+   */
   inline void setLongTermTrajectory(const std::vector<Motion>& long_term_traj) {
     long_term_traj_ = long_term_traj;
     length_ = long_term_traj_.size();
+  }
+
+  /**
+   * @brief Set the Long Term Trajectory object with new sample time
+   * 
+   * @param long_term_traj vector of motions to form the new long term trajectory 
+   * @param sample_time the sample time of the new long-term trajectory
+   */
+  inline void setLongTermTrajectory(const std::vector<Motion>& long_term_traj, double sample_time) {
+    long_term_traj_ = long_term_traj;
+    length_ = long_term_traj_.size();
+    sample_time_ = sample_time;
   }
 
   /**

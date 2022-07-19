@@ -55,7 +55,8 @@ class VerifyISO : public Verify {
    * @param[in] robot_capsules Reachable capsules of the robot
    * @param[in] human_capsules List of list of capsules. Each list of capsules corresponds to a human reachable set model.
    * 
-   * @returns Whether the robot movement is unsafe for the human
+   * @returns True: if the robot capsules do not collide with one set of the human capsules, i.e., the motion is safe. 
+   *          False: Otherwise
    */
   bool verify_human_reach(const std::vector<reach_lib::Capsule>& robot_capsules, 
       std::vector<std::vector<reach_lib::Capsule>> human_capsules);

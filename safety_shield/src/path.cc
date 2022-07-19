@@ -4,9 +4,10 @@
 namespace safety_shield {
 
 Path::Path():
-  pos_(0),
+  pos_(0.0),
   vel_(0.0),
-  acc_(0),
+  acc_(0.0),
+  jerk_(0.0),
   is_current_(false)
 {
   for (int i = 0; i < 6; i++){
@@ -28,6 +29,7 @@ void Path::increment(double sample_time)
     }
     i += 1;
   }
+  jerk_ = jerk;
 
   if (vel_ > -epsilon){
     pos_ += vel_*sample_time + acc_*sample_time*sample_time/2 + jerk*sample_time*sample_time*sample_time/6;

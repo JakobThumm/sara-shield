@@ -57,8 +57,10 @@ PYBIND11_MODULE(safety_shield_py, handle) {
   // Long-term trajectory class
   py::class_<safety_shield::LongTermTraj>(handle, "LongTermTraj")
     .def(py::init<>())
-    .def(py::init<std::vector<safety_shield::Motion>, int, int>(), py::arg("long_term_traj"), py::arg("starting_index") = 0, py::arg("sliding_window_k") = 10)
-    .def("setLongTermTrajectory", &safety_shield::LongTermTraj::setLongTermTrajectory, py::arg("long_term_traj"))
+    .def(py::init<std::vector<safety_shield::Motion>, double, int, int>(), py::arg("long_term_traj"), py::arg("sample_time"), py::arg("starting_index") = 0, py::arg("sliding_window_k") = 10)
+    .def("interpolate", &safety_shield::LongTermTraj::interpolate, py::arg("s"), py::arg("ds"), py::arg("dds"), py::arg("ddds"), py::arg("v_max_allowed"), py::arg("a_max_allowed"), py::arg("j_max_allowed"))
+    .def("setLongTermTrajectory", py::overload_cast<const std::vector<safety_shield::Motion>&>(&safety_shield::LongTermTraj::setLongTermTrajectory), py::arg("long_term_traj"))
+    .def("setLongTermTrajectory", py::overload_cast<const std::vector<safety_shield::Motion>&, double>(&safety_shield::LongTermTraj::setLongTermTrajectory), py::arg("long_term_traj"), py::arg("sample_time"))
     .def("getLength", &safety_shield::LongTermTraj::getLength)
     .def("getCurrentPos", &safety_shield::LongTermTraj::getCurrentPos)
     .def("getCurrentMotion", &safety_shield::LongTermTraj::getCurrentMotion)

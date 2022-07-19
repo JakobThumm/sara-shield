@@ -50,6 +50,11 @@ private:
   double acc_;
 
   /**
+   * @brief The starting jerk
+   */
+  double jerk_;
+
+  /**
    * @brief Is the path the current one?
    */
   bool is_current_;
@@ -118,6 +123,13 @@ public:
   inline double getAcceleration() { return acc_; }
 
   /**
+   * @brief Returns the path starting jerk
+   * 
+   * @return the starting jerk
+   */
+  inline double getJerk() { return jerk_; }
+
+  /**
    * @brief Returns the information about the current path
    *
    * @return is this path the current one ?
@@ -173,6 +185,8 @@ public:
 
   /**
    * @brief Return the last position, velocity, and acceleration of the path.
+   * @details Please note that the final jerk is always zero and therefore not returned.
+   * 
    * @param[out] final_pos last position
    * @param[out] final_vel last velocity
    * @param[out] final_acc last acceleration

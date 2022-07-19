@@ -36,7 +36,7 @@ class TestLTTConstruction:
     def test_constructor2(self):
         """Test the LongTermTraj constructor 2."""
         m = [Motion(1)]
-        ltt = LongTermTraj(m)
+        ltt = LongTermTraj(m, 0.001)
         assert ltt is not None
         assert ltt.getLength() == 1
 
@@ -63,7 +63,33 @@ class TestLTTFunctions:
         motions.append(Motion(
             3.0, [1.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0], 0.0
         ))
-        return LongTermTraj(motions)
+        return LongTermTraj(motions, 1.0)
+    
+    def test_interpolate_ds1(self, full_ltt):
+        """Test the interpolation function for ds=1."""
+        motion = full_ltt.interpolate(1.5, 1.0, 0.0, 0.0, [10, 10, 10], [10, 10, 10], [100, 100, 100])
+        assert motion.getAngle()[0] == 0.125
+        assert motion.getAngle()[1] == 0
+        assert motion.getAngle()[2] == 0
+        assert motion.getVelocity()[0] == 0.5
+        assert motion.getVelocity()[1] == 0
+        assert motion.getVelocity()[2] == 0
+        assert motion.getAcceleration()[0] == 1.0
+        assert motion.getAcceleration()[1] == 0
+        assert motion.getAcceleration()[2] == 0
+        
+    def test_interpolate_ds05(self, full_ltt):
+        """Test the interpolation function."""
+        motion = full_ltt.interpolate(1.5, 0.5, 1.0, 0.0, [10, 10, 10], [10, 10, 10], [100, 100, 100])
+        assert motion.getAngle()[0] == 0.125
+        assert motion.getAngle()[1] == 0
+        assert motion.getAngle()[2] == 0
+        assert motion.getVelocity()[0] == 0.25
+        assert motion.getVelocity()[1] == 0
+        assert motion.getVelocity()[2] == 0
+        assert motion.getAcceleration()[0] == 1.0 * 0.5 + 0.25 * 1.0
+        assert motion.getAcceleration()[1] == 0
+        assert motion.getAcceleration()[2] == 0
 
     def test_setLongTermTrajectory(self, full_ltt):
         """Test setLongTermTrajectory() function."""

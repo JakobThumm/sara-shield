@@ -100,7 +100,7 @@ SafetyShield::SafetyShield(bool activate_shield,
     // Initialize the long term trajectory
     std::vector<Motion> long_term_traj;
     long_term_traj.push_back(Motion(0.0, init_qpos));
-    long_term_trajectory_ = LongTermTraj(long_term_traj);
+    long_term_trajectory_ = LongTermTraj(long_term_traj, sample_time_);
     //////////// Build human reach
     YAML::Node human_config = YAML::LoadFile(mocap_config_file);
     double measurement_error_pos = human_config["measurement_error_pos"].as<double>();
@@ -194,7 +194,7 @@ void SafetyShield::reset(bool activate_shield,
   // Initialize the long term trajectory
   std::vector<Motion> long_term_traj;
   long_term_traj.push_back(Motion(0.0, init_qpos));
-  long_term_trajectory_ = LongTermTraj(long_term_traj);
+  long_term_trajectory_ = LongTermTraj(long_term_traj, sample_time_);
   computesPotentialTrajectory(is_safe_, prev_dq);
   next_motion_ = determineNextMotion(is_safe_);
   spdlog::info("Safety shield resetted.");
@@ -347,25 +347,28 @@ bool SafetyShield::planSafetyShield(double pos, double vel, double acc, double v
 
 void SafetyShield::calculateMaxAccJerk(const std::vector<double> &prev_speed, const std::vector<double>& a_max_part, const std::vector<double>& j_max_part, double& a_max_manoeuvre, double& j_max_manoeuvre) {
   double new_c, new_d;
-
+  // Calculate dds_max
   double denom = std::abs(prev_speed[0]) + std::abs(a_max_part[0]) * max_s_stop_ + 1E-9;
   double min_c = (a_max_allowed_[0] - std::abs(a_max_part[0])) / denom;
-  double min_d = (j_max_allowed_[0] - 3*std::abs(a_max_part[0])*a_max_allowed_[0] - std::abs(j_max_part[0])) / denom;
-  spdlog::debug("calculateMaxAccJerk new_c = {}, new_d = {}, a_max_part[{}] = {}, j_max_part[{}] = {}", min_c, min_d, 0, std::abs(a_max_part[0]), 0, std::abs(j_max_part[0]));
   for (int i = 1; i < a_max_allowed_.size(); i++) {
     denom = std::abs(prev_speed[i]) + std::abs(a_max_part[i]) * max_s_stop_;
     new_c = (a_max_allowed_[i] - std::abs(a_max_part[i])) / denom;
     min_c = (new_c < min_c) ? new_c : min_c;
-  
-    new_d = (j_max_allowed_[i] - 3*std::abs(a_max_part[i])*new_c - std::abs(j_max_part[i])) / denom;
-    min_d = (new_d < min_d) ? new_d : min_d;
-    spdlog::debug("calculateMaxAccJerk new_c = {}, new_d = {}, a_max_part[{}] = {}, j_max_part[{}] = {}", new_c, new_d, i, std::abs(a_max_part[i]), i, std::abs(j_max_part[i]));
   }
-
   a_max_manoeuvre = (min_c < 0) ? 0 : min_c;
+  // Calculate ddds_max
+  denom = std::abs(prev_speed[0]) + std::abs(a_max_part[0]) * max_s_stop_ + 1E-9;
+  double min_d = (j_max_allowed_[0] - 3*std::abs(a_max_part[0])*a_max_manoeuvre - std::abs(j_max_part[0])) / denom;
+  spdlog::info(min_d);
+  spdlog::info(j_max_allowed_[0]);
+  spdlog::info(j_max_part[0]);
+  spdlog::info(denom);
+  for (int i = 1; i < a_max_allowed_.size(); i++) {
+    denom = std::abs(prev_speed[i]) + std::abs(a_max_part[i]) * max_s_stop_;
+    new_d = (j_max_allowed_[i] - 3*std::abs(a_max_part[i])*a_max_manoeuvre - std::abs(j_max_part[i])) / denom;
+    min_d = (new_d < min_d) ? new_d : min_d;
+  }
   j_max_manoeuvre = (min_d < 0) ? 0 : min_d;
-  
-  spdlog::debug("calculateMaxAccJerk denom = {}, a_max_manoeuvre = {}, j_max_manoeuvre = {}", denom, a_max_manoeuvre, j_max_manoeuvre);
 }
 
 Motion SafetyShield::computesPotentialTrajectory(bool v, const std::vector<double> &prev_speed)
@@ -430,26 +433,20 @@ Motion SafetyShield::computesPotentialTrajectory(bool v, const std::vector<doubl
     }
 
     //// Calculate start and goal pos of intended motion
-    // Calculate start
     // Fill potential buffer with position and velocity from last failsafe path. This value is not really used.
     double s_d = failsafe_path_.getPosition();
     double ds_d = failsafe_path_.getVelocity();
     double dds_d = failsafe_path_.getAcceleration();
-    // Always interpolate from current long term buffer
-    Motion start_motion = interpolateFromTrajectory(s_d, ds_d, dds_d, long_term_trajectory_);
+    double ddds_d = failsafe_path_.getJerk();
     // Calculate goal
     potential_path_.getFinalMotion(s_d, ds_d, dds_d);
     Motion goal_motion;
     if (new_ltt_) {
-      goal_motion = interpolateFromTrajectory(s_d, ds_d, dds_d, new_long_term_trajectory_);
+      goal_motion = new_long_term_trajectory_.interpolate(s_d, ds_d, dds_d, ddds_d, v_max_allowed_, a_max_allowed_, j_max_allowed_);
     } else {
-      goal_motion = interpolateFromTrajectory(s_d, ds_d, dds_d, long_term_trajectory_);
+      goal_motion = long_term_trajectory_.interpolate(s_d, ds_d, dds_d, ddds_d, v_max_allowed_, a_max_allowed_, j_max_allowed_);
     } 
     goal_motion.setTime(potential_path_.getPhase(3));
-    //s_g_motion.header.stamp = cycle_begin_time_;
-    //s_g_motion.start_motion = start_motion;
-    //s_g_motion.goal_motion = goal_motion;
-    //s_g_motion.duration = potential_path_.getPhase(3);
     return goal_motion;
   } catch (const std::exception &exc) {
     spdlog::error("Exception in SafetyShield::computesPotentialTrajectory: {}", exc.what());
@@ -469,26 +466,28 @@ bool SafetyShield::checkMotionForJointLimits(Motion& motion) {
 
 Motion SafetyShield::determineNextMotion(bool is_safe) {
   Motion next_motion;
-  double s_d, ds_d, dds_d;
+  double s_d, ds_d, dds_d, ddds_d;
   if (is_safe) {
     // Fill potential buffer with position and velocity from recovery path
     if (recovery_path_.getPosition() >= failsafe_path_.getPosition()) {
       s_d = recovery_path_.getPosition();
       ds_d = recovery_path_.getVelocity();
       dds_d = recovery_path_.getAcceleration();
+      ddds_d = recovery_path_.getJerk();
     }
     else {
       potential_path_.increment(sample_time_);
       s_d = potential_path_.getPosition();
       ds_d = potential_path_.getVelocity();
       dds_d = potential_path_.getAcceleration();
+      ddds_d = potential_path_.getJerk();
     }
 
     // Interpolate from new long term buffer
     if (new_ltt_) {
-      next_motion = interpolateFromTrajectory(s_d, ds_d, dds_d, new_long_term_trajectory_);
+      next_motion = new_long_term_trajectory_.interpolate(s_d, ds_d, dds_d, ddds_d, v_max_allowed_, a_max_allowed_, j_max_allowed_);
     } else {
-      next_motion = interpolateFromTrajectory(s_d, ds_d, dds_d, long_term_trajectory_);
+      next_motion = long_term_trajectory_.interpolate(s_d, ds_d, dds_d, ddds_d, v_max_allowed_, a_max_allowed_, j_max_allowed_);
     }
     // Set potential path as new verified safe path
     safe_path_ = potential_path_;
@@ -498,59 +497,13 @@ Motion SafetyShield::determineNextMotion(bool is_safe) {
     s_d = safe_path_.getPosition();
     ds_d = safe_path_.getVelocity();
     dds_d = safe_path_.getAcceleration();
-    next_motion = interpolateFromTrajectory(s_d, ds_d, dds_d, long_term_trajectory_);
+    ddds_d = safe_path_.getJerk();
+    next_motion = long_term_trajectory_.interpolate(s_d, ds_d, dds_d, ddds_d, v_max_allowed_, a_max_allowed_, j_max_allowed_);
   }
   /// !!! Set s to the new path position !!!
   path_s_ = s_d;
   // Return the calculated next motion
   return next_motion;
-}
-
-Motion SafetyShield::interpolateFromTrajectory(double s, double ds, double dds, const LongTermTraj& trajectory) const {
-  try {
-    // Example: s=2.465, sample_time = 0.004 --> ind = 616.25
-    assert(sample_time_ != 0);
-    double ind = s/sample_time_;
-    double intpart;
-    // Example: intpart = 616.0, ind_mod = 0.25
-    double ind_mod = modf(ind, &intpart);
-    // floor(s/sample_time) + 1 ==> lower index
-    int ind1 = static_cast<int>(intpart);
-    // ceil(s/sample_time) + 1 ==> upper index
-    int ind2 = static_cast<int>(ceil(ind));
-    std::vector<double> q1 = trajectory.getNextMotionAtIndex(ind1).getAngle();
-    std::vector<double> q2 = trajectory.getNextMotionAtIndex(ind2).getAngle();
-    std::vector<double> q;
-    std::vector<double> dq;
-    std::vector<double> ddq;
-    std::vector<double> dddq = trajectory.getNextMotionAtIndex(ind1).getJerk();
-
-    assert(q1.size() == nb_joints_);
-    assert(q2.size() == nb_joints_);
-    for (int i = 0 ; i < nb_joints_; i++) {
-      // Linearly interpolate between lower and upper index of position
-      double q_clamped = q1[i] + ind_mod * (q2[i] - q1[i]);
-      q.push_back(q_clamped);
-      // Calculate LTT velocity
-      double v_max_int = (q2[i] - q1[i])/sample_time_;
-      double v_int = v_max_int * ds;
-      if (std::abs(v_int) > v_max_allowed_[i]) {
-        v_int = std::clamp(v_int, -v_max_allowed_[i], v_max_allowed_[i]);
-      }
-      dq.push_back(v_int);
-      // Calculate Acceleration
-      double a_int = v_max_int*dds;
-      if (std::abs(a_int) > a_max_allowed_[i]) {
-        a_int = std::clamp(a_int, -a_max_allowed_[i], a_max_allowed_[i]);
-      }
-      ddq.push_back(a_int);
-    }
-    return Motion(0.0, q, dq, ddq, dddq, s);
-  } catch (const std::exception &exc) {
-    spdlog::error("Exception in SafetyShield::interpolateFromTrajectory: {}", exc.what());
-    return Motion();
-  }
-
 }
 
 Motion SafetyShield::step(double cycle_begin_time) {
@@ -631,9 +584,21 @@ Motion SafetyShield::step(double cycle_begin_time) {
 Motion SafetyShield::getCurrentMotion() {
   Motion current_pos;
   if (!recovery_path_.isCurrent()) {
-    current_pos = interpolateFromTrajectory(failsafe_path_.getPosition(), failsafe_path_.getVelocity(), failsafe_path_.getAcceleration(), long_term_trajectory_);
+    current_pos = long_term_trajectory_.interpolate(failsafe_path_.getPosition(), 
+                                                    failsafe_path_.getVelocity(), 
+                                                    failsafe_path_.getAcceleration(),
+                                                    failsafe_path_.getJerk(), 
+                                                    v_max_allowed_, 
+                                                    a_max_allowed_,
+                                                    j_max_allowed_);
   } else {
-    current_pos = interpolateFromTrajectory(recovery_path_.getPosition(), recovery_path_.getVelocity(), recovery_path_.getAcceleration(), long_term_trajectory_); 
+    current_pos = long_term_trajectory_.interpolate(recovery_path_.getPosition(), 
+                                                    recovery_path_.getVelocity(), 
+                                                    recovery_path_.getAcceleration(), 
+                                                    recovery_path_.getJerk(), 
+                                                    v_max_allowed_, 
+                                                    a_max_allowed_,
+                                                    j_max_allowed_); 
   }
   return current_pos;
 }
@@ -766,7 +731,7 @@ LongTermTraj SafetyShield::calculateLongTermTrajectory(const std::vector<double>
   delete reflexxes_IP_;
   delete reflexxes_OP_;
 
-  return LongTermTraj(new_traj, path_s_discrete_, sliding_window_k_);
+  return LongTermTraj(new_traj, sample_time_, path_s_discrete_, sliding_window_k_);
 }
 
 std::vector<double> SafetyShield::convertRMLVec(const RMLDoubleVector& rml_vec) {
