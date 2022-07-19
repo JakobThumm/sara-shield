@@ -33,7 +33,11 @@ namespace safety_shield {
 class SafetyShieldExposed : public SafetyShield {
  public:
   using SafetyShield::calculateMaxAccJerk;
+  
+  using SafetyShield::planSafetyShield;
+
   SafetyShieldExposed() {}
+
   explicit SafetyShieldExposed(bool activate_shield,
       double sample_time,
       std::string trajectory_config_file,
