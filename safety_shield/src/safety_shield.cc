@@ -347,25 +347,28 @@ bool SafetyShield::planSafetyShield(double pos, double vel, double acc, double v
 
 void SafetyShield::calculateMaxAccJerk(const std::vector<double> &prev_speed, const std::vector<double>& a_max_part, const std::vector<double>& j_max_part, double& a_max_manoeuvre, double& j_max_manoeuvre) {
   double new_c, new_d;
-
+  // Calculate dds_max
   double denom = std::abs(prev_speed[0]) + std::abs(a_max_part[0]) * max_s_stop_ + 1E-9;
   double min_c = (a_max_allowed_[0] - std::abs(a_max_part[0])) / denom;
-  double min_d = (j_max_allowed_[0] - 3*std::abs(a_max_part[0])*a_max_allowed_[0] - std::abs(j_max_part[0])) / denom;
-  spdlog::debug("calculateMaxAccJerk new_c = {}, new_d = {}, a_max_part[{}] = {}, j_max_part[{}] = {}", min_c, min_d, 0, std::abs(a_max_part[0]), 0, std::abs(j_max_part[0]));
   for (int i = 1; i < a_max_allowed_.size(); i++) {
     denom = std::abs(prev_speed[i]) + std::abs(a_max_part[i]) * max_s_stop_;
     new_c = (a_max_allowed_[i] - std::abs(a_max_part[i])) / denom;
     min_c = (new_c < min_c) ? new_c : min_c;
-  
-    new_d = (j_max_allowed_[i] - 3*std::abs(a_max_part[i])*new_c - std::abs(j_max_part[i])) / denom;
-    min_d = (new_d < min_d) ? new_d : min_d;
-    spdlog::debug("calculateMaxAccJerk new_c = {}, new_d = {}, a_max_part[{}] = {}, j_max_part[{}] = {}", new_c, new_d, i, std::abs(a_max_part[i]), i, std::abs(j_max_part[i]));
   }
-
   a_max_manoeuvre = (min_c < 0) ? 0 : min_c;
+  // Calculate ddds_max
+  denom = std::abs(prev_speed[0]) + std::abs(a_max_part[0]) * max_s_stop_ + 1E-9;
+  double min_d = (j_max_allowed_[0] - 3*std::abs(a_max_part[0])*a_max_manoeuvre - std::abs(j_max_part[0])) / denom;
+  spdlog::info(min_d);
+  spdlog::info(j_max_allowed_[0]);
+  spdlog::info(j_max_part[0]);
+  spdlog::info(denom);
+  for (int i = 1; i < a_max_allowed_.size(); i++) {
+    denom = std::abs(prev_speed[i]) + std::abs(a_max_part[i]) * max_s_stop_;
+    new_d = (j_max_allowed_[i] - 3*std::abs(a_max_part[i])*a_max_manoeuvre - std::abs(j_max_part[i])) / denom;
+    min_d = (new_d < min_d) ? new_d : min_d;
+  }
   j_max_manoeuvre = (min_d < 0) ? 0 : min_d;
-  
-  spdlog::debug("calculateMaxAccJerk denom = {}, a_max_manoeuvre = {}, j_max_manoeuvre = {}", denom, a_max_manoeuvre, j_max_manoeuvre);
 }
 
 Motion SafetyShield::computesPotentialTrajectory(bool v, const std::vector<double> &prev_speed)

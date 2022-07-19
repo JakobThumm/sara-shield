@@ -276,6 +276,7 @@ class SafetyShield {
 protected:
   /**
    * @brief Calculate max acceleration and jerk based on previous velocity
+   * @details Mathematical explanation in http://mediatum.ub.tum.de/doc/1443612/652879.pdf eq. 2.6a and b (P.20).
    * 
    * @param[in] prev_speed vector of previous joint velocities
    * @param[in] a_max_part max acceleration for this part of the LTT
@@ -284,7 +285,6 @@ protected:
    * @param[out] j_max_manoeuvre Maximum path jerk
    */
   void calculateMaxAccJerk(const std::vector<double> &prev_speed, const std::vector<double>& a_max_part, const std::vector<double>& j_max_part, double& a_max_manoeuvre, double& j_max_manoeuvre);
-
 
   /**
    * @brief Computes the fail-safe path
@@ -423,7 +423,7 @@ protected:
    * @param init_yaw Base yaw
    * @param init_qpos Initial joint position of the robot
    */
-  SafetyShield(bool activate_shield,
+  explicit SafetyShield(bool activate_shield,
       double sample_time,
       std::string trajectory_config_file,
       std::string robot_config_file,
