@@ -18,7 +18,7 @@
 #include <algorithm>
 #include <exception>
 
-#include <eigen3/Eigen/Dense>
+#include <Eigen/Dense>
 #include "spdlog/spdlog.h" 
 
 #include "reach_lib.hpp"

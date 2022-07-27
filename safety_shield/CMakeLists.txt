@@ -35,31 +35,31 @@ add_library(${PROJECT_NAME}
 # Add external subdirectories
 add_subdirectory(external/pybind11)
 add_subdirectory(external/SaRA/ReachLib)
-add_subdirectory(external/reflexxesTypeIV)
+add_subdirectory(external/LongTermPlanner)
 add_subdirectory(external/spdlog)
 add_subdirectory(external/yaml-cpp)
 
 target_include_directories(${PROJECT_NAME}
     PUBLIC external/pybind11/include
     PUBLIC external/ReachLib/include
-    PUBLIC external/reflexxesTypeIV/include
+    PUBLIC external/LongTermPlanner/include
     PUBLIC external/spdlog/include
     PUBLIC external/yaml-cpp/include
 )
 
 target_link_directories(${PROJECT_NAME}
     PUBLIC external/ReachLib/src
-    PUBLIC external/reflexxesTypeIV/src
+    PUBLIC external/LongTermPlanner/src
     PUBLIC external/spdlog/src
     PUBLIC external/yaml-cpp/src
 )
 
-target_link_libraries(${PROJECT_NAME} Eigen3::Eigen SaRA reflexxes_type_iv spdlog yaml-cpp)
+target_link_libraries(${PROJECT_NAME} Eigen3::Eigen SaRA long_term_planner spdlog yaml-cpp)
 
 install(TARGETS ${PROJECT_NAME} DESTINATION /usr/lib)
 
 add_executable(debug src/debug.cc)
-target_link_libraries(debug ${PROJECT_NAME} reflexxes_type_iv spdlog Eigen3::Eigen yaml-cpp)
+target_link_libraries(debug ${PROJECT_NAME} long_term_planner spdlog Eigen3::Eigen yaml-cpp)
 #############
 ## GTest ##
 #############
@@ -106,4 +106,4 @@ gtest_discover_tests(safety_shield_tests)
 ## Bindings ##
 ##############
 pybind11_add_module(safety_shield_py MODULE bindings/safety_shield_bindings.cpp)
-target_link_libraries(safety_shield_py PRIVATE ${PROJECT_NAME} reflexxes_type_iv spdlog Eigen3::Eigen yaml-cpp)
+target_link_libraries(safety_shield_py PRIVATE ${PROJECT_NAME} long_term_planner spdlog Eigen3::Eigen yaml-cpp)

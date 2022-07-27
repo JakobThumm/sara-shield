@@ -54,6 +54,9 @@ SafetyShield::SafetyShield(bool activate_shield,
   is_safe_ = !activate_shield_;
   computesPotentialTrajectory(is_safe_, prev_dq);
   next_motion_ = determineNextMotion(is_safe_);
+  std::vector<double> q_min(nb_joints, -3.141);
+  std::vector<double> q_max(nb_joints, -3.141);
+  ltp_ = long_term_planner::LongTermPlanner(nb_joints, sample_time, q_min, q_max, v_max_allowed, a_max_path, j_max_path);
   spdlog::info("Safety shield created.");
 }
 
@@ -97,6 +100,7 @@ SafetyShield::SafetyShield(bool activate_shield,
     j_max_allowed_ = trajectory_config["j_max_allowed"].as<std::vector<double>>();
     a_max_ltt_ = trajectory_config["a_max_ltt"].as<std::vector<double>>();
     j_max_ltt_ = trajectory_config["j_max_ltt"].as<std::vector<double>>();
+    ltp_ = long_term_planner::LongTermPlanner(nb_joints_, sample_time, q_min_allowed_, q_max_allowed_, v_max_allowed_, a_max_ltt_, j_max_ltt_);
     // Initialize the long term trajectory
     std::vector<Motion> long_term_traj;
     long_term_traj.push_back(Motion(0.0, init_qpos));
@@ -537,13 +541,20 @@ Motion SafetyShield::step(double cycle_begin_time) {
           last_close = false;
         }
         // Only replan if the current joint position is different from the last.
+        bool success = true;
         if (!last_close) {
-          new_long_term_trajectory_ = calculateLongTermTrajectory(current_motion.getAngle(), current_motion.getVelocity(), 
-            current_motion.getAcceleration(), new_goal_motion_.getAngle(), new_goal_motion_.getVelocity());
-          last_replan_start_motion_ = current_motion;
+          success = calculateLongTermTrajectory(current_motion.getAngle(), current_motion.getVelocity(), 
+            current_motion.getAcceleration(), new_goal_motion_.getAngle(), new_long_term_trajectory_);
+          if (success) {
+            last_replan_start_motion_ = current_motion;
+          }
         }
-        new_ltt_ = true;
-        new_ltt_processed_ = false;
+        if (success) {
+          new_ltt_ = true;
+          new_ltt_processed_ = false;
+        } else {
+          new_ltt_ = false;
+        }
       } else {
         new_ltt_ = false;
       }
@@ -674,72 +685,33 @@ void SafetyShield::setLongTermTrajectory(LongTermTraj& traj) {
   new_ltt_processed_ = true;
 }
 
-LongTermTraj SafetyShield::calculateLongTermTrajectory(const std::vector<double>& start_q, 
+bool SafetyShield::calculateLongTermTrajectory(const std::vector<double>& start_q, 
     const std::vector<double> start_dq, 
     const std::vector<double> start_ddq,
     const std::vector<double>& goal_q, 
-    const std::vector<double> goal_dq) {
-  // 0 = Not finished, 1 = finished, <0 = Error  
-  int ResultValue = 0;
-  ReflexxesAPI* reflexxes_RML_ = new ReflexxesAPI(nb_joints_, sample_time_);
-  RMLPositionInputParameters* reflexxes_IP_ = new RMLPositionInputParameters(nb_joints_);
-  RMLPositionOutputParameters* reflexxes_OP_ = new RMLPositionOutputParameters(nb_joints_);
-  for (int i = 0; i < nb_joints_; i++) {
-    assert(start_dq[i] <= v_max_allowed_[i]);
-    assert(start_ddq[i] <= a_max_ltt_[i]);
-    reflexxes_IP_->CurrentPositionVector->VecData[i] = start_q[i];
-    reflexxes_IP_->CurrentVelocityVector->VecData[i] = start_dq[i];
-    reflexxes_IP_->CurrentAccelerationVector->VecData[i] = start_ddq[i];
-    reflexxes_IP_->MaxVelocityVector->VecData[i] = v_max_allowed_[i];
-    reflexxes_IP_->MaxAccelerationVector->VecData[i] = a_max_ltt_[i];
-    reflexxes_IP_->MaxJerkVector->VecData[i] = j_max_ltt_[i];
-    reflexxes_IP_->TargetPositionVector->VecData[i] = goal_q[i];
-    reflexxes_IP_->TargetVelocityVector->VecData[i] = goal_dq[i];
-    reflexxes_IP_->SelectionVector->VecData[i] = true;
-  }
-
+    LongTermTraj& ltt) {
+  long_term_planner::Trajectory trajectory;
+  bool success = ltp_.planTrajectory(goal_q, start_q, start_dq, start_ddq, trajectory);
+  if (!success) return false;
   std::vector<Motion> new_traj;
-  std::vector<double> last_acc = start_ddq;
+  new_traj.reserve(trajectory.length);
   double new_time = path_s_;
-  new_traj.push_back(Motion(new_time, convertRMLVec(*reflexxes_IP_->CurrentPositionVector), convertRMLVec(*reflexxes_IP_->CurrentVelocityVector), convertRMLVec(*reflexxes_IP_->CurrentAccelerationVector)));
-  /// Calculate trajectory
-  while (ResultValue != ReflexxesAPI::RML_FINAL_STATE_REACHED) {
-    // Calling the Reflexxes OTG algorithm
-    ResultValue	= reflexxes_RML_->RMLPosition( *reflexxes_IP_, reflexxes_OP_, reflexxes_flags_);
-                                        
-    if (ResultValue < 0) {
-        spdlog::error("An error occurred during safety_shield::calculateLongTermTrajectory {}", ResultValue);
-        spdlog::error(reflexxes_OP_->GetErrorString());
-        break;
+  std::vector<double> q(nb_joints_);
+  std::vector<double> dq(nb_joints_);
+  std::vector<double> ddq(nb_joints_);
+  std::vector<double> dddq(nb_joints_);
+  for (int i = 0; i < trajectory.length; i++) {
+    for (int j=0; j < nb_joints_; j++) {
+      q[j] = trajectory.q[j][i];
+      dq[j] = trajectory.v[j][i];
+      ddq[j] = trajectory.a[j][i];
+      dddq[j] = trajectory.j[j][i];
     }
-    *reflexxes_IP_->CurrentPositionVector = *reflexxes_OP_->NewPositionVector;
-    *reflexxes_IP_->CurrentVelocityVector = *reflexxes_OP_->NewVelocityVector;
-    *reflexxes_IP_->CurrentAccelerationVector = *reflexxes_OP_->NewAccelerationVector;
+    new_traj[i] = Motion(new_time, q, dq, ddq, dddq);
     new_time += sample_time_;
-    std::vector<double> new_pos = convertRMLVec(*reflexxes_IP_->CurrentPositionVector);
-    std::vector<double> new_vel = convertRMLVec(*reflexxes_IP_->CurrentVelocityVector);
-    std::vector<double> new_acc = convertRMLVec(*reflexxes_IP_->CurrentAccelerationVector);
-    std::vector<double> new_jerk;
-    new_jerk.reserve(nb_joints_);
-    for (int i = 0; i<nb_joints_; i++) {
-      new_jerk.push_back((new_acc[i]-last_acc[i])/sample_time_);
-    }
-    new_traj.push_back(Motion(new_time, new_pos, new_vel, new_acc, new_jerk));
   }
-  // delete reflexxes pointers
-  delete reflexxes_RML_;
-  delete reflexxes_IP_;
-  delete reflexxes_OP_;
-
-  return LongTermTraj(new_traj, sample_time_, path_s_discrete_, sliding_window_k_);
-}
-
-std::vector<double> SafetyShield::convertRMLVec(const RMLDoubleVector& rml_vec) {
-  std::vector<double> std_vec;
-  for (int i = 0; i < nb_joints_; i++) {
-    std_vec.push_back(rml_vec[i]);
-  }
-  return std_vec;
+  ltt = LongTermTraj(new_traj, sample_time_, path_s_discrete_, sliding_window_k_);
+  return true;
 }
 
 } // namespace safety_shield
