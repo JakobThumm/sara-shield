@@ -359,10 +359,6 @@ void SafetyShield::calculateMaxAccJerk(const std::vector<double> &prev_speed, co
   // Calculate ddds_max
   denom = std::abs(prev_speed[0]) + std::abs(a_max_part[0]) * max_s_stop_ + 1E-9;
   double min_d = (j_max_allowed_[0] - 3*std::abs(a_max_part[0])*a_max_manoeuvre - std::abs(j_max_part[0])) / denom;
-  spdlog::info(min_d);
-  spdlog::info(j_max_allowed_[0]);
-  spdlog::info(j_max_part[0]);
-  spdlog::info(denom);
   for (int i = 1; i < a_max_allowed_.size(); i++) {
     denom = std::abs(prev_speed[i]) + std::abs(a_max_part[i]) * max_s_stop_;
     new_d = (j_max_allowed_[i] - 3*std::abs(a_max_part[i])*a_max_manoeuvre - std::abs(j_max_part[i])) / denom;
@@ -678,6 +674,7 @@ LongTermTraj SafetyShield::calculateLongTermTrajectory(const std::vector<double>
     const std::vector<double> start_dq, 
     const std::vector<double> start_ddq,
     const std::vector<double>& goal_q, 
+<<<<<<< HEAD
     const std::vector<double> goal_dq) {
   // 0 = Not finished, 1 = finished, <0 = Error  
   int ResultValue = 0;
@@ -700,6 +697,13 @@ LongTermTraj SafetyShield::calculateLongTermTrajectory(const std::vector<double>
 
   std::vector<Motion> new_traj;
   std::vector<double> last_acc = start_ddq;
+=======
+    LongTermTraj& ltt) {
+  long_term_planner::Trajectory trajectory;
+  bool success = ltp_.planTrajectory(goal_q, start_q, start_dq, start_ddq, trajectory);
+  if (!success) return false;
+  std::vector<Motion> new_traj(trajectory.length);
+>>>>>>> 74d1a62... Adjusted spdlog msgs
   double new_time = path_s_;
   new_traj.push_back(Motion(new_time, convertRMLVec(*reflexxes_IP_->CurrentPositionVector), convertRMLVec(*reflexxes_IP_->CurrentVelocityVector), convertRMLVec(*reflexxes_IP_->CurrentAccelerationVector)));
   /// Calculate trajectory
