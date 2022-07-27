@@ -363,10 +363,6 @@ void SafetyShield::calculateMaxAccJerk(const std::vector<double> &prev_speed, co
   // Calculate ddds_max
   denom = std::abs(prev_speed[0]) + std::abs(a_max_part[0]) * max_s_stop_ + 1E-9;
   double min_d = (j_max_allowed_[0] - 3*std::abs(a_max_part[0])*a_max_manoeuvre - std::abs(j_max_part[0])) / denom;
-  spdlog::info(min_d);
-  spdlog::info(j_max_allowed_[0]);
-  spdlog::info(j_max_part[0]);
-  spdlog::info(denom);
   for (int i = 1; i < a_max_allowed_.size(); i++) {
     denom = std::abs(prev_speed[i]) + std::abs(a_max_part[i]) * max_s_stop_;
     new_d = (j_max_allowed_[i] - 3*std::abs(a_max_part[i])*a_max_manoeuvre - std::abs(j_max_part[i])) / denom;
@@ -693,8 +689,7 @@ bool SafetyShield::calculateLongTermTrajectory(const std::vector<double>& start_
   long_term_planner::Trajectory trajectory;
   bool success = ltp_.planTrajectory(goal_q, start_q, start_dq, start_ddq, trajectory);
   if (!success) return false;
-  std::vector<Motion> new_traj;
-  new_traj.reserve(trajectory.length);
+  std::vector<Motion> new_traj(trajectory.length);
   double new_time = path_s_;
   std::vector<double> q(nb_joints_);
   std::vector<double> dq(nb_joints_);
