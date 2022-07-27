@@ -11,3 +11,6 @@
 	path = safety_shield/external/SaRA
 	url = https://github.com/Sven-Schepp/SaRA.git
 	branch = main
+[submodule "safety_shield/external/LongTermPlanner"]
+	path = safety_shield/external/LongTermPlanner
+	url = https://github.com/yannickBurkhardt/LongTermPlanner.git

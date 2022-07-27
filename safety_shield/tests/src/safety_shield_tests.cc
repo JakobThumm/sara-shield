@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 #include <math.h> 
 
-#include <eigen3/Eigen/Dense>
+#include <Eigen/Dense>
 #include "spdlog/spdlog.h" 
 
 #include "safety_shield_fixture.h"
