@@ -674,7 +674,6 @@ LongTermTraj SafetyShield::calculateLongTermTrajectory(const std::vector<double>
     const std::vector<double> start_dq, 
     const std::vector<double> start_ddq,
     const std::vector<double>& goal_q, 
-<<<<<<< HEAD
     const std::vector<double> goal_dq) {
   // 0 = Not finished, 1 = finished, <0 = Error  
   int ResultValue = 0;
@@ -697,13 +696,6 @@ LongTermTraj SafetyShield::calculateLongTermTrajectory(const std::vector<double>
 
   std::vector<Motion> new_traj;
   std::vector<double> last_acc = start_ddq;
-=======
-    LongTermTraj& ltt) {
-  long_term_planner::Trajectory trajectory;
-  bool success = ltp_.planTrajectory(goal_q, start_q, start_dq, start_ddq, trajectory);
-  if (!success) return false;
-  std::vector<Motion> new_traj(trajectory.length);
->>>>>>> 74d1a62... Adjusted spdlog msgs
   double new_time = path_s_;
   new_traj.push_back(Motion(new_time, convertRMLVec(*reflexxes_IP_->CurrentPositionVector), convertRMLVec(*reflexxes_IP_->CurrentVelocityVector), convertRMLVec(*reflexxes_IP_->CurrentAccelerationVector)));
   /// Calculate trajectory

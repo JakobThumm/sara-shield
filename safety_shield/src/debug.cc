@@ -49,12 +49,12 @@ int main () {
     //double t = std::chrono::duration<double>(std::chrono::system_clock::now()-start_time).count();
     spdlog::info("Debug started.");
     double t = 0.0;
-    for (int ep=0; ep<100; ep++) {
+    for (int ep=0; ep<1; ep++) {
       for (int i=0; i<10000; i++) {
         t += 0.001;
         shield.humanMeasurement(dummy_human_meas, t);
         t += 0.003;
-        if (i % 100 == 0) {
+        if (i % 2 == 0) {
             std::vector<double> qpos{0.2*t, 0.0, 0.0, 0.0, 0.0, std::min(t, 3.1)};
             std::vector<double> qvel{0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
             shield.newLongTermTrajectory(qpos, qvel);

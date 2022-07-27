@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 #include <math.h> 
 
-#include <eigen3/Eigen/Dense>
+#include <Eigen/Dense>
 #include "spdlog/spdlog.h" 
 
 #include "verify_iso_fixture.h"
