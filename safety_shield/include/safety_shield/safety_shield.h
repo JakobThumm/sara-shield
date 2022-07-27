@@ -27,7 +27,7 @@
 
 #include "spdlog/spdlog.h" 
 #include <yaml-cpp/yaml.h>
-
+#include "long_term_planner/long_term_planner.h"
 #include "reach_lib.hpp"
 
 #include "safety_shield/long_term_traj.h"
@@ -38,11 +38,6 @@
 #include "safety_shield/verify.h"
 #include "safety_shield/verify_iso.h"
 #include "safety_shield/exceptions.h"
-
-#include "ReflexxesAPI.h"
-#include "RMLPositionFlags.h"
-#include "RMLPositionInputParameters.h"
-#include "RMLPositionOutputParameters.h"
 
 #ifndef safety_shield_H
 #define safety_shield_H
@@ -269,9 +264,9 @@ class SafetyShield {
 
   //////// For replanning new trajectory //////
   /**
-   * @brief Trajecory planning flags
+   * @brief Trajecory planner
    */
-  RMLPositionFlags reflexxes_flags_;
+  long_term_planner::LongTermPlanner ltp_;
 
 protected:
   /**
@@ -341,11 +336,11 @@ protected:
    * @param start_dq The current joint velocities
    * @param start_ddq The current joint accelerations
    * @param goal_q The desired joint angles
-   * @param goal_dq The desired joint velocity at the goal position
-   * @return Long term trajectory
+   * @param ltt The calculated long-term trajectory
+   * @return True if success, false otherwise
    */
-  LongTermTraj calculateLongTermTrajectory(const std::vector<double>& start_q, const std::vector<double> start_dq, const std::vector<double> start_ddq,
-      const std::vector<double>& goal_q, const std::vector<double> goal_dq);
+  bool calculateLongTermTrajectory(const std::vector<double>& start_q, const std::vector<double> start_dq, const std::vector<double> start_ddq,
+      const std::vector<double>& goal_q, LongTermTraj& ltt);
 
   /**
    * @brief Convert a capsule to a vector containing [p1.x, p1.y, p1.z, p2.x, p2.y, p2.z, r]
@@ -565,14 +560,6 @@ protected:
   inline bool getSafety() {
     return is_safe_;
   }
-
-  /**
-   * @brief Function to convert RML vector to a std vector
-   * @param rml_vec
-   * @return std_vec
-   */
-  std::vector<double> convertRMLVec(const RMLDoubleVector& rml_vec);
-
 };
 } // namespace safety_shield
 
