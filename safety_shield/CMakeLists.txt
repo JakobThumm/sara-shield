@@ -7,7 +7,7 @@ add_compile_options(-std=c++17)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 ## Find catkin macros and libraries
-find_package(Eigen3 3.3 REQUIRED)
+find_package(Eigen3 3.3 REQUIRED NO_MODULE)
 # Find Python
 # IF YOU DON'T WANT TO USE CONDA, DISABLE THESE THREE LINES
 #set(PYTHON_EXECUTABLE "$ENV{CONDA_PREFIX}/bin/python")
