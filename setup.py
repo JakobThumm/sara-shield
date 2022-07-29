@@ -152,7 +152,6 @@ class CMakeBuild(build_ext):
             ["cmake", "-DPYTHON_EXECUTABLE:FILEPATH="+os.environ["CONDA_PREFIX"]+"/bin/python",
                 "-DPYTHON_INCLUDE_DIR="+os.environ["CONDA_PREFIX"]+"/include/python3.8/",
                 "-DPYTHON_LIBRARY:FILEPATH="+os.environ["CONDA_PREFIX"]+"/lib/libpython3.8.so",
-                "-DCMAKE_PREFIX_PATH="+os.environ["CMAKE_PREFIX_PATH"],
                 ext.sourcedir] + cmake_args, cwd=self.build_temp
         )
         subprocess.check_call(
