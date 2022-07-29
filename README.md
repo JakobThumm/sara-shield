@@ -11,6 +11,12 @@ The SaRA shield additionally provides the necessary trajectory control to stop t
 git clone --recurse-submodules git@github.com:JakobThumm/sara-shield.git
 ```
 ### Install the shield [C++ only]
+The installation requires `gcc`, `c++>=17`, and `Eigen3` version 3.4 (download it here: https://eigen.tuxfamily.org/index.php?title=Main_Page).
+Add the install directory of eigen3.4 to your cmake path
+```
+export CMAKE_PREFIX_PATH="$CMAKE_PREFIX_PATH:$(pwd)/eigen-3.4.0"
+```
+
 ```
 cd safety_shield
 mkdir build && cd build
