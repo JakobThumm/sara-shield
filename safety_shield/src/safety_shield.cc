@@ -788,7 +788,6 @@ void SafetyShield::calculateMaxCartesianVelocity(LongTermTraj& traj) {
         double scalar_v = v.transpose() * n;
         double max = 0;
         // TODO: correct number of iterations?
-        // TODO: robot_capsules existiert nicht hier
         for(unsigned long j = 0; j <= nb_joints_; j++) {
             Eigen::Vector3d p1(robot_capsules_[j].p1_.x, robot_capsules_[j].p1_.y, robot_capsules_[j].p1_.z);
             Eigen::Vector3d p2(robot_capsules_[j].p2_.x, robot_capsules_[j].p2_.y, robot_capsules_[j].p2_.z);
@@ -810,31 +809,4 @@ void SafetyShield::calculateMaxCartesianVelocity(LongTermTraj& traj) {
         motion.setMaximumCartesianVelocity(max);
     }
 }
-
-// TODO: old shit
-/*
-double SafetyShield::getTimeFromVelocity(double vel, double jerk_max, double acc_max, double current_vel) {
-    double t1 = (std::sqrt(2 * jerk_max * vel + current_vel * current_vel) - current_vel) / jerk_max;
-    double t2 = (acc_max - current_vel) / jerk_max;
-    if(t1 >= t2) {
-        return t1;
-    } else {
-        // first phase: jerk_max until acc_max is reached
-        double square = acc_max - current_vel;
-        double velocity_at_t2 = 0.5 * (square * square + current_vel * acc_max - current_vel * current_vel) / jerk_max;
-        // second phase: acc_max until desired vel is reached
-        double t3 = (vel - velocity_at_t2) / acc_max;
-        return t2 + t3;
-    }
-}
-
-double SafetyShield::getCurrentS() {
-    if (!recovery_path_.isCurrent()) {
-        return failsafe_path_.getPosition();
-    } else {
-        return recovery_path_.getPosition();
-    }
-}
-*/
-
 } // namespace safety_shield
