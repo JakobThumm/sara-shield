@@ -119,5 +119,14 @@ void LongTermTraj::calculate_max_acc_jerk_window(std::vector<Motion> &long_term_
   }
 }
 
+double LongTermTraj::getMaxofMaximumCartesianVelocity(unsigned long index, unsigned long length) {
+    unsigned long last = index + length + 1;
+    double max = getMotion(index).getMaximumCartesianVelocity();
+    for(unsigned long i = index + 1; i < last; i++) {
+        max = std::max(max, getMotion(i).getMaximumCartesianVelocity());
+    }
+    return max;
+}
+
 
 } // namespace safety_shield

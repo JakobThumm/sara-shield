@@ -63,6 +63,11 @@ class Motion {
    * @brief The joint jerks
    */
   std::vector<double> dddq_;
+
+  /**
+   * @brief maximum cartesian velocity of robot
+   */
+  double maximumCartesianVelocity_;
   
  public:
   /**
@@ -300,6 +305,19 @@ class Motion {
    * @param new_jerk the new motion's jerk
    */
   inline void setJerk(const std::vector<double> &new_dddq) { dddq_ = new_dddq; }
+
+    /**
+     * @brief Sets the maximum cartesian velocity
+     *
+     * @param vel the new velocity
+     */
+  inline void setMaximumCartesianVelocity(double vel) { maximumCartesianVelocity_ = vel; }
+
+    /**
+     * @brief returns maximum cartesian velocity
+     */
+  inline double const getMaximumCartesianVelocity() { return maximumCartesianVelocity_; }
+
 };
 } // namespace safety_shield
 

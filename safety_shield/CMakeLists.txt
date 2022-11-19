@@ -10,11 +10,11 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 find_package(Eigen3 3.4 REQUIRED NO_MODULE)
 # Find Python
 # IF YOU DON'T WANT TO USE CONDA, DISABLE THESE THREE LINES
-#set(PYTHON_EXECUTABLE "$ENV{CONDA_PREFIX}/bin/python")
-#set(PYTHON_INCLUDE_DIR "$ENV{CONDA_PREFIX}/include/python3.8")
-#set(PYTHON_LIBRARY "$ENV{CONDA_PREFIX}/lib/libpython3.8.so")
-#set(PYTHON_LIBRARY_DEBUG "$ENV{CONDA_PREFIX}/lib/libpython3.8.so")
-#find_package(Python3 COMPONENTS Interpreter Development REQUIRED)
+set(PYTHON_EXECUTABLE "$ENV{CONDA_PREFIX}/bin/python")
+set(PYTHON_INCLUDE_DIR "$ENV{CONDA_PREFIX}/include/python3.8")
+set(PYTHON_LIBRARY "$ENV{CONDA_PREFIX}/lib/libpython3.8.so")
+set(PYTHON_LIBRARY_DEBUG "$ENV{CONDA_PREFIX}/lib/libpython3.8.so")
+find_package(Python3 COMPONENTS Interpreter Development REQUIRED)
 
 include_directories(
   include

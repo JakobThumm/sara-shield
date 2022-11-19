@@ -228,6 +228,22 @@ class LongTermTraj {
    * @param k sliding window size
    */
   void calculate_max_acc_jerk_window(std::vector<Motion> &long_term_traj, int k);
+
+  /**
+   * @brief gets specific motion of LTT
+   *
+   * @param index of motion in LTT
+   */
+  inline Motion& getMotion(unsigned long index) { return long_term_traj_[index]; }
+
+  /**
+   * @brief gets maximum of a window of maximum cartesian velocity
+   *
+   * @param index start of index
+   * @param length of window
+   */
+  double getMaxofMaximumCartesianVelocity(unsigned long index, unsigned long length);
+
 };
 }
 #endif // LONG_TERM_TRAJ_H

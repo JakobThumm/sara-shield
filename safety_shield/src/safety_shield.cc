@@ -52,6 +52,8 @@ SafetyShield::SafetyShield(bool activate_shield,
   alpha_i_.push_back(1.0);
 
   is_safe_ = !activate_shield_;
+  // TODO: correct?
+  calculateMaxCartesianVelocity(long_term_trajectory_);
   computesPotentialTrajectory(is_safe_, prev_dq);
   next_motion_ = determineNextMotion(is_safe_);
   std::vector<double> q_min(nb_joints, -3.141);
@@ -161,6 +163,8 @@ SafetyShield::SafetyShield(bool activate_shield,
     }
     alpha_i_.push_back(1.0);
     is_safe_ = !activate_shield_;
+    // TODO: correct?
+    calculateMaxCartesianVelocity(long_term_trajectory_);
     computesPotentialTrajectory(is_safe_, prev_dq);
     next_motion_ = determineNextMotion(is_safe_);
     spdlog::info("Safety shield created.");
@@ -396,12 +400,11 @@ Motion SafetyShield::computesPotentialTrajectory(bool v, const std::vector<doubl
       failsafe_path_.increment(sample_time_);
     }
     //find maximum acceleration and jerk authorised
-    double a_max_manoeuvre, j_max_manoeuvre;
     // One could use new_long_term_trajectory_.getMaxAccelerationWindow(path_s_discrete_) instead of a_max_ltt but there are many bugs to be solved before.
     if (!new_ltt_) {
-      calculateMaxAccJerk(prev_speed, a_max_ltt_, j_max_ltt_, a_max_manoeuvre, j_max_manoeuvre);
+      calculateMaxAccJerk(prev_speed, a_max_ltt_, j_max_ltt_, a_max_manoeuvre_, j_max_manoeuvre_);
     } else {
-      calculateMaxAccJerk(prev_speed, a_max_ltt_, j_max_ltt_, a_max_manoeuvre, j_max_manoeuvre);
+      calculateMaxAccJerk(prev_speed, a_max_ltt_, j_max_ltt_, a_max_manoeuvre_, j_max_manoeuvre_);
     }
     
     //Desired movement, one timestep
@@ -409,7 +412,7 @@ Motion SafetyShield::computesPotentialTrajectory(bool v, const std::vector<doubl
     if (!recovery_path_.isCurrent()) {
       // plan repair path and replace
       recovery_path_correct_ = planSafetyShield(failsafe_path_.getPosition(), failsafe_path_.getVelocity(), 
-          failsafe_path_.getAcceleration(), 1, a_max_manoeuvre, j_max_manoeuvre, recovery_path_);
+          failsafe_path_.getAcceleration(), 1, a_max_manoeuvre_, j_max_manoeuvre_, recovery_path_);
     }
     // Only plan new failsafe trajectory if the recovery path planning was successful.
     if (recovery_path_correct_) {
@@ -417,7 +420,8 @@ Motion SafetyShield::computesPotentialTrajectory(bool v, const std::vector<doubl
       recovery_path_.increment(sample_time_);
 
       // plan new failsafe path for STP
-      bool failsafe_2_planning_success = planSafetyShield(recovery_path_.getPosition(), recovery_path_.getVelocity(), recovery_path_.getAcceleration(), 0, a_max_manoeuvre, j_max_manoeuvre, failsafe_path_2_);
+      // TODO: 0 mit einer variable ersetzen
+      bool failsafe_2_planning_success = planSafetyShield(recovery_path_.getPosition(), recovery_path_.getVelocity(), recovery_path_.getAcceleration(), 0, a_max_manoeuvre_, j_max_manoeuvre_, failsafe_path_2_);
       // Check the validity of the planned path
       if (!failsafe_2_planning_success || recovery_path_.getPosition() < failsafe_path_.getPosition()) {
         recovery_path_correct_ = false;
@@ -432,21 +436,38 @@ Motion SafetyShield::computesPotentialTrajectory(bool v, const std::vector<doubl
       potential_path_ = failsafe_path_;
     }
 
+    // TODO alternativer Ansatz: instead of getFinalMotion, getMotionUnderVel? --> derive analytic expression?
     //// Calculate start and goal pos of intended motion
     // Fill potential buffer with position and velocity from last failsafe path. This value is not really used.
     double s_d = failsafe_path_.getPosition();
     double ds_d = failsafe_path_.getVelocity();
     double dds_d = failsafe_path_.getAcceleration();
     double ddds_d = failsafe_path_.getJerk();
+    double time;
     // Calculate goal
-    potential_path_.getFinalMotion(s_d, ds_d, dds_d);
+    if(safety_method_ == STANDARD) {
+        potential_path_.getFinalMotion(s_d, ds_d, dds_d);
+    } else if(safety_method_ == TRIVIAL_CARTESIAN) {
+        // v_max is maximum of LTT and s_dot is how much path velocity needs to be scaled to be under v_iso
+        // TODO: jedes mal wenn long_term_trajectory gesetted wird, max berechnen und speichern bzw auch für STP_MAXIMUM möglich?
+        double v_max = long_term_trajectory_.getMaxofMaximumCartesianVelocity(0, long_term_trajectory_.getLength());
+        // TODO: v_iso von config file
+        double s_dot = v_iso_ / v_max;
+        potential_path_.getMotionUnderVel(v_max, time, s_d, ds_d, dds_d, ddds_d);
+    } else if(safety_method_ == STP_MAXIMUM_CARTESIAN) {
+
+    }
     Motion goal_motion;
     if (new_ltt_) {
       goal_motion = new_long_term_trajectory_.interpolate(s_d, ds_d, dds_d, ddds_d, v_max_allowed_, a_max_allowed_, j_max_allowed_);
     } else {
       goal_motion = long_term_trajectory_.interpolate(s_d, ds_d, dds_d, ddds_d, v_max_allowed_, a_max_allowed_, j_max_allowed_);
-    } 
-    goal_motion.setTime(potential_path_.getPhase(3));
+    }
+    if(safety_method_ == TRIVIAL_CARTESIAN || safety_method_ == STP_MAXIMUM_CARTESIAN) {
+        goal_motion.setTime(time);
+    } else {
+        goal_motion.setTime(potential_path_.getPhase(3));
+    }
     return goal_motion;
   } catch (const std::exception &exc) {
     spdlog::error("Exception in SafetyShield::computesPotentialTrajectory: {}", exc.what());
@@ -566,14 +587,38 @@ Motion SafetyShield::step(double cycle_begin_time) {
       if (!checkMotionForJointLimits(goal_motion)) {
         is_safe_ = false;
       } else {
-        // Compute the robot reachable set for the potential trajectory
-        robot_capsules_ = robot_reach_->reach(current_motion, goal_motion, (goal_motion.getS()-current_motion.getS()), alpha_i_);
-        // Compute the human reachable sets for the potential trajectory
-        // humanReachabilityAnalysis(t_command, t_brake)
-        human_reach_->humanReachabilityAnalysis(cycle_begin_time_, goal_motion.getTime());
-        human_capsules_ = human_reach_->getAllCapsules();
-        // Verify if the robot and human reachable sets are collision free
-        is_safe_ = verify_->verify_human_reach(robot_capsules_, human_capsules_);
+          if (safety_method_ == STANDARD) {
+              // Compute the robot reachable set for the potential trajectory
+              robot_capsules_ = robot_reach_->reach(current_motion, goal_motion, (goal_motion.getS()-current_motion.getS()), alpha_i_);
+              // Compute the human reachable sets for the potential trajectory
+              // humanReachabilityAnalysis(t_command, t_brake)
+              human_reach_->humanReachabilityAnalysis(cycle_begin_time_, goal_motion.getTime());
+              human_capsules_ = human_reach_->getAllCapsules();
+              // Verify if the robot and human reachable sets are collision free
+              is_safe_ = verify_->verify_human_reach(robot_capsules_, human_capsules_);
+
+          } else if (safety_method_ == TRIVIAL_CARTESIAN) {
+              // check if there is collision between now and time t
+              robot_capsules_ = robot_reach_->reach(current_motion, goal_motion, (goal_motion.getS()-current_motion.getS()), alpha_i_);
+              human_reach_->humanReachabilityAnalysis(cycle_begin_time_, goal_motion.getTime());
+              human_capsules_ = human_reach_->getAllCapsules();
+              bool cartesian_criteria = verify_->verify_human_reach(robot_capsules_, human_capsules_);
+
+              // TODO: für statischen menschen: velocity model auf 0 setzen bzw 2. Parameter auf 0
+              // TODO: für static criteria alte goal_motion verwenden?
+              // check if robot doesnt run into static human
+              robot_capsules_ = robot_reach_->reach(current_motion, goal_motion, (goal_motion.getS()-current_motion.getS()), alpha_i_);
+              human_reach_->humanReachabilityAnalysis(cycle_begin_time_, 0);
+              human_capsules_ = human_reach_->getAllCapsules();
+              bool static_criteria = verify_->verify_human_reach(robot_capsules_, human_capsules_);
+
+              // combine both criteria
+              is_safe_ = static_criteria && cartesian_criteria;
+
+          } else if(safety_method_ == STP_MAXIMUM_CARTESIAN) {
+
+
+          }
       }
     } else {
       is_safe_ = true;
@@ -706,7 +751,90 @@ bool SafetyShield::calculateLongTermTrajectory(const std::vector<double>& start_
     new_time += sample_time_;
   }
   ltt = LongTermTraj(new_traj, sample_time_, path_s_discrete_, sliding_window_k_);
+  // TODO: correct?
+  calculateMaxCartesianVelocity(ltt);
   return true;
 }
+
+// TODO: how to calculate jacobian with pinnochio?
+Eigen::Matrix<double, 6, Eigen::Dynamic> SafetyShield::getJacobian(const std::vector<double>& qs) {
+    // Eigen::Matrix<double, 6, Eigen::Dynamic> matrix(6, nb_joints);
+    // matrix.setZero();
+    auto matrix = Eigen::Matrix<double, 6, Eigen::Dynamic>::Identity(6, nb_joints_);
+    return matrix;
+}
+
+Eigen::Matrix3d SafetyShield::getCrossProductAsMatrix(Eigen::Vector3d vec) {
+    Eigen::Matrix3d cross;
+    cross << 0, -vec(2), vec(1),
+            vec(2), 0, -vec(0),
+            -vec(1), vec(0), 0;
+    return cross;
+}
+
+void SafetyShield::calculateMaxCartesianVelocity(LongTermTraj& traj) {
+    // TODO: correct r?, + robot_reach.secure_radius?
+    double r = 10; //robot_capsules_[0].r_;
+    for(unsigned long i = 0; i < traj.getLength(); i++) {
+        Motion& motion = traj.getMotion(i);
+        robot_capsules_ = robot_reach_->reach(motion, motion, 0, alpha_i_);
+        auto jacobian = getJacobian(motion.getAngle());
+        Eigen::VectorXd velocity = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(motion.getVelocity().data(), motion.getVelocity().size());
+        Eigen::VectorXd result = jacobian * velocity;
+        Eigen::Vector3d w = result.segment(0, 3);
+        Eigen::Vector3d v = result.segment(3, 3);
+        double scalar_w = w.norm();
+        Eigen::VectorXd n = w / scalar_w;
+        double scalar_v = v.transpose() * n;
+        double max = 0;
+        // TODO: correct number of iterations?
+        // TODO: robot_capsules existiert nicht hier
+        for(unsigned long j = 0; j <= nb_joints_; j++) {
+            Eigen::Vector3d p1(robot_capsules_[j].p1_.x, robot_capsules_[j].p1_.y, robot_capsules_[j].p1_.z);
+            Eigen::Vector3d p2(robot_capsules_[j].p2_.x, robot_capsules_[j].p2_.y, robot_capsules_[j].p2_.z);
+            // Ax = b
+            // b = v - scalar_v * n
+            // A = S(w)
+            // o = -(x - p2)
+            Eigen::Matrix3d A = getCrossProductAsMatrix(w);
+            Eigen::Vector3d b = v - scalar_v * n;
+            Eigen::Vector3d x = A.colPivHouseholderQr().solve(b);
+            Eigen::Vector3d o = -(x - p2);
+            Eigen::Vector3d p1_cross = getCrossProductAsMatrix(n) * (p1 - o);
+            Eigen::Vector3d p2_cross = getCrossProductAsMatrix(n) * (p2 - o);
+            double d_perp = std::max(p1_cross.norm(), p2_cross.norm()) + r;
+            double right_current = std::abs(scalar_w) * d_perp;
+            double current = std::sqrt(scalar_v * scalar_v + right_current * right_current);
+            max = std::max(max, current);
+        }
+        motion.setMaximumCartesianVelocity(max);
+    }
+}
+
+// TODO: old shit
+/*
+double SafetyShield::getTimeFromVelocity(double vel, double jerk_max, double acc_max, double current_vel) {
+    double t1 = (std::sqrt(2 * jerk_max * vel + current_vel * current_vel) - current_vel) / jerk_max;
+    double t2 = (acc_max - current_vel) / jerk_max;
+    if(t1 >= t2) {
+        return t1;
+    } else {
+        // first phase: jerk_max until acc_max is reached
+        double square = acc_max - current_vel;
+        double velocity_at_t2 = 0.5 * (square * square + current_vel * acc_max - current_vel * current_vel) / jerk_max;
+        // second phase: acc_max until desired vel is reached
+        double t3 = (vel - velocity_at_t2) / acc_max;
+        return t2 + t3;
+    }
+}
+
+double SafetyShield::getCurrentS() {
+    if (!recovery_path_.isCurrent()) {
+        return failsafe_path_.getPosition();
+    } else {
+        return recovery_path_.getPosition();
+    }
+}
+*/
 
 } // namespace safety_shield

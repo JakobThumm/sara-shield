@@ -192,6 +192,15 @@ public:
    * @param[out] final_acc last acceleration
    */
   void getFinalMotion(double& final_pos, double& final_vel, double& final_acc);
+
+  /**
+   * @param[out] time
+   * @param[out] position
+   * @param[in] vel
+   * @param[out] acc
+   * @param[out] jerk
+   */
+  void getMotionUnderVel(double v_limit, double& time, double& position, double& vel, double& acc, double& jerk);
 };
 } // namespace safety_shield
 
