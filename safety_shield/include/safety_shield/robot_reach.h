@@ -41,12 +41,6 @@ class RobotReach {
   int nb_joints_;
 
   /**
-   * @brief Expands the radius of the robot capsules by this amount to
-   *  account for measurement and modelling errors.
-   */
-  double secure_radius_;
-
-  /**
    * @brief List of transforamtion matrices from joint to joint (fixed description, not including joint movements)
    */
   std::vector<Eigen::Matrix4d> transformation_matrices_;
@@ -57,6 +51,12 @@ class RobotReach {
   std::vector<reach_lib::Capsule> robot_capsules_;
 
 public:
+
+    /**
+    * @brief Expands the radius of the robot capsules by this amount to
+    *  account for measurement and modelling errors.
+    */
+    double secure_radius_;
 
   /**
    * @brief A robot empty constructor

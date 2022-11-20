@@ -103,6 +103,7 @@ SafetyShield::SafetyShield(bool activate_shield,
     a_max_ltt_ = trajectory_config["a_max_ltt"].as<std::vector<double>>();
     j_max_ltt_ = trajectory_config["j_max_ltt"].as<std::vector<double>>();
     ltp_ = long_term_planner::LongTermPlanner(nb_joints_, sample_time, q_min_allowed_, q_max_allowed_, v_max_allowed_, a_max_ltt_, j_max_ltt_);
+    v_iso_ = trajectory_config["v_iso"].as<double>();
     // Initialize the long term trajectory
     std::vector<Motion> long_term_traj;
     long_term_traj.push_back(Motion(0.0, init_qpos));
@@ -399,12 +400,14 @@ Motion SafetyShield::computesPotentialTrajectory(bool v, const std::vector<doubl
       recovery_path_.setCurrent(false);
       failsafe_path_.increment(sample_time_);
     }
+
     //find maximum acceleration and jerk authorised
+    double a_max_manoeuvre, j_max_manoeuvre;
     // One could use new_long_term_trajectory_.getMaxAccelerationWindow(path_s_discrete_) instead of a_max_ltt but there are many bugs to be solved before.
     if (!new_ltt_) {
-      calculateMaxAccJerk(prev_speed, a_max_ltt_, j_max_ltt_, a_max_manoeuvre_, j_max_manoeuvre_);
+      calculateMaxAccJerk(prev_speed, a_max_ltt_, j_max_ltt_, a_max_manoeuvre, j_max_manoeuvre);
     } else {
-      calculateMaxAccJerk(prev_speed, a_max_ltt_, j_max_ltt_, a_max_manoeuvre_, j_max_manoeuvre_);
+      calculateMaxAccJerk(prev_speed, a_max_ltt_, j_max_ltt_, a_max_manoeuvre, j_max_manoeuvre);
     }
     
     //Desired movement, one timestep
@@ -412,7 +415,7 @@ Motion SafetyShield::computesPotentialTrajectory(bool v, const std::vector<doubl
     if (!recovery_path_.isCurrent()) {
       // plan repair path and replace
       recovery_path_correct_ = planSafetyShield(failsafe_path_.getPosition(), failsafe_path_.getVelocity(), 
-          failsafe_path_.getAcceleration(), 1, a_max_manoeuvre_, j_max_manoeuvre_, recovery_path_);
+          failsafe_path_.getAcceleration(), 1, a_max_manoeuvre, j_max_manoeuvre, recovery_path_);
     }
     // Only plan new failsafe trajectory if the recovery path planning was successful.
     if (recovery_path_correct_) {
@@ -420,8 +423,7 @@ Motion SafetyShield::computesPotentialTrajectory(bool v, const std::vector<doubl
       recovery_path_.increment(sample_time_);
 
       // plan new failsafe path for STP
-      // TODO: 0 mit einer variable ersetzen
-      bool failsafe_2_planning_success = planSafetyShield(recovery_path_.getPosition(), recovery_path_.getVelocity(), recovery_path_.getAcceleration(), 0, a_max_manoeuvre_, j_max_manoeuvre_, failsafe_path_2_);
+      bool failsafe_2_planning_success = planSafetyShield(recovery_path_.getPosition(), recovery_path_.getVelocity(), recovery_path_.getAcceleration(), 0, a_max_manoeuvre, j_max_manoeuvre, failsafe_path_2_);
       // Check the validity of the planned path
       if (!failsafe_2_planning_success || recovery_path_.getPosition() < failsafe_path_.getPosition()) {
         recovery_path_correct_ = false;
@@ -436,14 +438,10 @@ Motion SafetyShield::computesPotentialTrajectory(bool v, const std::vector<doubl
       potential_path_ = failsafe_path_;
     }
 
-    // TODO alternativer Ansatz: instead of getFinalMotion, getMotionUnderVel? --> derive analytic expression?
     //// Calculate start and goal pos of intended motion
     // Fill potential buffer with position and velocity from last failsafe path. This value is not really used.
-    double s_d = failsafe_path_.getPosition();
-    double ds_d = failsafe_path_.getVelocity();
-    double dds_d = failsafe_path_.getAcceleration();
+    double time, s_d, ds_d, dds_d;
     double ddds_d = failsafe_path_.getJerk();
-    double time;
     // Calculate goal
     if(safety_method_ == STANDARD) {
         potential_path_.getFinalMotion(s_d, ds_d, dds_d);
@@ -451,11 +449,13 @@ Motion SafetyShield::computesPotentialTrajectory(bool v, const std::vector<doubl
         // v_max is maximum of LTT and s_dot is how much path velocity needs to be scaled to be under v_iso
         // TODO: jedes mal wenn long_term_trajectory gesetted wird, max berechnen und speichern bzw auch für STP_MAXIMUM möglich?
         double v_max = long_term_trajectory_.getMaxofMaximumCartesianVelocity(0, long_term_trajectory_.getLength());
-        // TODO: v_iso von config file
-        double s_dot = v_iso_ / v_max;
+        s_d = v_iso_ / v_max;
         potential_path_.getMotionUnderVel(v_max, time, s_d, ds_d, dds_d, ddds_d);
     } else if(safety_method_ == STP_MAXIMUM_CARTESIAN) {
-
+        // TODO: get index from last STP-Motion of LTT or length of STP-Motions in LTT
+        double v_max = long_term_trajectory_.getMaxofMaximumCartesianVelocity(long_term_trajectory_.getCurrentPos(), long_term_trajectory_.getLength());
+        s_d = v_iso_ / v_max;
+        potential_path_.getMotionUnderVel(v_max, time, s_d, ds_d, dds_d, ddds_d);
     }
     Motion goal_motion;
     if (new_ltt_) {
@@ -604,7 +604,7 @@ Motion SafetyShield::step(double cycle_begin_time) {
               human_capsules_ = human_reach_->getAllCapsules();
               bool cartesian_criteria = verify_->verify_human_reach(robot_capsules_, human_capsules_);
 
-              // TODO: für statischen menschen: velocity model auf 0 setzen bzw 2. Parameter auf 0
+              /// alternative: für statischen menschen: velocity model auf 0 setzen bzw 2. Parameter auf 0
               // TODO: für static criteria alte goal_motion verwenden?
               // check if robot doesnt run into static human
               robot_capsules_ = robot_reach_->reach(current_motion, goal_motion, (goal_motion.getS()-current_motion.getS()), alpha_i_);
@@ -772,9 +772,9 @@ Eigen::Matrix3d SafetyShield::getCrossProductAsMatrix(Eigen::Vector3d vec) {
     return cross;
 }
 
+// TODO: dauert zu lange
+// TODO: in Konstruktor von Long_Term_Traj auslagern?
 void SafetyShield::calculateMaxCartesianVelocity(LongTermTraj& traj) {
-    // TODO: correct r?, + robot_reach.secure_radius?
-    double r = 10; //robot_capsules_[0].r_;
     for(unsigned long i = 0; i < traj.getLength(); i++) {
         Motion& motion = traj.getMotion(i);
         robot_capsules_ = robot_reach_->reach(motion, motion, 0, alpha_i_);
@@ -787,7 +787,6 @@ void SafetyShield::calculateMaxCartesianVelocity(LongTermTraj& traj) {
         Eigen::VectorXd n = w / scalar_w;
         double scalar_v = v.transpose() * n;
         double max = 0;
-        // TODO: correct number of iterations?
         for(unsigned long j = 0; j <= nb_joints_; j++) {
             Eigen::Vector3d p1(robot_capsules_[j].p1_.x, robot_capsules_[j].p1_.y, robot_capsules_[j].p1_.z);
             Eigen::Vector3d p2(robot_capsules_[j].p2_.x, robot_capsules_[j].p2_.y, robot_capsules_[j].p2_.z);
@@ -797,10 +796,12 @@ void SafetyShield::calculateMaxCartesianVelocity(LongTermTraj& traj) {
             // o = -(x - p2)
             Eigen::Matrix3d A = getCrossProductAsMatrix(w);
             Eigen::Vector3d b = v - scalar_v * n;
-            Eigen::Vector3d x = A.colPivHouseholderQr().solve(b);
+            Eigen::Vector3d x = A.partialPivLu().solve(b); //colPivHouseholderQr()
             Eigen::Vector3d o = -(x - p2);
             Eigen::Vector3d p1_cross = getCrossProductAsMatrix(n) * (p1 - o);
             Eigen::Vector3d p2_cross = getCrossProductAsMatrix(n) * (p2 - o);
+            // TODO: secure_radius als public member variable oder separat in safety_shield nochmal speichern?
+            double r = robot_capsules_[j].r_ + robot_reach_->secure_radius_;
             double d_perp = std::max(p1_cross.norm(), p2_cross.norm()) + r;
             double right_current = std::abs(scalar_w) * d_perp;
             double current = std::sqrt(scalar_v * scalar_v + right_current * right_current);

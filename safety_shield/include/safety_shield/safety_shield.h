@@ -274,7 +274,6 @@ class SafetyShield {
       // maximum cartesian velocity criterias
       TRIVIAL_CARTESIAN,
       STP_MAXIMUM_CARTESIAN,
-      COLLISION_TIME_DETECTION_CARTESIAN
   };
 
   /**
@@ -286,11 +285,6 @@ class SafetyShield {
    * @brief maximum cartesian velocity determined by iso
    */
   double v_iso_ = 0.2;
-
-  /**
-   * @brief maximum acceleration and jerk of potential path
-   */
-  double a_max_manoeuvre_, j_max_manoeuvre_;
 
 protected:
   /**
