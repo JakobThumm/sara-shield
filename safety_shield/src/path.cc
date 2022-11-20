@@ -15,7 +15,6 @@ Path::Path():
   }
 }
 
-/// TODO anderer Ansatz: use increment method to determine motion when robot under s_dot
 void Path::increment(double sample_time)
 {
   double jerk = 0;
@@ -76,14 +75,31 @@ void Path::getMotionUnderVel(double v_limit, double& time, double& pos, double& 
         l_time = phases_[i];
 
         // if in this phase, next_vel falls below vel, recompute values but with correct time via formula
-        if(next_vel < v_limit) {
+        double epsilon = 1e-6;
+        if(next_vel < v_limit + epsilon) {
             jerk = phases_[i+3];
-            double square = std::sqrt(prev_acc*prev_acc - 2*jerk*(prev_vel - v_limit)) / jerk;
-            // TODO: correct if I do max?
-            dt = std::max(-prev_vel - square, -prev_vel + square);
+            double square = std::sqrt(prev_acc*prev_acc - 2*jerk*(prev_vel - v_limit));
+            double left = (-prev_acc - square) / jerk;
+            double right = (-prev_acc + square) / jerk;
+            // TODO: correct?
+            if(sgn(left) == 1 && sgn(right) == 1) {
+                dt = std::min(left, right);
+            } else {
+                dt = std::max(left, right);
+            }
             time = phases_[i] + dt;
             pos = prev_vel*dt + prev_acc*dt*dt/2 + jerk*dt*dt*dt/6 + prev_pos;
             acc = jerk*dt + prev_acc;
+            vel = prev_acc*dt + 0.5*jerk*dt*dt + prev_vel;
+
+            /*
+            double dt_o = std::min((-prev_acc - square) / jerk, (-prev_acc + square) / jerk);
+            double time_o = phases_[i] + dt_o;
+            double pos_o = prev_vel*dt_o + prev_acc*dt_o*dt_o/2 + jerk*dt_o*dt_o*dt_o/6 + prev_pos;
+            double acc_o = jerk*dt_o + prev_acc;
+            double vel_o = prev_acc*dt_o + 0.5*jerk*dt_o*dt_o + prev_vel;
+            */
+
             return;
         }
 
@@ -91,5 +107,6 @@ void Path::getMotionUnderVel(double v_limit, double& time, double& pos, double& 
     // if it is not in any phase, it can't be a failsafe-path
     time = -1;
 }
+
 
 }
