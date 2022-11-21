@@ -279,7 +279,7 @@ class SafetyShield {
   /**
    * @brief which safety method should be used
    */
-  Safety_method safety_method_ = TRIVIAL_CARTESIAN;
+  Safety_method safety_method_ = STANDARD;
 
   /**
    * @brief maximum cartesian velocity determined by iso

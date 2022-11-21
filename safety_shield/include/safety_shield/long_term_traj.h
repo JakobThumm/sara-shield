@@ -242,7 +242,13 @@ class LongTermTraj {
    * @param index start of index
    * @param length of window
    */
-  double getMaxofMaximumCartesianVelocity(unsigned long index, unsigned long length);
+  double getMaxofMaximumCartesianVelocityWithLength(unsigned long index, unsigned long length);
+
+  /**
+   * @brief gets maximum of cartesian velocity until s is reached
+   * @param s look at Motions until trajectory_time s
+   */
+  double getMaxofMaximumCartesianVelocityWithS(double s);
 
 };
 }

@@ -119,13 +119,25 @@ void LongTermTraj::calculate_max_acc_jerk_window(std::vector<Motion> &long_term_
   }
 }
 
-double LongTermTraj::getMaxofMaximumCartesianVelocity(unsigned long index, unsigned long length) {
+double LongTermTraj::getMaxofMaximumCartesianVelocityWithLength(unsigned long index, unsigned long length) {
     unsigned long last = index + length + 1;
     double max = getMotion(index).getMaximumCartesianVelocity();
     for(unsigned long i = index + 1; i < last; i++) {
         max = std::max(max, getMotion(i).getMaximumCartesianVelocity());
     }
     return max;
+}
+
+double LongTermTraj::getMaxofMaximumCartesianVelocityWithS(double s) {
+    unsigned long i = getCurrentPos();
+    double max = getMotion(i).getMaximumCartesianVelocity();
+    while(true) {
+        max = std::max(max, getMotion(i).getMaximumCartesianVelocity());
+        if(getMotion(i).getTime() > s) {
+            return max;
+        }
+        ++i;
+    }
 }
 
 

@@ -104,6 +104,7 @@ SafetyShield::SafetyShield(bool activate_shield,
     j_max_ltt_ = trajectory_config["j_max_ltt"].as<std::vector<double>>();
     ltp_ = long_term_planner::LongTermPlanner(nb_joints_, sample_time, q_min_allowed_, q_max_allowed_, v_max_allowed_, a_max_ltt_, j_max_ltt_);
     v_iso_ = trajectory_config["v_iso"].as<double>();
+    safety_method_ = static_cast<Safety_method>(trajectory_config["safety_method"].as<int>());
     // Initialize the long term trajectory
     std::vector<Motion> long_term_traj;
     long_term_traj.push_back(Motion(0.0, init_qpos));
@@ -448,12 +449,13 @@ Motion SafetyShield::computesPotentialTrajectory(bool v, const std::vector<doubl
     } else if(safety_method_ == TRIVIAL_CARTESIAN) {
         // v_max is maximum of LTT and s_dot is how much path velocity needs to be scaled to be under v_iso
         // TODO: jedes mal wenn long_term_trajectory gesetted wird, max berechnen und speichern bzw auch für STP_MAXIMUM möglich?
-        double v_max = long_term_trajectory_.getMaxofMaximumCartesianVelocity(0, long_term_trajectory_.getLength());
+        double v_max = long_term_trajectory_.getMaxofMaximumCartesianVelocityWithLength(0, long_term_trajectory_.getLength());
         s_d = v_iso_ / v_max;
         potential_path_.getMotionUnderVel(v_max, time, s_d, ds_d, dds_d, ddds_d);
     } else if(safety_method_ == STP_MAXIMUM_CARTESIAN) {
-        // TODO: get index from last STP-Motion of LTT or length of STP-Motions in LTT
-        double v_max = long_term_trajectory_.getMaxofMaximumCartesianVelocity(long_term_trajectory_.getCurrentPos(), long_term_trajectory_.getLength());
+        // TODO: ich verwende den s-Wert von der FinalMotion, bessere Abschätzung möglich mit s-Wert von MotionUnderVel?
+        potential_path_.getFinalMotion(s_d, ds_d, dds_d);
+        double v_max = long_term_trajectory_.getMaxofMaximumCartesianVelocityWithS(s_d);
         s_d = v_iso_ / v_max;
         potential_path_.getMotionUnderVel(v_max, time, s_d, ds_d, dds_d, ddds_d);
     }

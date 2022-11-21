@@ -50,7 +50,7 @@ int main () {
     spdlog::info("Debug started.");
     double t = 0.0;
     for (int ep=0; ep<1; ep++) {
-      for (int i=0; i<10000; i++) {
+      for (int i=0; i<100; i++) { //i<10000
         t += 0.001;
         shield.humanMeasurement(dummy_human_meas, t);
         t += 0.003;
