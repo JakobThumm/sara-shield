@@ -7,7 +7,8 @@ add_compile_options(-std=c++17)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 ## Find catkin macros and libraries
-find_package(Eigen3 3.4 REQUIRED NO_MODULE)
+#find_package(Eigen3 3.4 REQUIRED NO_MODULE)
+INCLUDE_DIRECTORIES ( "$ENV{EIGEN3_INCLUDE_DIR}" )
 # Find Python
 # IF YOU DON'T WANT TO USE CONDA, DISABLE THESE THREE LINES
 #set(PYTHON_EXECUTABLE "$ENV{CONDA_PREFIX}/bin/python")
@@ -54,12 +55,12 @@ target_link_directories(${PROJECT_NAME}
     PUBLIC external/yaml-cpp/src
 )
 
-target_link_libraries(${PROJECT_NAME} Eigen3::Eigen SaRA long_term_planner spdlog yaml-cpp)
+target_link_libraries(${PROJECT_NAME} SaRA long_term_planner spdlog yaml-cpp)
 
 install(TARGETS ${PROJECT_NAME} DESTINATION /usr/lib)
 
 add_executable(debug src/debug.cc)
-target_link_libraries(debug ${PROJECT_NAME} long_term_planner spdlog Eigen3::Eigen yaml-cpp)
+target_link_libraries(debug ${PROJECT_NAME} long_term_planner spdlog yaml-cpp)
 #############
 ## GTest ##
 #############
