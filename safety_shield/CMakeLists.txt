@@ -107,4 +107,4 @@ gtest_discover_tests(safety_shield_tests)
 ## Bindings ##
 ##############
 pybind11_add_module(safety_shield_py MODULE bindings/safety_shield_bindings.cpp)
-target_link_libraries(safety_shield_py PRIVATE ${PROJECT_NAME} long_term_planner spdlog Eigen3::Eigen yaml-cpp)
+target_link_libraries(safety_shield_py PRIVATE ${PROJECT_NAME} long_term_planner spdlog yaml-cpp)
