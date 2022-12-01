@@ -579,37 +579,7 @@ protected:
     return is_safe_;
   }
 
-  /**
-   * @brief gives back jacobian of robot depending on the joint values
-   * @param qs joint values
-   */
-  Eigen::Matrix<double, 6, Eigen::Dynamic> getJacobian(const std::vector<double>& qs);
 
-  /**
-   * @brief calculates maximum cartesian velocity for each motion and sets it
-   * @param traj LongTermTrajectory
-   */
-  void calculateMaxCartesianVelocity(LongTermTraj& traj);
-
-  /**
-   * @brief creates cross product as skew-symmetric matrix
-   * @param vec vector for cross product
-   */
-  Eigen::Matrix3d getCrossProductAsMatrix(Eigen::Vector3d vec);
-
-  /**
-   * @brief gets time when particular velocity is reached from a failsafe-path
-   * @param vel velocity to be reached
-   * @param jerk_max maximum jerk of path
-   * @param acc_max maximum acceleration of path
-   * @param current_vel current velocity of path
-   */
-  double getTimeFromVelocity(double vel, double jerk_max, double acc_max, double current_vel);
-
-  /**
-   * @brief returns position from current motion
-   */
-  double getCurrentS();
 };
 } // namespace safety_shield
 

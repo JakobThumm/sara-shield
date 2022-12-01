@@ -52,8 +52,6 @@ SafetyShield::SafetyShield(bool activate_shield,
   alpha_i_.push_back(1.0);
 
   is_safe_ = !activate_shield_;
-  // TODO: correct?
-  calculateMaxCartesianVelocity(long_term_trajectory_);
   computesPotentialTrajectory(is_safe_, prev_dq);
   next_motion_ = determineNextMotion(is_safe_);
   std::vector<double> q_min(nb_joints, -3.141);
@@ -108,7 +106,7 @@ SafetyShield::SafetyShield(bool activate_shield,
     // Initialize the long term trajectory
     std::vector<Motion> long_term_traj;
     long_term_traj.push_back(Motion(0.0, init_qpos));
-    long_term_trajectory_ = LongTermTraj(long_term_traj, sample_time_);
+    long_term_trajectory_ = LongTermTraj(long_term_traj, sample_time_, robot_reach_);
     //////////// Build human reach
     YAML::Node human_config = YAML::LoadFile(mocap_config_file);
     double measurement_error_pos = human_config["measurement_error_pos"].as<double>();
@@ -159,14 +157,13 @@ SafetyShield::SafetyShield(bool activate_shield,
     /////////// Other settings
     sliding_window_k_ = (int) std::floor(max_s_stop_/sample_time_);
     std::vector<double> prev_dq;
+
     for(int i = 0; i < 6; i++) {
         prev_dq.push_back(0.0);
         alpha_i_.push_back(1.0);
     }
     alpha_i_.push_back(1.0);
     is_safe_ = !activate_shield_;
-    // TODO: correct?
-    calculateMaxCartesianVelocity(long_term_trajectory_);
     computesPotentialTrajectory(is_safe_, prev_dq);
     next_motion_ = determineNextMotion(is_safe_);
     spdlog::info("Safety shield created.");
@@ -204,7 +201,7 @@ void SafetyShield::reset(bool activate_shield,
   // Initialize the long term trajectory
   std::vector<Motion> long_term_traj;
   long_term_traj.push_back(Motion(0.0, init_qpos));
-  long_term_trajectory_ = LongTermTraj(long_term_traj, sample_time_);
+  long_term_trajectory_ = LongTermTraj(long_term_traj, sample_time_, robot_reach_);
   computesPotentialTrajectory(is_safe_, prev_dq);
   next_motion_ = determineNextMotion(is_safe_);
   spdlog::info("Safety shield resetted.");
@@ -752,64 +749,8 @@ bool SafetyShield::calculateLongTermTrajectory(const std::vector<double>& start_
     new_traj[i] = Motion(new_time, q, dq, ddq, dddq);
     new_time += sample_time_;
   }
-  ltt = LongTermTraj(new_traj, sample_time_, path_s_discrete_, sliding_window_k_);
-  // TODO: correct?
-  calculateMaxCartesianVelocity(ltt);
+  ltt = LongTermTraj(new_traj, sample_time_, robot_reach_, path_s_discrete_, sliding_window_k_);
   return true;
 }
 
-// TODO: how to calculate jacobian with pinnochio?
-Eigen::Matrix<double, 6, Eigen::Dynamic> SafetyShield::getJacobian(const std::vector<double>& qs) {
-    // Eigen::Matrix<double, 6, Eigen::Dynamic> matrix(6, nb_joints);
-    // matrix.setZero();
-    auto matrix = Eigen::Matrix<double, 6, Eigen::Dynamic>::Identity(6, nb_joints_);
-    return matrix;
-}
-
-Eigen::Matrix3d SafetyShield::getCrossProductAsMatrix(Eigen::Vector3d vec) {
-    Eigen::Matrix3d cross;
-    cross << 0, -vec(2), vec(1),
-            vec(2), 0, -vec(0),
-            -vec(1), vec(0), 0;
-    return cross;
-}
-
-// TODO: dauert zu lange
-// TODO: in Konstruktor von Long_Term_Traj auslagern?
-void SafetyShield::calculateMaxCartesianVelocity(LongTermTraj& traj) {
-    for(unsigned long i = 0; i < traj.getLength(); i++) {
-        Motion& motion = traj.getMotion(i);
-        robot_capsules_ = robot_reach_->reach(motion, motion, 0, alpha_i_);
-        auto jacobian = getJacobian(motion.getAngle());
-        Eigen::VectorXd velocity = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(motion.getVelocity().data(), motion.getVelocity().size());
-        Eigen::VectorXd result = jacobian * velocity;
-        Eigen::Vector3d w = result.segment(0, 3);
-        Eigen::Vector3d v = result.segment(3, 3);
-        double scalar_w = w.norm();
-        Eigen::VectorXd n = w / scalar_w;
-        double scalar_v = v.transpose() * n;
-        double max = 0;
-        for(unsigned long j = 0; j <= nb_joints_; j++) {
-            Eigen::Vector3d p1(robot_capsules_[j].p1_.x, robot_capsules_[j].p1_.y, robot_capsules_[j].p1_.z);
-            Eigen::Vector3d p2(robot_capsules_[j].p2_.x, robot_capsules_[j].p2_.y, robot_capsules_[j].p2_.z);
-            // Ax = b
-            // b = v - scalar_v * n
-            // A = S(w)
-            // o = -(x - p2)
-            Eigen::Matrix3d A = getCrossProductAsMatrix(w);
-            Eigen::Vector3d b = v - scalar_v * n;
-            Eigen::Vector3d x = A.partialPivLu().solve(b); //colPivHouseholderQr()
-            Eigen::Vector3d o = -(x - p2);
-            Eigen::Vector3d p1_cross = getCrossProductAsMatrix(n) * (p1 - o);
-            Eigen::Vector3d p2_cross = getCrossProductAsMatrix(n) * (p2 - o);
-            // TODO: secure_radius als public member variable oder separat in safety_shield nochmal speichern?
-            double r = robot_capsules_[j].r_ + robot_reach_->secure_radius_;
-            double d_perp = std::max(p1_cross.norm(), p2_cross.norm()) + r;
-            double right_current = std::abs(scalar_w) * d_perp;
-            double current = std::sqrt(scalar_v * scalar_v + right_current * right_current);
-            max = std::max(max, current);
-        }
-        motion.setMaximumCartesianVelocity(max);
-    }
-}
 } // namespace safety_shield

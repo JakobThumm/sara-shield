@@ -23,6 +23,7 @@
 #include "spdlog/spdlog.h" // https://github.com/gabime/spdlog
 
 #include "safety_shield/motion.h"
+#include "safety_shield/robot_reach.h"
 
 #ifndef LONG_TERM_TRAJ_H
 #define LONG_TERM_TRAJ_H
@@ -71,6 +72,35 @@ class LongTermTraj {
    */
   int starting_index_;
 
+  /**
+   * @brief Robot reachable set calculation object
+   *
+   */
+  RobotReach* robot_reach_;
+
+  /**
+   * @brief Vector of robot reachable set capsules
+   */
+  std::vector<reach_lib::Capsule> robot_capsules_;
+
+  /**
+   * @brief maximum cartesian acceleration of robot joints (+ end effector!)
+   *
+   * alpha_i_.size() = nb_joints_ + 1
+   * TODO: Calculate this as overapproximation.
+   */
+  std::vector<double> alpha_i_;
+
+  /**
+   * @brief calculates maximum cartesian velocity in the exact way via LSE solving
+   */
+  void calculateExactMaxCartesianVelocity();
+
+  /**
+   * @brief calculates maximum cartesian velocity in an overapproximative way
+   */
+  void calculateApproximateMaxCartesianVelocity();
+
  public:
   /**
    * @brief Construct a new Long Term Traj object.
@@ -82,6 +112,10 @@ class LongTermTraj {
     sample_time_(0.01)
   {
       long_term_traj_.push_back(Motion(1));
+      for(int i = 0; i < 7; i++) {
+          alpha_i_.push_back(1.0);
+      }
+      //calculateExactMaxCartesianVelocity();
   }
 
   /**
@@ -90,14 +124,20 @@ class LongTermTraj {
    * @param long_term_traj Vector of motions that make up the LTT.
    * @param sliding_window_k Size of sliding window for max acc and jerk calculationa
    */
-  LongTermTraj(const std::vector<Motion> &long_term_traj, double sample_time, int starting_index=0, int sliding_window_k=10):
+  LongTermTraj(const std::vector<Motion> &long_term_traj, double sample_time, RobotReach* robotReach, int starting_index=0, int sliding_window_k=10):
     long_term_traj_(long_term_traj),
     sample_time_(sample_time),
     current_pos_(0),
-    starting_index_(starting_index)
+    starting_index_(starting_index),
+    robot_reach_(robotReach)
   {
     length_ = long_term_traj.size();
     calculate_max_acc_jerk_window(long_term_traj_, sliding_window_k);
+    for(int i = 0; i < 7; i++) {
+        alpha_i_.push_back(1.0);
+    }
+    calculateExactMaxCartesianVelocity();
+    //calculateApproximateMaxCartesianVelocity();
   }
 
   /**
@@ -249,6 +289,19 @@ class LongTermTraj {
    * @param s look at Motions until trajectory_time s
    */
   double getMaxofMaximumCartesianVelocityWithS(double s);
+
+  /**
+   * @brief gives back jacobian of robot depending on the joint values
+   * @param qs joint values
+   * @param link which link to get jacobian from
+   */
+  Eigen::Matrix<double, 6, Eigen::Dynamic> getJacobian(const std::vector<double>& qs, int link);
+
+  /**
+   * @brief creates cross product as skew-symmetric matrix
+   * @param vec vector for cross product
+   */
+  Eigen::Matrix3d getCrossProductAsMatrix(Eigen::Vector3d vec);
 
 };
 }
