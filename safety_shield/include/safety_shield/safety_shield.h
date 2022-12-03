@@ -479,11 +479,12 @@ protected:
 
   /**
    * @brief Computes the new trajectory depending on dq and if the previous path is safe and publishes it
-   * @param v is the previous path safe
-   * @param prev_speed the velocity of the previous point
-   * @returns goal position, velocity, acceleration and time of the computed trajectory to execute.
+   * @param[in] v is the previous path safe
+   * @param[in] prev_speed the velocity of the previous point
+   * @param[out] goal_motion: goal position, velocity, acceleration and time of the computed trajectory to execute.
+   * @param[out] under_vel_motion: motion when robot is under ISO-norm velocity
    */
-  Motion computesPotentialTrajectory(bool v, const std::vector<double> &prev_speed);
+  void computesPotentialTrajectory(bool v, const std::vector<double> &prev_speed, Motion* goal_motion, Motion* under_vel_motion);
 
   /**
    * @brief Gets the information that the next simulation cycle (sample time) has started
