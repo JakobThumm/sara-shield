@@ -214,8 +214,10 @@ void LongTermTraj::calculateApproximateMaxCartesianVelocity() {
             Eigen::Vector3d p2(robot_capsules_[j].p2_.x, robot_capsules_[j].p2_.y, robot_capsules_[j].p2_.z);
             Eigen::Vector3d link = p2 - p1;
             double r = robot_capsules_[j].r_ + robot_reach_->secure_radius_;
-            double current = (v + getCrossProductAsMatrix(w) * link).norm() + scalar_w * r;
-            max = std::max(max, current);
+            double q1 = v.norm() + w.norm() * r;
+            double q2 = (v + getCrossProductAsMatrix(w) * link).norm() + scalar_w * r;
+            max = std::max(max, q1);
+            max = std::max(max, q2);
         }
         motion.setMaximumCartesianVelocity(max);
     }
