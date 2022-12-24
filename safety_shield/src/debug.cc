@@ -5,6 +5,10 @@
 
 #include "reach_lib.hpp"
 
+#include "pinocchio/parsers/urdf.hpp"
+#include "pinocchio/algorithm/joint-configuration.hpp"
+#include "pinocchio/algorithm/kinematics.hpp"
+
 #include "safety_shield/safety_shield.h"
 #include "safety_shield/human_reach.h"
 #include "safety_shield/robot_reach.h"
@@ -15,9 +19,10 @@
 int main () {
     bool activate_shield = true;
     double sample_time = 0.001; 
-    std::string trajectory_config_file = std::string("../config/trajectory_parameters_schunk.yaml"); // ../safety_shield/config/trajectory_parameters_schunk.yaml"
+    std::string trajectory_config_file = std::string("../config/trajectory_parameters_schunk.yaml");
     std::string robot_config_file = std::string("../config/robot_parameters_schunk.yaml");
     std::string mocap_config_file = std::string("../config/cmu_mocap_no_hand.yaml");
+    std::string urdf_file = std::string("../config/schunk_model/schunk.urdf");
     double init_x = 0.0;
     double init_y = 0.0;
     double init_z = 0.0;
@@ -31,6 +36,7 @@ int main () {
       trajectory_config_file,
       robot_config_file,
       mocap_config_file,
+      urdf_file,
       init_x, 
       init_y, 
       init_z, 

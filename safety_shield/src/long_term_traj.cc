@@ -140,12 +140,13 @@ double LongTermTraj::getMaxofMaximumCartesianVelocityWithS(double s) {
     }
 }
 
-// TODO: how to calculate jacobian with pinnochio?
-Eigen::Matrix<double, 6, Eigen::Dynamic> LongTermTraj::getJacobian(const std::vector<double>& qs, int link) {
-    // Eigen::Matrix<double, 6, Eigen::Dynamic> matrix(6, nb_joints);
-    // matrix.setZero();
-    auto matrix = Eigen::Matrix<double, 6, Eigen::Dynamic>::Identity(6, long_term_traj_[0].getNbModules());
-    return matrix;
+Eigen::Matrix<double, 6, Eigen::Dynamic> LongTermTraj::getJacobian(pinocchio::JointIndex joint) {
+    Eigen::Matrix<double, 6, Eigen::Dynamic> jacobian;
+    jacobian.resize(6, long_term_traj_[0].getNbModules());
+    jacobian.setZero();
+    // TODO: wrong argument size: expected 6, got 7, hint: Jout.cols() is different from model.nv
+    pinocchio::getJointJacobian(model_, data_, joint, pinocchio::WORLD, jacobian);
+    return jacobian;
 }
 
 Eigen::Matrix3d LongTermTraj::getCrossProductAsMatrix(Eigen::Vector3d vec) {
@@ -158,17 +159,28 @@ Eigen::Matrix3d LongTermTraj::getCrossProductAsMatrix(Eigen::Vector3d vec) {
 
 // TODO: dauert zu lange
 void LongTermTraj::calculateExactMaxCartesianVelocity() {
+    if(!velocityCalculation_) {
+        return;
+    }
     for (unsigned long i = 0; i < getLength(); i++) {
         Motion &motion = long_term_traj_[i];
-        robot_capsules_ = robot_reach_->reach(motion, motion, 0, alpha_i_);
+        // TODO: forward kinematics with pinocchio --> get cartesian coordinates of Link Points + radius of capsule
+        robot_capsules_ = robot_reach_.reach(motion, motion, 0, alpha_i_);
+        Eigen::VectorXd q = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(motion.getAngle().data(),
+                                                                          motion.getAngle().size());
+        Eigen::VectorXd q_dot = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(motion.getVelocity().data(),
+                                                                              motion.getVelocity().size());
+        pinocchio::forwardKinematics(model_, data_, q, q_dot);
+        pinocchio::computeJointJacobians(model_, data_, q);
         double max = 0;
         for (unsigned long j = 0; j <= motion.getNbModules(); j++) {
-            auto jacobian = getJacobian(motion.getAngle(), j);
+            auto jacobian = getJacobian(j);
             Eigen::VectorXd velocity = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(motion.getVelocity().data(),
                                                                                          motion.getVelocity().size());
             Eigen::VectorXd result = jacobian * velocity;
-            Eigen::Vector3d w = result.segment(0, 3);
-            Eigen::Vector3d v = result.segment(3, 3);
+            // TODO: is this how I get w, and v
+            Eigen::Vector3d v = result.segment(0, 3);
+            Eigen::Vector3d w = result.segment(3, 3);
             double scalar_w = w.norm();
             Eigen::Vector3d n = w / scalar_w;
             double scalar_v = v.transpose() * n;
@@ -185,7 +197,7 @@ void LongTermTraj::calculateExactMaxCartesianVelocity() {
             Eigen::Vector3d p1_cross = getCrossProductAsMatrix(n) * (p1 - o);
             Eigen::Vector3d p2_cross = getCrossProductAsMatrix(n) * (p2 - o);
             // TODO: secure_radius als public member variable oder separat in safety_shield nochmal speichern?
-            double r = robot_capsules_[j].r_ + robot_reach_->secure_radius_;
+            double r = robot_capsules_[j].r_ + robot_reach_.secure_radius_;
             double d_perp = std::max(p1_cross.norm(), p2_cross.norm()) + r;
             double right_current = std::abs(scalar_w) * d_perp;
             double current = std::sqrt(scalar_v * scalar_v + right_current * right_current);
@@ -197,23 +209,30 @@ void LongTermTraj::calculateExactMaxCartesianVelocity() {
 
 // TODO: dauert auch zu lange
 void LongTermTraj::calculateApproximateMaxCartesianVelocity() {
+    if(!velocityCalculation_) {
+        return;
+    }
     for (unsigned long i = 0; i < getLength(); i++) {
         Motion &motion = long_term_traj_[i];
-        robot_capsules_ = robot_reach_->reach(motion, motion, 0, alpha_i_);
+        robot_capsules_ = robot_reach_.reach(motion, motion, 0, alpha_i_);
+        Eigen::VectorXd q = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(motion.getAngle().data(), motion.getAngle().size());
+        Eigen::VectorXd q_dot = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(motion.getVelocity().data(), motion.getVelocity().size());
+        pinocchio::forwardKinematics(model_, data_, q, q_dot);
+        pinocchio::computeJointJacobians(model_, data_, q);
         double max = 0;
         for (unsigned long j = 0; j <= motion.getNbModules(); j++) {
-            auto jacobian = getJacobian(motion.getAngle(), j);
+            auto jacobian = getJacobian(j);
             Eigen::VectorXd velocity = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(motion.getVelocity().data(),
                                                                                      motion.getVelocity().size());
             Eigen::VectorXd result = jacobian * velocity;
-            Eigen::Vector3d w = result.segment(0, 3);
-            Eigen::Vector3d v = result.segment(3, 3);
+            Eigen::Vector3d v = result.segment(0, 3);
+            Eigen::Vector3d w = result.segment(3, 3);
             double scalar_w = w.norm();
             // vector of Link: r1 = p2 - p1
             Eigen::Vector3d p1(robot_capsules_[j].p1_.x, robot_capsules_[j].p1_.y, robot_capsules_[j].p1_.z);
             Eigen::Vector3d p2(robot_capsules_[j].p2_.x, robot_capsules_[j].p2_.y, robot_capsules_[j].p2_.z);
             Eigen::Vector3d link = p2 - p1;
-            double r = robot_capsules_[j].r_ + robot_reach_->secure_radius_;
+            double r = robot_capsules_[j].r_ + robot_reach_.secure_radius_;
             double q1 = v.norm() + w.norm() * r;
             double q2 = (v + getCrossProductAsMatrix(w) * link).norm() + scalar_w * r;
             max = std::max(max, q1);

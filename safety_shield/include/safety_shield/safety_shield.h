@@ -30,6 +30,9 @@
 #include "long_term_planner/long_term_planner.h"
 #include "reach_lib.hpp"
 
+#include <pinocchio/parsers/urdf.hpp>
+#include <pinocchio/multibody/data.hpp>
+
 #include "safety_shield/long_term_traj.h"
 #include "safety_shield/path.h"
 #include "safety_shield/motion.h"
@@ -284,7 +287,13 @@ class SafetyShield {
   /**
    * @brief maximum cartesian velocity determined by iso
    */
-  double v_iso_ = 0.2;
+  double v_iso_ = 0.25;
+
+  /**
+   * @brief Pinocchio model
+   */
+
+  pinocchio::Model model_;
 
 protected:
   /**
@@ -448,6 +457,38 @@ protected:
       double init_pitch, 
       double init_yaw,
       const std::vector<double> &init_qpos);
+
+    /**
+     * @brief Construct a new Safety Shield object from config files + urdf for pinocchio functionality
+     *
+     * @param activate_shield If the safety function should be active or not.
+     * @param sample_time Sample time of shield
+     * @param trajectory_config_file Path to config file defining the trajectory parameters
+     * @param robot_config_file Path to config file defining the robot transformation matrices and capsules
+     * @param mocap_config_file Path to config file defining the human motion capture
+     * @param robot_urdf Path to urdf file of robot
+     * @param init_x Base x pos
+     * @param init_y Base y pos
+     * @param init_z Base z pos
+     * @param init_roll Base roll
+     * @param init_pitch Base pitch
+     * @param init_yaw Base yaw
+     * @param init_qpos Initial joint position of the robot
+     */
+    explicit SafetyShield(bool activate_shield,
+                          double sample_time,
+                          std::string trajectory_config_file,
+                          std::string robot_config_file,
+                          std::string mocap_config_file,
+                          std::string robot_urdf,
+                          double init_x,
+                          double init_y,
+                          double init_z,
+                          double init_roll,
+                          double init_pitch,
+                          double init_yaw,
+                          const std::vector<double> &init_qpos);
+
 
   /**
    * @brief A SafetyShield destructor

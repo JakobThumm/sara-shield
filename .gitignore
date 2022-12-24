@@ -41,3 +41,4 @@ __pycache__/
 .gittoken
 .idea/
 cmake-build-debug/
+external/pinocchio/

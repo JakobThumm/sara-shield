@@ -23,6 +23,8 @@
 
 namespace py = pybind11;
 
+// TODO: bindings for new constructors
+
 PYBIND11_MODULE(safety_shield_py, handle) {
   handle.doc() = "This module contains the python bindings for the safety shield.";
   // Motion class
@@ -57,7 +59,7 @@ PYBIND11_MODULE(safety_shield_py, handle) {
   // Long-term trajectory class
   py::class_<safety_shield::LongTermTraj>(handle, "LongTermTraj")
     .def(py::init<>())
-    .def(py::init<std::vector<safety_shield::Motion>, double, int, int>(), py::arg("long_term_traj"), py::arg("sample_time"), py::arg("starting_index") = 0, py::arg("sliding_window_k") = 10)
+    .def(py::init<std::vector<safety_shield::Motion>, double, int, int>(), py::arg("long_term_traj"), py::arg("sample_time"), py::arg("starting_index") = 0, py::arg("sliding_window_k") = 10) // TODO: changed
     .def("interpolate", &safety_shield::LongTermTraj::interpolate, py::arg("s"), py::arg("ds"), py::arg("dds"), py::arg("ddds"), py::arg("v_max_allowed"), py::arg("a_max_allowed"), py::arg("j_max_allowed"))
     .def("setLongTermTrajectory", py::overload_cast<const std::vector<safety_shield::Motion>&>(&safety_shield::LongTermTraj::setLongTermTrajectory), py::arg("long_term_traj"))
     .def("setLongTermTrajectory", py::overload_cast<const std::vector<safety_shield::Motion>&, double>(&safety_shield::LongTermTraj::setLongTermTrajectory), py::arg("long_term_traj"), py::arg("sample_time"))
