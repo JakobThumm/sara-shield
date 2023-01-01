@@ -196,7 +196,6 @@ SafetyShield::SafetyShield(bool activate_shield,
                      init_yaw,
                      init_qpos)
 {
-    // TODO: model only has 1 joint? URDF file has 6 joints
     pinocchio::urdf::buildModel(robot_urdf, model_);
 
 }
