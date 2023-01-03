@@ -1,13 +1,8 @@
 #include <string>
 #include <vector>
-#include <chrono>
-#include <type_traits>
 
 #include "reach_lib.hpp"
 
-#include "pinocchio/parsers/urdf.hpp"
-#include "pinocchio/algorithm/joint-configuration.hpp"
-#include "pinocchio/algorithm/kinematics.hpp"
 
 #include "safety_shield/safety_shield.h"
 #include "safety_shield/human_reach.h"
@@ -22,7 +17,7 @@ int main () {
     std::string trajectory_config_file = std::string("../config/trajectory_parameters_schunk.yaml");
     std::string robot_config_file = std::string("../config/robot_parameters_schunk.yaml");
     std::string mocap_config_file = std::string("../config/cmu_mocap_no_hand.yaml");
-    std::string urdf_file = std::string("../config/schunk_model/schunk.urdf");
+    std::string urdf_file = std::string("../config/schunk.urdf"); //../config/robot.urdf
     double init_x = 0.0;
     double init_y = 0.0;
     double init_z = 0.0;
@@ -51,8 +46,6 @@ int main () {
       dummy_human_meas[i] = reach_lib::Point(10.0, 10.0, 0.0);
     }
 
-    //auto start_time = std::chrono::system_clock::now();
-    //double t = std::chrono::duration<double>(std::chrono::system_clock::now()-start_time).count();
     spdlog::info("Debug started.");
     double t = 0.0;
     for (int ep=0; ep<1; ep++) {

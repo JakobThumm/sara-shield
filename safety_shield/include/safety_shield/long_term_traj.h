@@ -179,8 +179,8 @@ class LongTermTraj {
           alpha_i_.push_back(1.0);
       }
       // TODO: change
-      //calculateApproximateMaxCartesianVelocity();
-      calculateExactMaxCartesianVelocity();
+      calculateApproximateMaxCartesianVelocity();
+      //calculateExactMaxCartesianVelocity();
   }
   /**
    * @brief Destroy the Long Term Traj object

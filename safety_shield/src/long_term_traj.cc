@@ -144,7 +144,6 @@ Eigen::Matrix<double, 6, Eigen::Dynamic> LongTermTraj::getJacobian(pinocchio::Jo
     Eigen::Matrix<double, 6, Eigen::Dynamic> jacobian;
     jacobian.resize(6, long_term_traj_[0].getNbModules());
     jacobian.setZero();
-    // TODO: wrong argument size: expected 6, got 7, hint: Jout.cols() is different from model.nv
     pinocchio::getJointJacobian(model_, data_, joint, pinocchio::WORLD, jacobian);
     return jacobian;
 }
@@ -213,6 +212,8 @@ void LongTermTraj::calculateExactMaxCartesianVelocity() {
     }
 }
 
+// TODO: make a new method without pinocchio stuff for approximative velocity and jacobian computation
+
 // TODO: dauert auch zu lange
 void LongTermTraj::calculateApproximateMaxCartesianVelocity() {
     if(!velocityCalculation_) {
@@ -235,6 +236,7 @@ void LongTermTraj::calculateApproximateMaxCartesianVelocity() {
             Eigen::Vector3d v = result.segment(0, 3);
             Eigen::Vector3d w = result.segment(3, 3);
             double scalar_w = w.norm();
+            //std::cout << jacobian << std::endl;
             if(scalar_w < epsilon) {
                 // no angular velocity
                 max = std::max(max, v.norm());
