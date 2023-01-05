@@ -50,13 +50,13 @@ class RobotReach {
    */
   std::vector<reach_lib::Capsule> robot_capsules_;
 
-public:
+  /**
+   * @brief Expands the radius of the robot capsules by this amount to
+   *  account for measurement and modelling errors.
+   */
+  double secure_radius_;
 
-    /**
-    * @brief Expands the radius of the robot capsules by this amount to
-    *  account for measurement and modelling errors.
-    */
-    double secure_radius_;
+public:
 
   /**
    * @brief A robot empty constructor
@@ -152,6 +152,27 @@ public:
    */
   std::vector<reach_lib::Capsule> reach(Motion& start_config, Motion& goal_config,
     double s_diff, std::vector<double> alpha_i);
+
+  /**
+   * @return secure_radius_
+   */
+  inline double getSecureRadius() {
+      return secure_radius_;
+  }
+
+  /**
+   * @return transformation_matrices_
+   */
+  inline std::vector<Eigen::Matrix4d> getTransformationMatrices() {
+      return transformation_matrices_;
+  }
+
+  /**
+   * @return robot_capsules_
+   */
+  inline std::vector<reach_lib::Capsule> getRobotCapsules() {
+      return robot_capsules_;
+  }
 };
 } // namespace safety_shield 
 

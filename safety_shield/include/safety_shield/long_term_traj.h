@@ -89,16 +89,6 @@ class LongTermTraj {
   pinocchio::Data data_;
 
   /**
-   * @brief Vector of robot reachable set capsules
-   */
-  std::vector<reach_lib::Capsule> robot_capsules_;
-
-  /**
-   * @brief RobotReach object
-   */
-  RobotReach robot_reach_;
-
-  /**
    * @brief true if cartesian velocity calculation is on
    */
    bool velocityCalculation_ = false;
@@ -112,14 +102,19 @@ class LongTermTraj {
   std::vector<double> alpha_i_;
 
   /**
-   * @brief calculates maximum cartesian velocity in the exact way via LSE solving
+   * @brief calculates maximum cartesian velocity in the exact way via LSE solving with pinocchio
    */
-  void calculateExactMaxCartesianVelocity();
+  void calculateExactMaxCartesianVelocity(RobotReach& robot_reach);
 
   /**
-   * @brief calculates maximum cartesian velocity in an overapproximative way
+   * @brief calculates maximum cartesian velocity in an overapproximative way with pinocchio
    */
-  void calculateApproximateMaxCartesianVelocity();
+  void calculateApproximateMaxCartesianVelocity(RobotReach& robot_reach);
+
+  /**
+   * @brief calculates maximum cartesian velocity in an overapproximative way with self-implemented jacobian computation
+   */
+  void myCalculateApproximateMaxCartesianVelocity(RobotReach& robot_reach);
 
  public:
   /**
@@ -170,7 +165,6 @@ class LongTermTraj {
           starting_index_(starting_index),
           model_(model),
           data_(model),
-          robot_reach_(robot_reach),
           velocityCalculation_(true)
   {
       length_ = long_term_traj.size();
@@ -179,8 +173,9 @@ class LongTermTraj {
           alpha_i_.push_back(1.0);
       }
       // TODO: change
-      calculateApproximateMaxCartesianVelocity();
-      //calculateExactMaxCartesianVelocity();
+      //myCalculateApproximateMaxCartesianVelocity(robot_reach);
+      calculateApproximateMaxCartesianVelocity(robot_reach);
+      //calculateExactMaxCartesianVelocity(robot_reach);
   }
   /**
    * @brief Destroy the Long Term Traj object
@@ -344,6 +339,16 @@ class LongTermTraj {
    * @param vec vector for cross product
    */
   Eigen::Matrix3d getCrossProductAsMatrix(Eigen::Vector3d vec);
+
+
+  /**
+   * @brief computes jacobians and transformation_matrices for each joint for a specific motion
+   * @param[in] robotReach
+   * @param[in] motion
+   * @param[out] transformation_matrices_q
+   * @param[out] jacobians
+   */
+  void allKinematics(RobotReach& robotReach, Motion& motion, std::vector<Eigen::Matrix4d> transformation_matrices_q, std::vector<Eigen::Matrix<double, 6, Eigen::Dynamic>> jacobians);
 
 };
 }
