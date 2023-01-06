@@ -116,6 +116,11 @@ class LongTermTraj {
    */
   void myCalculateApproximateMaxCartesianVelocity(RobotReach& robot_reach);
 
+  /**
+   * @brief calculates maximum cartesian velocity in an exact way via LSE solving with self-implemented jacobian computation
+   */
+  void myCalculateExactMaxCartesianVelocity(RobotReach& robot_reach);
+
  public:
   /**
    * @brief Construct a new Long Term Traj object.
@@ -173,9 +178,10 @@ class LongTermTraj {
           alpha_i_.push_back(1.0);
       }
       // TODO: change
-      myCalculateApproximateMaxCartesianVelocity(robot_reach);
+      //myCalculateApproximateMaxCartesianVelocity(robot_reach);
       //calculateApproximateMaxCartesianVelocity(robot_reach);
       //calculateExactMaxCartesianVelocity(robot_reach);
+      myCalculateExactMaxCartesianVelocity(robot_reach);
   }
   /**
    * @brief Destroy the Long Term Traj object
@@ -340,15 +346,6 @@ class LongTermTraj {
    */
   Eigen::Matrix3d getCrossProductAsMatrix(Eigen::Vector3d& vec);
 
-
-  /**
-   * @brief computes jacobians and transformation_matrices for each joint for a specific motion
-   * @param[in] robotReach
-   * @param[in] motion
-   * @param[out] transformation_matrices_q
-   * @param[out] jacobians
-   */
-  void allKinematics(RobotReach& robotReach, Motion& motion, std::vector<Eigen::Matrix4d> transformation_matrices_q, std::vector<Eigen::Matrix<double, 6, Eigen::Dynamic>> jacobians);
 
 };
 }
