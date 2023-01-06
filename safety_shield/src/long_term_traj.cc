@@ -212,8 +212,6 @@ void LongTermTraj::calculateExactMaxCartesianVelocity(RobotReach& robot_reach) {
     }
 }
 
-// TODO: make a new method without pinocchio stuff for approximative velocity and jacobian computation
-
 // TODO: dauert auch zu lange
 void LongTermTraj::calculateApproximateMaxCartesianVelocity(RobotReach& robot_reach) {
     if(!velocityCalculation_) {
@@ -244,8 +242,8 @@ void LongTermTraj::calculateApproximateMaxCartesianVelocity(RobotReach& robot_re
             } else {
                 // with angular velocity
                 // vector of Link: r1 = p2 - p1
-                Eigen::Vector3d p1(robot_capsules[j].p1_.x, robot_capsules[j].p1_.y, robot_capsules[j].p1_.z);
-                Eigen::Vector3d p2(robot_capsules[j].p2_.x, robot_capsules[j].p2_.y, robot_capsules[j].p2_.z);
+                Eigen::Vector3d p1(robot_capsules[j].p1_.x, robot_capsules[j].p1_.y, robot_capsules[j].p1_.z); //data_.oMi[j]; model_.jointPlacements;
+                Eigen::Vector3d p2(robot_capsules[j].p2_.x, robot_capsules[j].p2_.y, robot_capsules[j].p2_.z); //data.oMi[j+1];
                 Eigen::Vector3d link = p2 - p1;
                 double r = robot_capsules[j].r_ + robot_reach.getSecureRadius();
                 double q1 = v.norm() + w.norm() * r;
@@ -258,6 +256,7 @@ void LongTermTraj::calculateApproximateMaxCartesianVelocity(RobotReach& robot_re
     }
 }
 
+// TODO: iterative allKinematics function
 void LongTermTraj::allKinematics(RobotReach& robotReach, Motion& motion, std::vector<Eigen::Matrix4d> transformation_matrices_q, std::vector<Eigen::Matrix<double, 6, Eigen::Dynamic>> jacobians) {
     Eigen::Matrix4d T = robotReach.getTransformationMatrices()[0];
     transformation_matrices_q.push_back(T);
@@ -265,16 +264,23 @@ void LongTermTraj::allKinematics(RobotReach& robotReach, Motion& motion, std::ve
     for(int i = 0; i < motion.getAngle().size(); i++) {
         robotReach.forwardKinematic(q[i], i, T);
         transformation_matrices_q.push_back(T);
-        jacobians[i].resize(6, i+1);
-        for(int j = 0; j < i; j++) {
+        // TODO: segfault, maybe cant save this type of list --> save current jacobi matrix + transformation_matrices in a list
+        Eigen::Matrix<double, 6, Eigen::Dynamic> jacobian;
+        jacobian.setZero(6, i+1);
+        //std::cout << "jacobian" << std::endl;
+        //std::cout << jacobian << std::endl;
+        for(int j = 0; j <= i; j++) {
             // z_j x (p_j+1 - p_j) over z_j
             Eigen::Vector3d z_j = transformation_matrices_q[j].block(0,2,3,1);
             Eigen::Vector3d p_j = transformation_matrices_q[j].block(0,3,3,1);
-            Eigen::Vector3d p_j_next = transformation_matrices_q[j].block(0,3,3,1);
+            Eigen::Vector3d p_j_next = transformation_matrices_q[j+1].block(0,3,3,1);
             Eigen::Vector3d over = getCrossProductAsMatrix(z_j) * (p_j_next - p_j);
             Eigen::Vector<double, 6> column;
             column << over, z_j;
-            jacobians[i].row(j) = column;
+            // TODO: does not allow resize?
+            //std::cout << "column-vector" << std::endl;
+            //std::cout << column << std::endl;
+            jacobian.col(j) = column;
         }
     }
 }
@@ -287,16 +293,30 @@ void LongTermTraj::myCalculateApproximateMaxCartesianVelocity(RobotReach& robot_
     for (unsigned long i = 0; i < getLength(); i++) {
         Motion& motion = long_term_traj_[i];
         std::vector<Eigen::Matrix4d> transformation_matrices_q;
-        std::vector<Eigen::Matrix<double, 6, Eigen::Dynamic>> jacobians;
-        allKinematics(robot_reach, motion, transformation_matrices_q, jacobians);
+        Eigen::Matrix4d T = robot_reach.getTransformationMatrices()[0];
+        transformation_matrices_q.push_back(T);
         Eigen::VectorXd q = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(motion.getAngle().data(), motion.getAngle().size());
         Eigen::VectorXd q_dot = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(motion.getVelocity().data(), motion.getVelocity().size());
         double max = 0;
-        for (unsigned long j = 0; j <= motion.getNbModules(); j++) {
+        for (unsigned long j = 0; j < q.size(); j++) {
+            robot_reach.forwardKinematic(q[j], j, T);
+            transformation_matrices_q.push_back(T);
+            Eigen::Matrix<double, 6, Eigen::Dynamic> jacobian;
+            jacobian.setZero(6, j+1);
+            for(int k = 0; k <= j; k++) {
+                // z_k x (p_k+1 - p_k) over k_j
+                Eigen::Vector3d z_k = transformation_matrices_q[k].block(0,2,3,1);
+                Eigen::Vector3d p_k = transformation_matrices_q[k].block(0,3,3,1);
+                Eigen::Vector3d p_k_next = transformation_matrices_q[k+1].block(0,3,3,1);
+                Eigen::Vector3d over = getCrossProductAsMatrix(z_k) * (p_k_next - p_k);
+                Eigen::Vector<double, 6> column;
+                column << over, z_k;
+                jacobian.col(k) = column;
+            }
             // jacobian j, transformation_matrices j - 1
             Eigen::VectorXd velocity = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(motion.getVelocity().data(),
                                                                                      motion.getVelocity().size());
-            Eigen::Vector<double, 6> result = jacobians[j] * velocity.segment(0, j);
+            Eigen::Vector<double, 6> result = jacobian * velocity.segment(0, j+1);
             Eigen::Vector3d v = result.segment(0, 3);
             Eigen::Vector3d w = result.segment(3, 3);
             double scalar_w = w.norm();
@@ -306,8 +326,8 @@ void LongTermTraj::myCalculateApproximateMaxCartesianVelocity(RobotReach& robot_
             } else {
                 // with angular velocity
                 // vector of Link: r1 = p2 - p1, p2 from transformation_matrix_j and p1 from transformation_matrix_j-1
-                Eigen::Vector3d p1 = transformation_matrices_q[j-1].block(0,3,3,1);
-                Eigen::Vector3d p2 = transformation_matrices_q[j].block(0,3,3,1);;
+                Eigen::Vector3d p1 = transformation_matrices_q[j].block(0,3,3,1);
+                Eigen::Vector3d p2 = transformation_matrices_q[j+1].block(0,3,3,1);;
                 Eigen::Vector3d link = p2 - p1;
                 double r = robot_reach.getRobotCapsules()[j].r_ + robot_reach.getSecureRadius();
                 double q1 = v.norm() + w.norm() * r;

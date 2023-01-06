@@ -173,8 +173,8 @@ class LongTermTraj {
           alpha_i_.push_back(1.0);
       }
       // TODO: change
-      //myCalculateApproximateMaxCartesianVelocity(robot_reach);
-      calculateApproximateMaxCartesianVelocity(robot_reach);
+      myCalculateApproximateMaxCartesianVelocity(robot_reach);
+      //calculateApproximateMaxCartesianVelocity(robot_reach);
       //calculateExactMaxCartesianVelocity(robot_reach);
   }
   /**
