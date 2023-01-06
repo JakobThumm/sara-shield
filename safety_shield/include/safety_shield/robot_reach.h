@@ -173,6 +173,27 @@ public:
   inline std::vector<reach_lib::Capsule> getRobotCapsules() {
       return robot_capsules_;
   }
+
+  /**
+   * @brief computes jacobian and transformation_matrices for next joint for a specific motion
+   * @param[in] robotReach
+   * @param[in] motion
+   * @param[in&out] transformation_matrices_q
+   * @return jacobian for next joint
+   */
+  Eigen::Matrix<double, 6, Eigen::Dynamic> allKinematics(Motion& motion, std::vector<Eigen::Matrix4d>& transformation_matrices_q);
+
+  /**
+   * @brief computes matrix version of cross product
+   */
+  inline Eigen::Matrix3d getCrossProductAsMatrix(Eigen::Vector3d& vec) {
+      Eigen::Matrix3d cross;
+      cross <<    0, -vec(2), vec(1),
+                vec(2), 0, -vec(0),
+                -vec(1), vec(0), 0;
+      return cross;
+  }
+
 };
 } // namespace safety_shield 
 

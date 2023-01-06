@@ -338,7 +338,7 @@ class LongTermTraj {
    * @brief creates cross product as skew-symmetric matrix
    * @param vec vector for cross product
    */
-  Eigen::Matrix3d getCrossProductAsMatrix(Eigen::Vector3d vec);
+  Eigen::Matrix3d getCrossProductAsMatrix(Eigen::Vector3d& vec);
 
 
   /**
