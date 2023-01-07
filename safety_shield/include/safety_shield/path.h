@@ -204,13 +204,6 @@ public:
    */
   void getMotionUnderVel(double v_limit, double& time, double& position, double& vel, double& acc, double& jerk);
 
-  /**
-   * @brief calculates sign of value
-   */
-  template <typename T> inline int sgn(T val) {
-      return (T(0) < val) - (val < T(0));
-  }
-
 };
 } // namespace safety_shield
 

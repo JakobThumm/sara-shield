@@ -1,4 +1,5 @@
 #include "safety_shield/path.h"
+#include "spdlog/spdlog.h"
 #include <cmath>
 
 namespace safety_shield {
@@ -82,30 +83,27 @@ void Path::getMotionUnderVel(double v_limit, double& time, double& pos, double& 
             double left = (-prev_acc - square) / jerk;
             double right = (-prev_acc + square) / jerk;
             // TODO: correct?
-            if(sgn(left) == 1 && sgn(right) == 1) {
+            if(left > 0 && right > 0) {
                 dt = std::min(left, right);
+            } else if (left > 0) {
+                dt = left;
+            } else if (right > 0) {
+                dt = right;
             } else {
-                dt = std::max(left, right);
+                time = -1;
+                spdlog::error("Error in Path::getMotionUnderVel: Quadratic-Function only has negative zero-values");
             }
             time = phases_[i] + dt;
             pos = prev_vel*dt + prev_acc*dt*dt/2 + jerk*dt*dt*dt/6 + prev_pos;
             acc = jerk*dt + prev_acc;
             vel = prev_acc*dt + 0.5*jerk*dt*dt + prev_vel;
-
-            /*
-            double dt_o = std::min((-prev_acc - square) / jerk, (-prev_acc + square) / jerk);
-            double time_o = phases_[i] + dt_o;
-            double pos_o = prev_vel*dt_o + prev_acc*dt_o*dt_o/2 + jerk*dt_o*dt_o*dt_o/6 + prev_pos;
-            double acc_o = jerk*dt_o + prev_acc;
-            double vel_o = prev_acc*dt_o + 0.5*jerk*dt_o*dt_o + prev_vel;
-            */
-
             return;
         }
 
     }
     // if it is not in any phase, it can't be a failsafe-path
     time = -1;
+    spdlog::error("Error in Path::getMotionUnderVel: it is not in any phase");
 }
 
 
