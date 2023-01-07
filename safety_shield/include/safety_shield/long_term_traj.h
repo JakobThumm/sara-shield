@@ -25,9 +25,6 @@
 #include "safety_shield/motion.h"
 #include "safety_shield/robot_reach.h"
 
-#include "pinocchio/algorithm/joint-configuration.hpp"
-#include "pinocchio/algorithm/kinematics-derivatives.hpp"
-#include "pinocchio/algorithm/kinematics.hpp"
 #ifndef LONG_TERM_TRAJ_H
 #define LONG_TERM_TRAJ_H
 
@@ -76,19 +73,6 @@ class LongTermTraj {
   int starting_index_;
 
   /**
-   * @brief Pinocchio model
-   *
-   */
-  pinocchio::Model model_;
-
-
-  /**
-   * @brief Pinocchio data
-   *
-   */
-  pinocchio::Data data_;
-
-  /**
    * @brief true if cartesian velocity calculation is on
    */
    bool velocityCalculation_ = false;
@@ -102,24 +86,14 @@ class LongTermTraj {
   std::vector<double> alpha_i_;
 
   /**
-   * @brief calculates maximum cartesian velocity in the exact way via LSE solving with pinocchio
-   */
-  void calculateExactMaxCartesianVelocity(RobotReach& robot_reach);
-
-  /**
-   * @brief calculates maximum cartesian velocity in an overapproximative way with pinocchio
+   * @brief calculates maximum cartesian velocity in an overapproximative way with self-implemented jacobian computation
    */
   void calculateApproximateMaxCartesianVelocity(RobotReach& robot_reach);
 
   /**
-   * @brief calculates maximum cartesian velocity in an overapproximative way with self-implemented jacobian computation
-   */
-  void myCalculateApproximateMaxCartesianVelocity(RobotReach& robot_reach);
-
-  /**
    * @brief calculates maximum cartesian velocity in an exact way via LSE solving with self-implemented jacobian computation
    */
-  void myCalculateExactMaxCartesianVelocity(RobotReach& robot_reach);
+  void calculateExactMaxCartesianVelocity(RobotReach& robot_reach);
 
  public:
   /**
@@ -163,13 +137,11 @@ class LongTermTraj {
     * @param sliding_window_k Size of sliding window for max acc and jerk calculation
     * @param model pinocchio model of robot
     */
-  LongTermTraj(const std::vector<Motion> &long_term_traj, double sample_time, pinocchio::Model& model, RobotReach& robot_reach, int starting_index=0, int sliding_window_k=10):
+  LongTermTraj(const std::vector<Motion> &long_term_traj, double sample_time, RobotReach& robot_reach, int starting_index=0, int sliding_window_k=10):
           long_term_traj_(long_term_traj),
           sample_time_(sample_time),
           current_pos_(0),
           starting_index_(starting_index),
-          model_(model),
-          data_(model),
           velocityCalculation_(true)
   {
       length_ = long_term_traj.size();
@@ -178,10 +150,8 @@ class LongTermTraj {
           alpha_i_.push_back(1.0);
       }
       // TODO: change
-      //myCalculateApproximateMaxCartesianVelocity(robot_reach);
-      //calculateApproximateMaxCartesianVelocity(robot_reach);
+      calculateApproximateMaxCartesianVelocity(robot_reach);
       //calculateExactMaxCartesianVelocity(robot_reach);
-      myCalculateExactMaxCartesianVelocity(robot_reach);
   }
   /**
    * @brief Destroy the Long Term Traj object
@@ -332,13 +302,6 @@ class LongTermTraj {
    * @param s look at Motions until trajectory_time s
    */
   double getMaxofMaximumCartesianVelocityWithS(double s);
-
-  /**
-   * @brief gives back jacobian of robot depending on the joint values
-   * @param qs joint values
-   * @param link which link to get jacobian from
-   */
-  Eigen::Matrix<double, 6, Eigen::Dynamic> getJacobian(pinocchio::JointIndex joint);
 
   /**
    * @brief creates cross product as skew-symmetric matrix

@@ -9,19 +9,6 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 ## Find catkin macros and libraries
 find_package(Eigen3 3.4 REQUIRED NO_MODULE)
 
-# TODO add pinocchio $(pkg-config --cflags --libs pinocchio)?
-#include(FindPkgConfig)
-#pkg_check_modules(pinocchio)
-#target_link_libraries(${PROJECT_NAME} pinocchio)
-#set(Pinocchio_DIR /opt/openrobots/lib/cmake)
-#find_library(PINOCCHIO_LIBRARY pinocchio) in target library link ${PINNOCHIO_LIBRARY}
-#set(CMAKE_PREFIX_PATH /opt/openrobots)
-#target_compile_options(${PROJECT_NAME} PUBLIC $(pkg-config --cflags --libs pinocchio))
-
-find_package(pinocchio REQUIRED)
-set(PINOCCHIO_MODEL_DIR "${PROJECT_SOURCE_DIR}/../../../models")
-add_definitions('-DPINOCCHIO_MODEL_DIR=\"${PINOCCHIO_MODEL_DIR}\"')
-
 # Find Python
 # IF YOU DON'T WANT TO USE CONDA, DISABLE THESE THREE LINES
 #set(PYTHON_EXECUTABLE "$ENV{CONDA_PREFIX}/bin/python")
@@ -52,7 +39,6 @@ add_subdirectory(external/SaRA/ReachLib)
 add_subdirectory(external/LongTermPlanner)
 add_subdirectory(external/spdlog)
 add_subdirectory(external/yaml-cpp)
-#add_subdirectory(external/pinocchio) #TODO: uncomment
 
 target_include_directories(${PROJECT_NAME}
     PUBLIC external/pybind11/include
@@ -60,7 +46,6 @@ target_include_directories(${PROJECT_NAME}
     PUBLIC external/LongTermPlanner/include
     PUBLIC external/spdlog/include
     PUBLIC external/yaml-cpp/include
-    #PUBLIC opt/openrobots/include/pinocchio #TODO: uncomment
 )
 
 target_link_directories(${PROJECT_NAME}
@@ -68,15 +53,14 @@ target_link_directories(${PROJECT_NAME}
     PUBLIC external/LongTermPlanner/src
     PUBLIC external/spdlog/src
     PUBLIC external/yaml-cpp/src
-    #PUBLIC external/pinocchio/src #TODO: uncomment
 )
 
-target_link_libraries(${PROJECT_NAME} Eigen3::Eigen SaRA long_term_planner spdlog yaml-cpp pinocchio::pinocchio) #TODO pinocchio
+target_link_libraries(${PROJECT_NAME} Eigen3::Eigen SaRA long_term_planner spdlog yaml-cpp)
 
 install(TARGETS ${PROJECT_NAME} DESTINATION /usr/lib)
 
 add_executable(debug src/debug.cc)
-target_link_libraries(debug ${PROJECT_NAME} long_term_planner spdlog Eigen3::Eigen yaml-cpp pinocchio::pinocchio) #TODO pinocchio
+target_link_libraries(debug ${PROJECT_NAME} long_term_planner spdlog Eigen3::Eigen yaml-cpp)
 #############
 ## GTest ##
 #############
@@ -123,4 +107,4 @@ gtest_discover_tests(safety_shield_tests)
 ## Bindings ##
 ##############
 pybind11_add_module(safety_shield_py MODULE bindings/safety_shield_bindings.cpp)
-target_link_libraries(safety_shield_py PRIVATE ${PROJECT_NAME} long_term_planner spdlog Eigen3::Eigen yaml-cpp pinocchio::pinocchio) #TODO pinocchio
+target_link_libraries(safety_shield_py PRIVATE ${PROJECT_NAME} long_term_planner spdlog Eigen3::Eigen yaml-cpp)

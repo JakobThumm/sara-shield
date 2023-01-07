@@ -103,11 +103,14 @@ SafetyShield::SafetyShield(bool activate_shield,
     ltp_ = long_term_planner::LongTermPlanner(nb_joints_, sample_time, q_min_allowed_, q_max_allowed_, v_max_allowed_, a_max_ltt_, j_max_ltt_);
     v_iso_ = trajectory_config["v_iso"].as<double>();
     safety_method_ = static_cast<Safety_method>(trajectory_config["safety_method"].as<int>());
-    // TODO: long term trajectory
     // Initialize the long term trajectory
     std::vector<Motion> long_term_traj;
     long_term_traj.push_back(Motion(0.0, init_qpos));
-    long_term_trajectory_ = LongTermTraj(long_term_traj, sample_time_);
+    if(safety_method_ == STANDARD) {
+        long_term_trajectory_ = LongTermTraj(long_term_traj, sample_time_);
+    } else {
+        long_term_trajectory_ = LongTermTraj(long_term_traj, sample_time_, *robot_reach_);
+    }
     //////////// Build human reach
     YAML::Node human_config = YAML::LoadFile(mocap_config_file);
     double measurement_error_pos = human_config["measurement_error_pos"].as<double>();
@@ -170,36 +173,6 @@ SafetyShield::SafetyShield(bool activate_shield,
     spdlog::info("Safety shield created.");
   }
 
-SafetyShield::SafetyShield(bool activate_shield,
-                           double sample_time,
-                           std::string trajectory_config_file,
-                           std::string robot_config_file,
-                           std::string mocap_config_file,
-                           std::string robot_urdf,
-                           double init_x,
-                           double init_y,
-                           double init_z,
-                           double init_roll,
-                           double init_pitch,
-                           double init_yaw,
-                           const std::vector<double> &init_qpos) :
-        SafetyShield(activate_shield,
-                     sample_time,
-                     trajectory_config_file,
-                     robot_config_file,
-                     mocap_config_file,
-                     init_x,
-                     init_y,
-                     init_z,
-                     init_roll,
-                     init_pitch,
-                     init_yaw,
-                     init_qpos)
-{
-    pinocchio::urdf::buildModel(robot_urdf, model_);
-
-}
-
 void SafetyShield::reset(bool activate_shield,
       double init_x, 
       double init_y, 
@@ -232,7 +205,11 @@ void SafetyShield::reset(bool activate_shield,
   // Initialize the long term trajectory
   std::vector<Motion> long_term_traj;
   long_term_traj.push_back(Motion(0.0, init_qpos));
-  long_term_trajectory_ = LongTermTraj(long_term_traj, sample_time_);
+  if(safety_method_ == STANDARD) {
+      long_term_trajectory_ = LongTermTraj(long_term_traj, sample_time_);
+  } else {
+      long_term_trajectory_ = LongTermTraj(long_term_traj, sample_time_, *robot_reach_);
+  }
   computesPotentialTrajectory(is_safe_, prev_dq, nullptr, nullptr);
   next_motion_ = determineNextMotion(is_safe_);
   spdlog::info("Safety shield resetted.");
@@ -483,7 +460,6 @@ void SafetyShield::computesPotentialTrajectory(bool v, const std::vector<double>
         potential_path_.getMotionUnderVel(v_max, vel_time, vel_s_d, vel_ds_d, vel_dds_d, ddds_d);
         potential_path_.getFinalMotion(final_s_d, final_ds_d, final_dds_d);
     } else if(safety_method_ == STP_MAXIMUM_CARTESIAN) {
-        // TODO: ich verwende den s-Wert von der FinalMotion, bessere Abschätzung möglich mit s-Wert von MotionUnderVel?
         potential_path_.getFinalMotion(final_s_d, final_ds_d, final_dds_d);
         double v_max = long_term_trajectory_.getMaxofMaximumCartesianVelocityWithS(final_s_d);
         vel_s_d = v_iso_ / v_max;
@@ -787,7 +763,7 @@ bool SafetyShield::calculateLongTermTrajectory(const std::vector<double>& start_
   if(safety_method_ == STANDARD) {
       ltt = LongTermTraj(new_traj, sample_time_, path_s_discrete_, sliding_window_k_);
   } else {
-      ltt = LongTermTraj(new_traj, sample_time_, model_, *robot_reach_, path_s_discrete_, sliding_window_k_);
+      ltt = LongTermTraj(new_traj, sample_time_, *robot_reach_, path_s_discrete_, sliding_window_k_);
   }
   return true;
 }

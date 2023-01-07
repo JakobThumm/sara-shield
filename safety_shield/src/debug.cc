@@ -17,7 +17,6 @@ int main () {
     std::string trajectory_config_file = std::string("../config/trajectory_parameters_schunk.yaml");
     std::string robot_config_file = std::string("../config/robot_parameters_schunk.yaml");
     std::string mocap_config_file = std::string("../config/cmu_mocap_no_hand.yaml");
-    std::string urdf_file = std::string("../config/schunk.urdf"); //../config/robot.urdf
     double init_x = 0.0;
     double init_y = 0.0;
     double init_z = 0.0;
@@ -31,7 +30,6 @@ int main () {
       trajectory_config_file,
       robot_config_file,
       mocap_config_file,
-      urdf_file,
       init_x, 
       init_y, 
       init_z, 
