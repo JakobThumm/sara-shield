@@ -73,17 +73,17 @@ class LongTermTraj {
   int starting_index_;
 
   /**
-   * @brief true if cartesian velocity calculation is on
-   */
-   bool velocityCalculation_ = false;
-
-  /**
    * @brief maximum cartesian acceleration of robot joints (+ end effector!)
    *
    * alpha_i_.size() = nb_joints_ + 1
    * TODO: Calculate this as overapproximation.
    */
   std::vector<double> alpha_i_;
+
+  /**
+   * @brief LTT-maximum of maximum cartesian velocity
+   */
+   double ltt_maximum_;
 
   /**
    * @brief calculates maximum cartesian velocity in an overapproximative way with self-implemented jacobian computation
@@ -141,8 +141,7 @@ class LongTermTraj {
           long_term_traj_(long_term_traj),
           sample_time_(sample_time),
           current_pos_(0),
-          starting_index_(starting_index),
-          velocityCalculation_(true)
+          starting_index_(starting_index)
   {
       length_ = long_term_traj.size();
       calculate_max_acc_jerk_window(long_term_traj_, sliding_window_k);
@@ -290,12 +289,9 @@ class LongTermTraj {
   inline Motion& getMotion(unsigned long index) { return long_term_traj_[index]; }
 
   /**
-   * @brief gets maximum of a window of maximum cartesian velocity
-   *
-   * @param index start of index
-   * @param length of window
+   * @brief gets LTT-maximum of maximum cartesian velocity
    */
-  double getMaxofMaximumCartesianVelocityWithLength(unsigned long index, unsigned long length);
+  double getMaxofMaximumCartesianVelocity() const;
 
   /**
    * @brief gets maximum of cartesian velocity until s is reached

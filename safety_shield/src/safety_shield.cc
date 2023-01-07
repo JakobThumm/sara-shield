@@ -454,8 +454,7 @@ void SafetyShield::computesPotentialTrajectory(bool v, const std::vector<double>
         potential_path_.getFinalMotion(final_s_d, final_ds_d, final_dds_d);
     } else if(safety_method_ == TRIVIAL_CARTESIAN) {
         // v_max is maximum of LTT and s_dot is how much path velocity needs to be scaled to be under v_iso
-        // TODO: jedes mal wenn long_term_trajectory gesetted wird, max berechnen und speichern bzw auch für STP_MAXIMUM möglich?
-        double v_max = long_term_trajectory_.getMaxofMaximumCartesianVelocityWithLength(0, long_term_trajectory_.getLength());
+        double v_max = long_term_trajectory_.getMaxofMaximumCartesianVelocity();
         vel_s_d = v_iso_ / v_max;
         potential_path_.getMotionUnderVel(v_max, vel_time, vel_s_d, vel_ds_d, vel_dds_d, ddds_d);
         potential_path_.getFinalMotion(final_s_d, final_ds_d, final_dds_d);

@@ -119,13 +119,8 @@ void LongTermTraj::calculate_max_acc_jerk_window(std::vector<Motion> &long_term_
   }
 }
 
-double LongTermTraj::getMaxofMaximumCartesianVelocityWithLength(unsigned long index, unsigned long length) {
-    unsigned long last = index + length + 1;
-    double max = getMotion(index).getMaximumCartesianVelocity();
-    for(unsigned long i = index + 1; i < last; i++) {
-        max = std::max(max, getMotion(i).getMaximumCartesianVelocity());
-    }
-    return max;
+double LongTermTraj::getMaxofMaximumCartesianVelocity() const {
+    return ltt_maximum_;
 }
 
 double LongTermTraj::getMaxofMaximumCartesianVelocityWithS(double s) {
@@ -149,10 +144,8 @@ Eigen::Matrix3d LongTermTraj::getCrossProductAsMatrix(Eigen::Vector3d& vec) {
 }
 
 void LongTermTraj::calculateApproximateMaxCartesianVelocity(RobotReach& robot_reach) {
-    if(!velocityCalculation_) {
-        return;
-    }
     double epsilon = 1e-6;
+    double ltt_maximum = 0;
     for (unsigned long i = 0; i < getLength(); i++) {
         Motion& motion = long_term_traj_[i];
         std::vector<Eigen::Matrix4d> transformation_matrices_q;
@@ -174,7 +167,7 @@ void LongTermTraj::calculateApproximateMaxCartesianVelocity(RobotReach& robot_re
                 max = std::max(max, v.norm());
             } else {
                 // with angular velocity
-                // vector of Link: r1 = p2 - p1, p2 from transformation_matrix_j and p1 from transformation_matrix_j-1
+                // vector of Link: r1 = p2 - p1, p2 from transformation_matrix_j+1 and p1 from transformation_matrix_j
                 Eigen::Vector3d p1 = transformation_matrices_q[j].block(0,3,3,1);
                 Eigen::Vector3d p2 = transformation_matrices_q[j+1].block(0,3,3,1);
                 Eigen::Vector3d link = p2 - p1;
@@ -186,14 +179,14 @@ void LongTermTraj::calculateApproximateMaxCartesianVelocity(RobotReach& robot_re
             }
         }
         motion.setMaximumCartesianVelocity(max);
+        ltt_maximum = std::max(max, ltt_maximum);
     }
+    ltt_maximum_ = ltt_maximum;
 }
 
 void LongTermTraj::calculateExactMaxCartesianVelocity(RobotReach& robot_reach) {
-    if(!velocityCalculation_) {
-        return;
-    }
     double epsilon = 1e-6;
+    double ltt_maximum = 0;
     for (unsigned long i = 0; i < getLength(); i++) {
         Motion& motion = long_term_traj_[i];
         std::vector<Eigen::Matrix4d> transformation_matrices_q;
@@ -237,7 +230,9 @@ void LongTermTraj::calculateExactMaxCartesianVelocity(RobotReach& robot_reach) {
             }
         }
         motion.setMaximumCartesianVelocity(max);
+        ltt_maximum = std::max(max, ltt_maximum);
     }
+    ltt_maximum_ = ltt_maximum;
 }
 
 } // namespace safety_shield
