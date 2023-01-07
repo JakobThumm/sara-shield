@@ -36,6 +36,11 @@ namespace safety_shield {
  * When the trajectory is over, it will output its last position forever.
  */
 class LongTermTraj {
+ public:
+    enum Velocity_method {
+        APPROXIMATE,
+        EXACT,
+    };
  private:
   /**
    * @brief Trajectory length.
@@ -85,15 +90,38 @@ class LongTermTraj {
    */
    double ltt_maximum_;
 
-  /**
-   * @brief calculates maximum cartesian velocity in an overapproximative way with self-implemented jacobian computation
-   */
-  void calculateApproximateMaxCartesianVelocity(RobotReach& robot_reach);
 
-  /**
-   * @brief calculates maximum cartesian velocity in an exact way via LSE solving with self-implemented jacobian computation
-   */
-  void calculateExactMaxCartesianVelocity(RobotReach& robot_reach);
+   /**
+    * @brief which velocity method should be used
+    */
+   Velocity_method velocity_method_;
+
+   /**
+    * @brief iteratively calculates velocity for each Motion in LTT
+    */
+    void velocity(RobotReach& robot_reach);
+
+    /**
+     * @brief calculates maximum cartesian velocity in an overapproximative way with self-implemented jacobian computation
+     * @param[in] robot_reach
+     * @param[in] v
+     * @param[in] omega
+     * @param[in] transformation_matrices_q
+     * @param[in] joint
+     * @return maximum velocity of capsule
+     */
+    double calculateApproximateMaxCartesianVelocity(RobotReach& robot_reach, Eigen::Vector3d& v, Eigen::Vector3d& omega, std::vector<Eigen::Matrix4d>& transformation_matrices_q, int joint);
+
+    /**
+     * @brief calculates maximum cartesian velocity in an exact way via LSE solving with self-implemented jacobian computation
+     * @param robot_reach
+     * @param v
+     * @param omega
+     * @param transformation_matrices_q
+     * @param joint
+     * @return maximum velocity of capsule
+     */
+    double calculateExactMaxCartesianVelocity(RobotReach& robot_reach, Eigen::Vector3d& v, Eigen::Vector3d& omega, std::vector<Eigen::Matrix4d>& transformation_matrices_q, int joint);
 
  public:
   /**
@@ -131,26 +159,25 @@ class LongTermTraj {
   }
 
   /**
-    * @brief constructor for pinocchio functionality
+    * @brief constructor for maximum velocity functionality of LTT
     *
     * @param long_term_traj Vector of motions that make up the LTT.
     * @param sliding_window_k Size of sliding window for max acc and jerk calculation
-    * @param model pinocchio model of robot
+    * @param robot_reach needed for forward kinematics
     */
-  LongTermTraj(const std::vector<Motion> &long_term_traj, double sample_time, RobotReach& robot_reach, int starting_index=0, int sliding_window_k=10):
+  LongTermTraj(const std::vector<Motion> &long_term_traj, double sample_time, RobotReach& robot_reach, Velocity_method velocity_method, int starting_index=0, int sliding_window_k=10):
           long_term_traj_(long_term_traj),
           sample_time_(sample_time),
           current_pos_(0),
-          starting_index_(starting_index)
+          starting_index_(starting_index),
+          velocity_method_(velocity_method)
   {
       length_ = long_term_traj.size();
       calculate_max_acc_jerk_window(long_term_traj_, sliding_window_k);
       for(int i = 0; i < 7; i++) {
           alpha_i_.push_back(1.0);
       }
-      // TODO: change
-      calculateApproximateMaxCartesianVelocity(robot_reach);
-      //calculateExactMaxCartesianVelocity(robot_reach);
+      velocity(robot_reach);
   }
   /**
    * @brief Destroy the Long Term Traj object

@@ -282,6 +282,11 @@ class SafetyShield {
   Safety_method safety_method_ = STANDARD;
 
   /**
+   * @brief which velocity method should be used
+   */
+  LongTermTraj::Velocity_method velocity_method_;
+
+  /**
    * @brief maximum cartesian velocity determined by iso
    */
   double v_iso_ = 0.25;

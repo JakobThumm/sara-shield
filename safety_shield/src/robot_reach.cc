@@ -101,16 +101,20 @@ std::vector<reach_lib::Capsule> RobotReach::reach(Motion& start_config, Motion& 
 Eigen::Matrix<double, 6, Eigen::Dynamic> RobotReach::allKinematics(Motion& motion, std::vector<Eigen::Matrix4d>& transformation_matrices_q) {
     int j = transformation_matrices_q.size() - 1;
     Eigen::VectorXd q = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(motion.getAngle().data(), motion.getAngle().size());
+    // computes next transformation_matrix and pushes it to the list
     Eigen::Matrix4d T (transformation_matrices_q.back());
     forwardKinematic(q[j], j, T);
     transformation_matrices_q.push_back(T);
     Eigen::Matrix<double, 6, Eigen::Dynamic> jacobian;
     jacobian.setZero(6, j+1);
+    // in each iteration, column-vectors of the jacobian are computed, z_k x (p_k+1 - p_k) over z_k
     for(int k = 0; k <= j; k++) {
-        // z_k x (p_k+1 - p_k) over z_k
+        // third column-vector of transformation-matrix
         Eigen::Vector3d z_k = transformation_matrices_q[k].block(0,2,3,1);
+        // fourth column-vector of transformation-matrix
         Eigen::Vector3d p_k = transformation_matrices_q[k].block(0,3,3,1);
         Eigen::Vector3d p_k_next = transformation_matrices_q[k+1].block(0,3,3,1);
+        // upper is linear velocity part, z_k is angular velocity part
         Eigen::Vector3d upper = getCrossProductAsMatrix(z_k) * (p_k_next - p_k);
         Eigen::Vector<double, 6> column;
         column << upper, z_k;
