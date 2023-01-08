@@ -102,9 +102,10 @@ SafetyShield::SafetyShield(bool activate_shield,
     j_max_ltt_ = trajectory_config["j_max_ltt"].as<std::vector<double>>();
     ltp_ = long_term_planner::LongTermPlanner(nb_joints_, sample_time, q_min_allowed_, q_max_allowed_, v_max_allowed_, a_max_ltt_, j_max_ltt_);
     v_iso_ = trajectory_config["v_iso"].as<double>();
-    // TODO: velocity_method_ error?
     safety_method_ = static_cast<Safety_method>(trajectory_config["safety_method"].as<int>());
     velocity_method_ = static_cast<LongTermTraj::Velocity_method>(trajectory_config["velocity_method"].as<int>());
+    spdlog::info("safety_method = {}", safety_method_);
+    spdlog::info("velocity_method = {}", velocity_method_);
     // Initialize the long term trajectory
     std::vector<Motion> long_term_traj;
     long_term_traj.push_back(Motion(0.0, init_qpos));

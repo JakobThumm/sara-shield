@@ -25,8 +25,8 @@ v_iso: 0.25
 # standard full stop criteria (STANDARD) == 0
 # maximum of LTT (TRIVIAL_CARTESIAN) == 1
 # maximum of STP (STP_MAXIMUM_CARTESIAN) == 2
-safety_method: 0
+safety_method: 2
 
-# EXACT == 0
-# APPROXIMATE == 1
+# APPROXIMATE == 0
+# EXACT == 1
 velocity_method: 0

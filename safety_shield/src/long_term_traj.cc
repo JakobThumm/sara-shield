@@ -146,6 +146,7 @@ Eigen::Matrix3d LongTermTraj::getCrossProductAsMatrix(Eigen::Vector3d& vec) {
 void LongTermTraj::velocity(RobotReach& robot_reach) {
         double epsilon = 1e-6;
         double ltt_maximum = 0;
+        // iterate through each motion and setup list of transformation matrices
         for (int i = 0; i < getLength(); i++) {
             Motion &motion = long_term_traj_[i];
             std::vector<Eigen::Matrix4d> transformation_matrices_q;
@@ -155,7 +156,8 @@ void LongTermTraj::velocity(RobotReach& robot_reach) {
                                                                               motion.getAngle().size());
             Eigen::VectorXd q_dot = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(motion.getVelocity().data(),
                                                                                   motion.getVelocity().size());
-            double max = 0;
+            double motion_max = 0;
+            // iterate through each link and calculate linear and angular velocity at joint with jacobian
             for (int j = 0; j < q.size(); j++) {
                 Eigen::Matrix<double, 6, Eigen::Dynamic> jacobian = robot_reach.allKinematics(motion,
                                                                                               transformation_matrices_q);
@@ -166,55 +168,58 @@ void LongTermTraj::velocity(RobotReach& robot_reach) {
                 Eigen::Vector3d omega = result.segment(3, 3);
                 if (omega.norm() < epsilon) {
                     // no angular velocity
-                    max = std::max(max, v.norm());
+                    motion_max = std::max(motion_max, v.norm());
                 } else {
+                    // with angular velocity
                     if(velocity_method_ == APPROXIMATE) {
-                        calculateExactMaxCartesianVelocity(robot_reach, v, omega, transformation_matrices_q, j);
+                        motion_max = std::max(motion_max, calculateApproximateMaxCartesianVelocity(robot_reach, v, omega, transformation_matrices_q, j));
                     } else {
                         // velocity_method_ == EXACT
-                        calculateApproximateMaxCartesianVelocity(robot_reach, v, omega, transformation_matrices_q, j);
+                        motion_max = std::max(motion_max, calculateExactMaxCartesianVelocity(robot_reach, v, omega, transformation_matrices_q, j));
                     }
 
                 }
             }
-            motion.setMaximumCartesianVelocity(max);
-            ltt_maximum = std::max(max, ltt_maximum);
+            motion.setMaximumCartesianVelocity(motion_max);
+            ltt_maximum = std::max(motion_max, ltt_maximum);
         }
+        // save maximum of whole LTT for TRIVIAL_CARTESIAN
         ltt_maximum_ = ltt_maximum;
 }
 
 double LongTermTraj::calculateApproximateMaxCartesianVelocity(RobotReach& robot_reach, Eigen::Vector3d& v, Eigen::Vector3d& omega, std::vector<Eigen::Matrix4d>& transformation_matrices_q, int joint) {
-    // with angular velocity
-    // vector of Link: r1 = p2 - p1, p2 from transformation_matrix_j+1 and p1 from transformation_matrix_j
-    double max_vel = 0;
+    // link = p2 - p1, p2 from transformation_matrix_j+1 and p1 from transformation_matrix_j
     Eigen::Vector3d p1 = transformation_matrices_q[joint].block(0,3,3,1);
     Eigen::Vector3d p2 = transformation_matrices_q[joint+1].block(0,3,3,1);
     Eigen::Vector3d link = p2 - p1;
+    // radius of capsule
     double r = robot_reach.getRobotCapsules()[joint].r_ + robot_reach.getSecureRadius();
+    // velocity of first endpoint
     double q1 = v.norm() + omega.norm() * r;
+    // velocity of second endpoint
     double q2 = (v + getCrossProductAsMatrix(omega) * link).norm() + omega.norm() * r;
+    // take maximum of both
     return std::max(q1, q2);
 }
 
 double LongTermTraj::calculateExactMaxCartesianVelocity(RobotReach& robot_reach, Eigen::Vector3d& v, Eigen::Vector3d& omega, std::vector<Eigen::Matrix4d>& transformation_matrices_q, int joint) {
-    // with angular velocity
     Eigen::Vector3d n = omega.normalized();
     double scalar_v = v.transpose() * n;
     Eigen::Vector3d p1 = transformation_matrices_q[joint].block(0,3,3,1);
     Eigen::Vector3d p2 = transformation_matrices_q[joint+1].block(0,3,3,1);
-    // Ax = b
-    // b = v - scalar_v * n
-    // A = S(w)
-    // o = -(x - p2)
+    // LSE solving to get offset o of screw axis: Ax = b, b = v - scalar_v * n, A = S(omega), o = -(x - p2)
     Eigen::Matrix3d A = getCrossProductAsMatrix(omega);
     Eigen::Vector3d b = v - scalar_v * n;
     Eigen::Vector3d x = A.partialPivLu().solve(b); //colPivHouseholderQr()
-    Eigen::Vector3d o = -(x - p2);
+    Eigen::Vector3d o = p2 - x;
+    // perpendicular distance between pi and screw axis
     Eigen::Vector3d p1_cross = getCrossProductAsMatrix(n) * (p1 - o);
     Eigen::Vector3d p2_cross = getCrossProductAsMatrix(n) * (p2 - o);
     double r = robot_reach.getRobotCapsules()[joint].r_ + robot_reach.getSecureRadius();
+    // get maximum distance + radius of capsule
     double d_perp = std::max(p1_cross.norm(), p2_cross.norm()) + r;
     double right_current = std::abs(omega.norm()) * d_perp;
+    // norm of angular and linear velocity
     return std::sqrt(scalar_v * scalar_v + right_current * right_current);
 }
 
