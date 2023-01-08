@@ -79,7 +79,8 @@ void Path::getMotionUnderVel(double v_limit, double& time, double& pos, double& 
         double epsilon = 1e-6;
         if(next_vel < v_limit + epsilon) {
             jerk = phases_[i+3];
-            // TODO: square might be NaN --> numerische Ungenauigkeit oder square should have a value
+            // TODO: square might be NaN --> passiert bei i = 0 aka es ist schon von Anfang an unter Wert?
+            // TODO: 1. Fall beim Starten/Resetten vom Shield, 2. Fall ansonsten?
             double square = std::sqrt(prev_acc*prev_acc - 2*jerk*(prev_vel - v_limit));
             double left = (-prev_acc - square) / jerk;
             double right = (-prev_acc + square) / jerk;
@@ -91,7 +92,11 @@ void Path::getMotionUnderVel(double v_limit, double& time, double& pos, double& 
                 dt = right;
             } else {
                 time = -1;
-                spdlog::error("Error in Path::getMotionUnderVel: Quadratic-Function only has negative zero-values or NaN");
+                if(std::isnan(square)) {
+                    spdlog::error("Error in Path::getMotionUnderVel: square is NaN");
+                } else {
+                    spdlog::error("Error in Path::getMotionUnderVel: Quadratic-Function only has negative zero-values");
+                }
             }
             time = phases_[i] + dt;
             pos = prev_vel*dt + prev_acc*dt*dt/2 + jerk*dt*dt*dt/6 + prev_pos;

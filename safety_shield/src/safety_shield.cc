@@ -453,19 +453,27 @@ void SafetyShield::computesPotentialTrajectory(bool v, const std::vector<double>
     double vel_time, vel_s_d, vel_ds_d, vel_dds_d;
     double ddds_d = failsafe_path_.getJerk();
     // Calculate goal
+    // if v_max is under v_iso, velocity_criteria is true and we can skip calculating getMotionUnderVel()
+    bool is_under_iso_velocity;
     if(safety_method_ == STANDARD) {
         potential_path_.getFinalMotion(final_s_d, final_ds_d, final_dds_d);
     } else if(safety_method_ == TRIVIAL_CARTESIAN) {
         // v_max is maximum of LTT and s_dot is how much path velocity needs to be scaled to be under v_iso
         double v_max = long_term_trajectory_.getMaxofMaximumCartesianVelocity();
-        vel_s_d = v_iso_ / v_max;
-        potential_path_.getMotionUnderVel(v_max, vel_time, vel_s_d, vel_ds_d, vel_dds_d, ddds_d);
+        is_under_iso_velocity = v_max <= v_iso_;
+        if(!is_under_iso_velocity) {
+            vel_s_d = v_iso_ / v_max;
+            potential_path_.getMotionUnderVel(v_max, vel_time, vel_s_d, vel_ds_d, vel_dds_d, ddds_d);
+        }
         potential_path_.getFinalMotion(final_s_d, final_ds_d, final_dds_d);
     } else if(safety_method_ == STP_MAXIMUM_CARTESIAN) {
         potential_path_.getFinalMotion(final_s_d, final_ds_d, final_dds_d);
         double v_max = long_term_trajectory_.getMaxofMaximumCartesianVelocityWithS(final_s_d);
-        vel_s_d = v_iso_ / v_max;
-        potential_path_.getMotionUnderVel(v_max, vel_time, vel_s_d, vel_ds_d, vel_dds_d, ddds_d);
+        is_under_iso_velocity = v_max <= v_iso_;
+        if(!is_under_iso_velocity) {
+            vel_s_d = v_iso_ / v_max;
+            potential_path_.getMotionUnderVel(v_max, vel_time, vel_s_d, vel_ds_d, vel_dds_d, ddds_d);
+        }
     }
     if(goal_motion == nullptr) {
         Motion temp1;
@@ -481,7 +489,12 @@ void SafetyShield::computesPotentialTrajectory(bool v, const std::vector<double>
       *under_vel_motion = long_term_trajectory_.interpolate(vel_s_d, vel_ds_d, vel_dds_d, ddds_d, v_max_allowed_, a_max_allowed_, j_max_allowed_);
     }
     goal_motion->setTime(potential_path_.getPhase(3));
-    under_vel_motion->setTime(vel_time);
+    if(!is_under_iso_velocity) {
+        under_vel_motion->setTime(vel_time);
+    } else {
+        // set to negative time so that step() knows, that velocity_criteria is already true
+        under_vel_motion->setTime(-10);
+    }
   } catch (const std::exception &exc) {
     spdlog::error("Exception in SafetyShield::computesPotentialTrajectory: {}", exc.what());
     throw exc;
@@ -613,12 +626,16 @@ Motion SafetyShield::step(double cycle_begin_time) {
               is_safe_ = verify_->verify_human_reach(robot_capsules_, human_capsules_);
 
           } else if (safety_method_ == TRIVIAL_CARTESIAN || safety_method_ == STP_MAXIMUM_CARTESIAN) {
-              // check if there is collision between now and time t
-              robot_capsules_ = robot_reach_->reach(current_motion, under_vel_motion, (under_vel_motion.getS()-current_motion.getS()), alpha_i_);
-              human_reach_->humanReachabilityAnalysis(cycle_begin_time_, under_vel_motion.getTime());
-              human_capsules_ = human_reach_->getAllCapsules();
-              bool cartesian_criteria = verify_->verify_human_reach(robot_capsules_, human_capsules_);
-
+              // check if there is collision between now and time t, during that time velocity of robot is higher than v_iso_
+              bool velocity_criteria;
+              if(under_vel_motion.getTime() < 0) {
+                   velocity_criteria = true;
+              } else {
+                  robot_capsules_ = robot_reach_->reach(current_motion, under_vel_motion, (under_vel_motion.getS()-current_motion.getS()), alpha_i_);
+                  human_reach_->humanReachabilityAnalysis(cycle_begin_time_, under_vel_motion.getTime());
+                  human_capsules_ = human_reach_->getAllCapsules();
+                  velocity_criteria = verify_->verify_human_reach(robot_capsules_, human_capsules_);
+              }
               /// alternative: für statischen menschen: velocity model auf 0 setzen bzw 2. Parameter auf 0
               // check if robot doesnt run into static human
               robot_capsules_ = robot_reach_->reach(current_motion, goal_motion, (goal_motion.getS()-current_motion.getS()), alpha_i_);
@@ -628,7 +645,7 @@ Motion SafetyShield::step(double cycle_begin_time) {
               bool static_criteria = verify_->verify_human_reach(robot_capsules_, human_capsules_);
 
               // combine both criteria
-              is_safe_ = static_criteria && cartesian_criteria;
+              is_safe_ = static_criteria && velocity_criteria;
 
           }
       }
