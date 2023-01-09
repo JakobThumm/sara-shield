@@ -80,7 +80,6 @@ void Path::getMotionUnderVel(double v_limit, double& time, double& pos, double& 
         if(next_vel < v_limit + epsilon) {
             jerk = phases_[i+3];
             // TODO: square might be NaN --> passiert bei i = 0 aka es ist schon von Anfang an unter Wert?
-            // TODO: 1. Fall beim Starten/Resetten vom Shield, 2. Fall ansonsten?
             double square = std::sqrt(prev_acc*prev_acc - 2*jerk*(prev_vel - v_limit));
             double left = (-prev_acc - square) / jerk;
             double right = (-prev_acc + square) / jerk;

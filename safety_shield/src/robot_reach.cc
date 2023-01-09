@@ -7,15 +7,15 @@ RobotReach::RobotReach(std::vector<double> transformation_matrices, int nb_joint
   nb_joints_(nb_joints),
   secure_radius_(secure_radius)
 {
-  Eigen::Matrix4d transformation_matrix;
+  Eigen::Matrix4d transformation_matrix_first;
   double cr = cos(roll); double sr = sin(roll);
   double cp = cos(pitch); double sp = sin(pitch);
   double cy = cos(yaw); double sy = sin(yaw);
-  transformation_matrix << cr*cp, cr*sp*sy-sr*cy, cr*sp*cy+sr*sy, x,
+  transformation_matrix_first << cr*cp, cr*sp*sy-sr*cy, cr*sp*cy+sr*sy, x,
             sr*cp, sr*sp*sy+cr*cy, sr*sp*cy-cr*sy, y,
             -sp, cp*sy, cp*cy, z,
             0, 0, 0, 1;
-  transformation_matrices_.push_back(transformation_matrix);
+  transformation_matrices_.push_back(transformation_matrix_first);
   for (int joint = 0; joint < nb_joints; joint++) {
     // Fill transformation matrix
     Eigen::Matrix4d transformation_matrix;
@@ -25,8 +25,8 @@ RobotReach::RobotReach(std::vector<double> transformation_matrices, int nb_joint
       }
     }
     transformation_matrices_.push_back(transformation_matrix);
+
     // Fill capsules
-    
     Eigen::Vector4d p1;
     Eigen::Vector4d p2;
     for (int i = 0; i < 3; i++) {
@@ -99,8 +99,9 @@ std::vector<reach_lib::Capsule> RobotReach::reach(Motion& start_config, Motion& 
 }
 
 Eigen::Matrix<double, 6, Eigen::Dynamic> RobotReach::allKinematics(Motion& motion, std::vector<Eigen::Matrix4d>& transformation_matrices_q) {
+    // which joint to compute it for
     int j = transformation_matrices_q.size() - 1;
-    Eigen::VectorXd q = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(motion.getAngle().data(), motion.getAngle().size());
+    auto q = motion.getAngle(); //Eigen::VectorXd q = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(motion.getAngle().data(), motion.getAngle().size());
     // computes next transformation_matrix and pushes it to the list
     Eigen::Matrix4d T (transformation_matrices_q.back());
     forwardKinematic(q[j], j, T);
