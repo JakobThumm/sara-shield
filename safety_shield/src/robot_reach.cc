@@ -120,6 +120,17 @@ Eigen::Matrix<double, 6, Eigen::Dynamic> RobotReach::allKinematics(Motion& motio
         Eigen::Vector<double, 6> column;
         column << upper, z_k;
         jacobian.col(k) = column;
+        // TODO: remove debug
+        /*
+        if(j == 5) {
+            std::cout << "transformation_matrix_" << k+1 << std::endl;
+            std::cout << transformation_matrices_q[k+1] << std::endl;
+            std::cout << "z_" << k << " is " << std::endl;
+            std::cout << z_k << std::endl;
+            std::cout << "p_" << k+1 << " is " << std::endl;
+            std::cout << p_k_next << std::endl;
+        }
+         */
     }
     return jacobian;
 }

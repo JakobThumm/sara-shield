@@ -126,7 +126,7 @@ double LongTermTraj::getMaxofMaximumCartesianVelocity() const {
 double LongTermTraj::getMaxofMaximumCartesianVelocityWithS(double s) {
     unsigned long i = getCurrentPos();
     double max = getMotion(i).getMaximumCartesianVelocity();
-    while(true) {
+    while(i < length_) {
         max = std::max(max, getMotion(i).getMaximumCartesianVelocity());
         if(getMotion(i).getTime() > s) {
             return max;

@@ -79,7 +79,6 @@ void Path::getMotionUnderVel(double v_limit, double& time, double& pos, double& 
         double epsilon = 1e-6;
         if(next_vel < v_limit + epsilon) {
             jerk = phases_[i+3];
-            // TODO: square might be NaN --> passiert bei i = 0 aka es ist schon von Anfang an unter Wert?
             double square = std::sqrt(prev_acc*prev_acc - 2*jerk*(prev_vel - v_limit));
             double left = (-prev_acc - square) / jerk;
             double right = (-prev_acc + square) / jerk;
