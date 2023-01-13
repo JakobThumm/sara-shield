@@ -229,6 +229,14 @@ TEST_F(LongTermTrajTest, InterpolateTest) {
     EXPECT_NEAR(motion_int3.getJerk()[0], 1.561990000000000, 1e-5);
 }
 
+TEST_F(LongTermTrajTestVelocity, overapproximation) {
+    for(int i = 0; i < long_term_trajectory_approximate.getLength(); i++) {
+        double approximate = long_term_trajectory_approximate.getMotion(i).getMaximumCartesianVelocity();
+        double exact = long_term_trajectory_exact.getMotion(i).getMaximumCartesianVelocity();
+        EXPECT_TRUE(approximate >= exact);
+    }
+}
+
 } // namespace safety_shield
 
 int main(int argc, char **argv){
