@@ -140,7 +140,7 @@ protected:
 
         for(int i = 0; i < 100; ++i) {
             double dub = i;
-            std::vector<double> q = {dub, dub, dub, dub, dub, dub};
+            std::vector<double> q = {dub, dub+1, dub+2, dub+3, dub+4, dub+5};
             mo_vec.push_back(Motion(0, q, q));
         }
 

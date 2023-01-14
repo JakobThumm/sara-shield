@@ -47,7 +47,7 @@ int main () {
     spdlog::info("Debug started.");
     double t = 0.0;
     for (int ep=0; ep<1; ep++) {
-      for (int i=0; i<100; i++) { //i<10000
+      for (int i=0; i<10; i++) { //i < 100; i<10000
         t += 0.001;
         shield.humanMeasurement(dummy_human_meas, t);
         t += 0.003;
@@ -55,8 +55,10 @@ int main () {
             std::vector<double> qpos{0.2*t, 0.0, 0.0, 0.0, 0.0, std::min(t, 3.1)};
             std::vector<double> qvel{1.0, 1.0, 1.0, 1.0, 1.0, 1.0}; //qvel{0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
             shield.newLongTermTrajectory(qpos, qvel);
+            spdlog::info("new LTT");
         }
         safety_shield::Motion next_motion = shield.step(t);
+        spdlog::info("finished step");
       }
       shield.reset(true, init_x, init_y, init_z, init_roll, init_pitch, init_yaw, init_qpos, t);
     }

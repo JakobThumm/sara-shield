@@ -101,7 +101,7 @@ std::vector<reach_lib::Capsule> RobotReach::reach(Motion& start_config, Motion& 
 Eigen::Matrix<double, 6, Eigen::Dynamic> RobotReach::allKinematics(Motion& motion, std::vector<Eigen::Matrix4d>& transformation_matrices_q) {
     // which joint to compute it for
     int j = transformation_matrices_q.size() - 1;
-    auto q = motion.getAngle(); //Eigen::VectorXd q = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(motion.getAngle().data(), motion.getAngle().size());
+    auto q = motion.getAngle();
     // computes next transformation_matrix and pushes it to the list
     Eigen::Matrix4d T (transformation_matrices_q.back());
     forwardKinematic(q[j], j, T);
