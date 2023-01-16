@@ -67,9 +67,57 @@ TEST_F(RobotReachTestVelocity, JacobianTest2) {
                 0.0, -0.84,
                 0.0, 0.54,
                 1.0, 0.0;
-    //std::cout << "jacobian is" << std::endl;
-    //std::cout << jacobian << std::endl;
+    std::cout << "jacobian is" << std::endl;
+    std::cout << jacobian << std::endl;
     EXPECT_TRUE(jacobian.isApprox(expect));
+}
+
+TEST_F(RobotReachTestVelocity, JacobianTest3) {
+    std::vector<Eigen::Matrix4d> transformation_matrices_q;
+    Eigen::Matrix4d T = robot_reach_->getTransformationMatrices()[0];
+    transformation_matrices_q.push_back(T);
+    std::vector<double> q = {1.0, 1.0, 1.0, 1.0, 1.0, 1.0};
+    Motion motion(0.0, q);
+    Eigen::Matrix<double, 6, Eigen::Dynamic> jacobian;
+    for (int j = 0; j < 3; j++) {
+        jacobian = robot_reach_->allKinematics(motion, transformation_matrices_q);
+    }
+    std::cout << "jacobian is" << std::endl;
+    std::cout << jacobian << std::endl;
+    EXPECT_TRUE(false);
+    //EXPECT_TRUE(jacobian.isApprox(expect));
+}
+
+TEST_F(RobotReachTestVelocity, JacobianTest4) {
+    std::vector<Eigen::Matrix4d> transformation_matrices_q;
+    Eigen::Matrix4d T = robot_reach_->getTransformationMatrices()[0];
+    transformation_matrices_q.push_back(T);
+    std::vector<double> q = {1.0, 1.0, 1.0, 1.0, 1.0, 1.0};
+    Motion motion(0.0, q);
+    Eigen::Matrix<double, 6, Eigen::Dynamic> jacobian;
+    for (int j = 0; j < 4; j++) {
+        jacobian = robot_reach_->allKinematics(motion, transformation_matrices_q);
+    }
+    std::cout << "jacobian is" << std::endl;
+    std::cout << jacobian << std::endl;
+    EXPECT_TRUE(false);
+    //EXPECT_TRUE(jacobian.isApprox(expect));
+}
+
+TEST_F(RobotReachTestVelocity, JacobianTest5) {
+    std::vector<Eigen::Matrix4d> transformation_matrices_q;
+    Eigen::Matrix4d T = robot_reach_->getTransformationMatrices()[0];
+    transformation_matrices_q.push_back(T);
+    std::vector<double> q = {1.0, 1.0, 1.0, 1.0, 1.0, 1.0};
+    Motion motion(0.0, q);
+    Eigen::Matrix<double, 6, Eigen::Dynamic> jacobian;
+    for (int j = 0; j < 5; j++) {
+        jacobian = robot_reach_->allKinematics(motion, transformation_matrices_q);
+    }
+    std::cout << "jacobian is" << std::endl;
+    std::cout << jacobian << std::endl;
+    EXPECT_TRUE(false);
+    //EXPECT_TRUE(jacobian.isApprox(expect));
 }
 
 TEST_F(RobotReachTestVelocity, JacobianTest6) {

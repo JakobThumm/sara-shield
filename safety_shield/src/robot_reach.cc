@@ -98,6 +98,7 @@ std::vector<reach_lib::Capsule> RobotReach::reach(Motion& start_config, Motion& 
   }
 }
 
+// TODO: mach ich p_e richtig?
 Eigen::Matrix<double, 6, Eigen::Dynamic> RobotReach::allKinematics(Motion& motion, std::vector<Eigen::Matrix4d>& transformation_matrices_q) {
     // which joint to compute it for
     int j = transformation_matrices_q.size() - 1;
@@ -108,29 +109,29 @@ Eigen::Matrix<double, 6, Eigen::Dynamic> RobotReach::allKinematics(Motion& motio
     transformation_matrices_q.push_back(T);
     Eigen::Matrix<double, 6, Eigen::Dynamic> jacobian;
     jacobian.setZero(6, j+1);
+    Eigen::Vector3d p_e = transformation_matrices_q[j+1].block(0,3,3,1);
     // in each iteration, column-vectors of the jacobian are computed, z_k x (p_k+1 - p_k) over z_k
     for(int k = 0; k <= j; k++) {
         // third column-vector of transformation-matrix
         Eigen::Vector3d z_k = transformation_matrices_q[k].block(0,2,3,1);
         // fourth column-vector of transformation-matrix
         Eigen::Vector3d p_k = transformation_matrices_q[k].block(0,3,3,1);
-        Eigen::Vector3d p_k_next = transformation_matrices_q[k+1].block(0,3,3,1);
+        // TODO: hier ist Fehler
+        //Eigen::Vector3d p_k_next = transformation_matrices_q[k+1].block(0,3,3,1);
         // upper is linear velocity part, z_k is angular velocity part
-        Eigen::Vector3d upper = getCrossProductAsMatrix(z_k) * (p_k_next - p_k);
+        Eigen::Vector3d upper = getCrossProductAsMatrix(z_k) * (p_e - p_k);
         Eigen::Vector<double, 6> column;
         column << upper, z_k;
         jacobian.col(k) = column;
         // TODO: remove debug
-        /*
         if(j == 5) {
             std::cout << "transformation_matrix_" << k+1 << std::endl;
             std::cout << transformation_matrices_q[k+1] << std::endl;
             std::cout << "z_" << k << " is " << std::endl;
             std::cout << z_k << std::endl;
-            std::cout << "p_" << k+1 << " is " << std::endl;
-            std::cout << p_k_next << std::endl;
+            //std::cout << "p_" << k+1 << " is " << std::endl;
+            //std::cout << p_k_next << std::endl;
         }
-         */
     }
     return jacobian;
 }
