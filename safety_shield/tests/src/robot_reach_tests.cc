@@ -47,7 +47,10 @@ TEST_F(RobotReachTestVelocity, JacobianTest1) {
     }
     Eigen::Matrix<double, 6, 1> expect;
     expect << 0.0, 0.0, 0.0, 0.0, 0.0, 1.0;
-    EXPECT_TRUE(jacobian.isApprox(expect));
+    std::cout << "jacobian_1 is" << std::endl;
+    std::cout << jacobian << std::endl;
+    EXPECT_TRUE(false);
+    //EXPECT_TRUE(jacobian.isApprox(expect));
 }
 
 TEST_F(RobotReachTestVelocity, JacobianTest2) {
@@ -67,7 +70,7 @@ TEST_F(RobotReachTestVelocity, JacobianTest2) {
                 0.0, -0.84,
                 0.0, 0.54,
                 1.0, 0.0;
-    std::cout << "jacobian is" << std::endl;
+    std::cout << "jacobian_2 is" << std::endl;
     std::cout << jacobian << std::endl;
     EXPECT_TRUE(jacobian.isApprox(expect));
 }
@@ -82,7 +85,7 @@ TEST_F(RobotReachTestVelocity, JacobianTest3) {
     for (int j = 0; j < 3; j++) {
         jacobian = robot_reach_->allKinematics(motion, transformation_matrices_q);
     }
-    std::cout << "jacobian is" << std::endl;
+    std::cout << "jacobian_3 is" << std::endl;
     std::cout << jacobian << std::endl;
     EXPECT_TRUE(false);
     //EXPECT_TRUE(jacobian.isApprox(expect));
@@ -98,7 +101,7 @@ TEST_F(RobotReachTestVelocity, JacobianTest4) {
     for (int j = 0; j < 4; j++) {
         jacobian = robot_reach_->allKinematics(motion, transformation_matrices_q);
     }
-    std::cout << "jacobian is" << std::endl;
+    std::cout << "jacobian_4 is" << std::endl;
     std::cout << jacobian << std::endl;
     EXPECT_TRUE(false);
     //EXPECT_TRUE(jacobian.isApprox(expect));
@@ -114,7 +117,7 @@ TEST_F(RobotReachTestVelocity, JacobianTest5) {
     for (int j = 0; j < 5; j++) {
         jacobian = robot_reach_->allKinematics(motion, transformation_matrices_q);
     }
-    std::cout << "jacobian is" << std::endl;
+    std::cout << "jacobian_5 is" << std::endl;
     std::cout << jacobian << std::endl;
     EXPECT_TRUE(false);
     //EXPECT_TRUE(jacobian.isApprox(expect));
@@ -137,7 +140,7 @@ TEST_F(RobotReachTestVelocity, JacobianTest6) {
         0.00,  -0.84, 0.84,  -0.00, 0.91,  0.35,
         0.00,  0.54,  -0.54, 0.00,  0.42,  -0.77,
         1.00,  -0.00, 0.00,  1.00,  -0.00, 0.54;
-    std::cout << "jacobian is" << std::endl;
+    std::cout << "jacobian_6 is" << std::endl;
     std::cout << jacobian << std::endl;
     EXPECT_TRUE(jacobian.isApprox(expect));
     }

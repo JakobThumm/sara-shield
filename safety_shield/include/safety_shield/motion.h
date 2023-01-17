@@ -318,6 +318,16 @@ class Motion {
      */
   inline double const getMaximumCartesianVelocity() { return maximumCartesianVelocity_; }
 
+  /**
+   * @brief returns angle as reference
+   */
+  inline const std::vector<double>& getAngleRef() const {return q_;}
+
+  /**
+   * @brief returns velocity as reference
+   */
+  inline const std::vector<double>& getVelocityRef() const {return dq_;}
+
 };
 } // namespace safety_shield
 

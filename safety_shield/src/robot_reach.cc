@@ -78,9 +78,9 @@ std::vector<reach_lib::Capsule> RobotReach::reach(Motion& start_config, Motion& 
         forwardKinematic(q2[i], i, T_after);
         reach_lib::Capsule after = transformCapsule(i, T_after);
 
-        // Caculate center of ball enclosing point p1 before and after
+        // Calculate center of ball enclosing point p1 before and after
         reach_lib::Point p_1_k = (before.p1_ + after.p1_) * 0.5;
-        // Caculate center of ball enclosing point p2 before and after
+        // Calculate center of ball enclosing point p2 before and after
         reach_lib::Point p_2_k = (before.p2_ + after.p2_) * 0.5;
         // Calculate radius of ball enclosing point p1 before and after
         double r_1 = reach_lib::Point::norm(before.p1_-after.p1_) / 2 + alpha_i[i] * s_diff*s_diff/8 + robot_capsules_[i].r_;
@@ -98,42 +98,108 @@ std::vector<reach_lib::Capsule> RobotReach::reach(Motion& start_config, Motion& 
   }
 }
 
-// TODO: mach ich p_e richtig?
-Eigen::Matrix<double, 6, Eigen::Dynamic> RobotReach::allKinematics(Motion& motion, std::vector<Eigen::Matrix4d>& transformation_matrices_q) {
-    // which joint to compute it for
-    int j = transformation_matrices_q.size() - 1;
-    auto q = motion.getAngle();
-    // computes next transformation_matrix and pushes it to the list
-    Eigen::Matrix4d T (transformation_matrices_q.back());
-    forwardKinematic(q[j], j, T);
-    transformation_matrices_q.push_back(T);
-    Eigen::Matrix<double, 6, Eigen::Dynamic> jacobian;
-    jacobian.setZero(6, j+1);
-    Eigen::Vector3d p_e = transformation_matrices_q[j+1].block(0,3,3,1);
-    // in each iteration, column-vectors of the jacobian are computed, z_k x (p_k+1 - p_k) over z_k
-    for(int k = 0; k <= j; k++) {
-        // third column-vector of transformation-matrix
-        Eigen::Vector3d z_k = transformation_matrices_q[k].block(0,2,3,1);
-        // fourth column-vector of transformation-matrix
-        Eigen::Vector3d p_k = transformation_matrices_q[k].block(0,3,3,1);
-        // TODO: hier ist Fehler
-        //Eigen::Vector3d p_k_next = transformation_matrices_q[k+1].block(0,3,3,1);
-        // upper is linear velocity part, z_k is angular velocity part
-        Eigen::Vector3d upper = getCrossProductAsMatrix(z_k) * (p_e - p_k);
-        Eigen::Vector<double, 6> column;
-        column << upper, z_k;
-        jacobian.col(k) = column;
-        // TODO: remove debug
-        if(j == 5) {
-            std::cout << "transformation_matrix_" << k+1 << std::endl;
-            std::cout << transformation_matrices_q[k+1] << std::endl;
-            std::cout << "z_" << k << " is " << std::endl;
-            std::cout << z_k << std::endl;
-            //std::cout << "p_" << k+1 << " is " << std::endl;
-            //std::cout << p_k_next << std::endl;
+double RobotReach::velocityOfMotion(const Motion& motion) {
+    calculateAllTransformationMatricesAndCapsules(motion.getAngleRef());
+    double capsule_vel = 0;
+    for(int i = 0; i < nb_joints_; ++i) {
+        std::max(capsule_vel, velocityOfCapsule(i, motion.getVelocityRef()));
+    }
+    return capsule_vel;
+}
+
+void RobotReach::calculateAllTransformationMatricesAndCapsules(const std::vector<double>& q) {
+    robot_capsules_for_velocity_.clear();
+    z_vectors_.clear();
+    Eigen::Matrix4d T = transformation_matrices_[0];
+    // push z-vector of transformation matrix
+    z_vectors_.emplace_back(T.block(0,2,3,1));
+    for(int i = 0; i < nb_joints_; ++i) {
+        forwardKinematic(q[i], i, T);
+        reach_lib::Capsule capsule = transformCapsule(i, T);
+        // push robot capsule and z-vector
+        robot_capsules_for_velocity_.push_back(capsule);
+        z_vectors_.emplace_back(T.block(0,2,3,1));
+    }
+}
+
+double RobotReach::velocityOfCapsule(const int capsule, std::vector<double> q_dot) {
+    double epsilon = 1e-6;
+    Eigen::Matrix<double, 6, Eigen::Dynamic> jacobian = getJacobian(capsule);
+    Eigen::VectorXd velocity = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(q_dot.data(), q_dot.size());
+    Eigen::Vector<double, 6> result = jacobian * velocity.segment(0, capsule + 1);
+    Eigen::Vector3d v = result.segment(0, 3);
+    Eigen::Vector3d omega = result.segment(3, 3);
+    // TODO: remove debug
+    std::cout << "q_dot" << std::endl;
+    std::cout << velocity << std::endl;
+    std::cout << "result" << std::endl;
+    std::cout << result << std::endl;
+    std::cout << "jacobian" << std::endl;
+    std::cout << jacobian << std::endl;
+    if (omega.norm() < epsilon) {
+        // no angular velocity
+        return v.norm();
+    } else {
+        // with angular velocity
+        if(velocity_method_ == APPROXIMATE) {
+            return approximateVelOfCapsule(capsule, v, omega);
+        } else {
+            // velocity_method_ == EXACT
+            return exactVelOfCapsule(capsule, v, omega);
         }
+
+    }
+}
+
+Eigen::Matrix<double, 6, Eigen::Dynamic> RobotReach::getJacobian(const int joint) {
+    Eigen::Matrix<double, 6, Eigen::Dynamic> jacobian;
+    jacobian.setZero(6, joint+1);
+    Eigen::Vector3d p_e = pointTo3dVector(robot_capsules_[joint].p2_);
+    for(int i = 0; i < joint+1; ++i) {
+        Eigen::Vector3d z_i = z_vectors_[i];
+        Eigen::Vector3d p_i(robot_capsules_[i].p1_.x, robot_capsules_[i].p1_.y, robot_capsules_[i].p1_.z);
+        Eigen::Vector3d upper = z_i.cross(p_e - p_i);
+        Eigen::Vector<double, 6> column;
+        column << upper, z_i;
+        jacobian.col(i) = column;
     }
     return jacobian;
+}
+
+double RobotReach::approximateVelOfCapsule(const int capsule, const Eigen::Vector3d& v, const Eigen::Vector3d& omega) {
+    Eigen::Vector3d p1 = pointTo3dVector(robot_capsules_[capsule].p1_);
+    Eigen::Vector3d p2 = pointTo3dVector(robot_capsules_[capsule].p2_);
+    Eigen::Vector3d link = p1 - p2;
+    // radius of capsule
+    double r = robot_capsules_for_velocity_[capsule].r_;
+    // maximum velocity of capsule surface at second endpoint
+    double q2 = v.norm() + omega.norm() * r;
+    // maximum velocity of capsule surface at first endpoint
+    double q1 = (v + omega.cross(link)).norm() + omega.norm() * r;
+    // take maximum of both
+    return std::max(q1, q2);
+}
+
+double RobotReach::exactVelOfCapsule(const int capsule, const Eigen::Vector3d& v, const Eigen::Vector3d& omega) {
+    Eigen::Vector3d n = omega.normalized();
+    double scalar_v = v.transpose() * n;
+    Eigen::Vector3d p1 = pointTo3dVector(robot_capsules_[capsule].p1_);
+    Eigen::Vector3d p2 = pointTo3dVector(robot_capsules_[capsule].p2_);
+    // LSE solving to get offset o of screw axis: Ax = b, b = v - scalar_v * n, A = S(omega), o = -(x - p2)
+    Eigen::Matrix3d A = getCrossProductAsMatrix(omega);
+    Eigen::Vector3d b = v - scalar_v * n;
+    Eigen::Vector3d x = A.partialPivLu().solve(b); //colPivHouseholderQr()
+    Eigen::Vector3d o = p2 - x;
+    // perpendicular distance between pi and screw axis
+    Eigen::Vector3d p1_cross = n.cross(p1 - o);
+    Eigen::Vector3d p2_cross = n.cross(p2 - o);
+    // radius of capsule
+    double r = robot_capsules_for_velocity_[capsule].r_;
+    // get maximum distance + radius of capsule
+    double d_perp = std::max(p1_cross.norm(), p2_cross.norm()) + r;
+    double right_current = std::abs(omega.norm()) * d_perp;
+    // norm of angular and linear velocity
+    return std::sqrt(scalar_v * scalar_v + right_current * right_current);
 }
 
 } // namespace safety_shield

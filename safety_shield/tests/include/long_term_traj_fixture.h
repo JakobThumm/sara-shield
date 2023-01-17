@@ -111,8 +111,6 @@ protected:
      * @brief Create the LTT object
      */
     void SetUp() override {
-
-
         // setup for tests with jacobian matrix, testing with schunk robot
         std::filesystem::path config_file = std::filesystem::current_path().parent_path() / "config/robot_parameters_schunk.yaml";
         YAML::Node robot_config = YAML::LoadFile(config_file.string());
@@ -120,32 +118,29 @@ protected:
         std::vector<double> transformation_matrices = robot_config["transformation_matrices"].as<std::vector<double>>();
         std::vector<double>  enclosures = robot_config["enclosures"].as<std::vector<double>>();
         double secure_radius = robot_config["secure_radius"].as<double>();
-        RobotReach robot_reach(transformation_matrices,
+        RobotReach robot_reach_approximate(transformation_matrices,
                                nb_joints,
                                enclosures,
                                0.0, 0.0, 0.0,
                                0.0, 0.0, 0.0,
                                secure_radius);
-
-        std::vector<double> q1 = {1.0, 1.0, 1.0, 1.0, 1.0, 1.0};
-        std::vector<double> q1_dot = {1.0, 1.0, 1.0, 1.0, 1.0, 1.0};
-        Motion m1(0, q1, q1_dot);
-        std::vector<double> q2 = {2.0, 2.0, 2.0, 2.0, 2.0, 2.0};
-        std::vector<double> q2_dot = {2.0, 2.0, 2.0, 2.0, 2.0, 2.0};
-        Motion m2(0, q2, q2_dot);
-        std::vector<double> q3 = {3.0, 3.0, 3.0, 3.0, 3.0, 3.0};
-        std::vector<double> q3_dot = {3.0, 3.0, 3.0, 3.0, 3.0, 3.0};
-        Motion m3(0, q3, q3_dot);
-        std::vector<Motion> mo_vec = {m1, m2, m3};
-
-        for(int i = 0; i < 100; ++i) {
+        RobotReach robot_reach_exact(transformation_matrices,
+                                           nb_joints,
+                                           enclosures,
+                                           0.0, 0.0, 0.0,
+                                           0.0, 0.0, 0.0,
+                                           secure_radius);
+        robot_reach_approximate.setVelocityMethod(RobotReach::Velocity_method::APPROXIMATE);
+        robot_reach_approximate.setVelocityMethod(RobotReach::Velocity_method::EXACT);
+        std::vector<Motion> mo_vec;
+        for(int i = 1; i < 100; ++i) {
             double dub = i;
             std::vector<double> q = {dub, dub+1, dub+2, dub+3, dub+4, dub+5};
             mo_vec.push_back(Motion(0, q, q));
         }
 
-        long_term_trajectory_approximate = LongTermTraj(mo_vec, 0.001, robot_reach, LongTermTraj::APPROXIMATE);
-        long_term_trajectory_exact = LongTermTraj(mo_vec, 0.001, robot_reach, LongTermTraj::EXACT);
+        long_term_trajectory_approximate = LongTermTraj(mo_vec, 0.001, robot_reach_approximate);
+        long_term_trajectory_exact = LongTermTraj(mo_vec, 0.001, robot_reach_exact);
     }
 };
 

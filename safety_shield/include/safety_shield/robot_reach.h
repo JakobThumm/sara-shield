@@ -34,6 +34,13 @@ namespace safety_shield {
  * @brief Class that calculates the robot reachable sets.
  */
 class RobotReach {
+
+ public:
+    enum Velocity_method {
+        APPROXIMATE,
+        EXACT,
+    };
+
  private:
   /**
    * @brief the number of joints of the robot
@@ -55,6 +62,21 @@ class RobotReach {
    *  account for measurement and modelling errors.
    */
   double secure_radius_;
+
+  /**
+   * @brief if maximum cartesian velocities should be approximative or exact
+   */
+  Velocity_method velocity_method_;
+
+  /**
+   * @brief enclosing capsules for velocity calculation
+   */
+  std::vector<reach_lib::Capsule> robot_capsules_for_velocity_;
+
+  /**
+   * @brief list of z-vectors (third column of transformation matrix) for velocity calculation
+   */
+  std::vector<Eigen::Vector3d> z_vectors_;
 
 public:
 
@@ -127,6 +149,12 @@ public:
       return vec;
   }
 
+  Eigen::Vector3d pointTo3dVector(const reach_lib::Point& p) {
+      Eigen::Vector3d vec;
+      vec << p.x, p.y, p.z;
+      return vec;
+}
+
   reach_lib::Point vectorToPoint(const Eigen::Vector4d& vec) {
       return reach_lib::Point(vec(0), vec(1), vec(2));
   }
@@ -153,43 +181,73 @@ public:
   std::vector<reach_lib::Capsule> reach(Motion& start_config, Motion& goal_config,
     double s_diff, std::vector<double> alpha_i);
 
+
   /**
-   * @return secure_radius_
+   * @brief sets velocity_method
    */
-  inline double getSecureRadius() {
-      return secure_radius_;
+  inline void setVelocityMethod(Velocity_method velocity_method) {
+      velocity_method_ = velocity_method;
   }
 
   /**
-   * @return transformation_matrices_
+   * @brief calculates maximum cartesian velocity for a specific robot configuration
+   * @param motion configuration of robot
+   * @return maximum cartesian velocity of motion
    */
-  inline std::vector<Eigen::Matrix4d> getTransformationMatrices() {
-      return transformation_matrices_;
-  }
+  double velocityOfMotion(const Motion& motion);
 
   /**
-   * @return robot_capsules_
+   * @brief calculates maximum cartesian velocity for a specific capsule
+   * @param capsule which capsule
+   * @param q_dot velocity configuration of robot
+   * @return maximum cartesian velocity of capsule
    */
-  inline std::vector<reach_lib::Capsule> getRobotCapsules() {
-      return robot_capsules_;
-  }
+  double velocityOfCapsule(const int capsule, std::vector<double> q_dot);
 
   /**
-   * @brief computes jacobian and transformation_matrices for next joint for a specific motion
-   * @param[in] robotReach
-   * @param[in] motion
-   * @param[in&out] transformation_matrices_q
-   * @return jacobian for next joint
+   * @brief calculates all transformation matrices and capsules for a specific robot configuration and sets them
+   * @assumption velocityOfMotion was called before
+   * @param q vector of robot angles
    */
-  Eigen::Matrix<double, 6, Eigen::Dynamic> allKinematics(Motion& motion, std::vector<Eigen::Matrix4d>& transformation_matrices_q);
+  void calculateAllTransformationMatricesAndCapsules(const std::vector<double>& q);
 
   /**
-   * @brief computes matrix version of cross product
+   * @brief returns joint jacobian
+   * @assumption calculateAlltransformationMatricesAndCapsules() was called before
+   * @param joint jacobian for which joint
+   * @return jacobian
    */
-  inline Eigen::Matrix3d getCrossProductAsMatrix(Eigen::Vector3d& vec) {
+  Eigen::Matrix<double, 6, Eigen::Dynamic> getJacobian(const int joint);
+
+  /**
+   * @brief computes approximate maximum cartesian velocity of a specific capsule
+   * @assumption calculateAlltransformationMatricesAndCapsules() was called before
+   * @param capsule
+   * @param v linear velocity at joint
+   * @param omega angular velocity at joint
+   * @return approximate maximum cartesian velocity of capsule
+   */
+  double approximateVelOfCapsule(const int capsule, const Eigen::Vector3d& v, const Eigen::Vector3d& omega);
+
+  /**
+   * @brief computes approximate maximum cartesian velocity of a specific capsule
+   * @assumption calculateAlltransformationMatricesAndCapsules() was called before
+   * @param capsule
+   * @param v linear velocity at joint
+   * @param omega angular velocity at joint
+   * @return approximate maximum cartesian velocity of capsule
+   */
+  double exactVelOfCapsule(const int capsule, const Eigen::Vector3d& v, const Eigen::Vector3d& omega);
+
+  /**
+   * @brief computes cross product as skew-symmetric matrix
+   * @param vec
+   * @return matrix
+   */
+  inline Eigen::Matrix3d getCrossProductAsMatrix(const Eigen::Vector3d& vec) {
       Eigen::Matrix3d cross;
       cross <<    0, -vec(2), vec(1),
-                vec(2), 0, -vec(0),
+                  vec(2), 0, -vec(0),
                 -vec(1), vec(0), 0;
       return cross;
   }

@@ -103,16 +103,17 @@ SafetyShield::SafetyShield(bool activate_shield,
     ltp_ = long_term_planner::LongTermPlanner(nb_joints_, sample_time, q_min_allowed_, q_max_allowed_, v_max_allowed_, a_max_ltt_, j_max_ltt_);
     v_iso_ = trajectory_config["v_iso"].as<double>();
     safety_method_ = static_cast<Safety_method>(trajectory_config["safety_method"].as<int>());
-    velocity_method_ = static_cast<LongTermTraj::Velocity_method>(trajectory_config["velocity_method"].as<int>());
+    RobotReach::Velocity_method velocity_method = static_cast<RobotReach::Velocity_method>(trajectory_config["velocity_method"].as<int>());
+    robot_reach_->setVelocityMethod(velocity_method);
     spdlog::info("safety_method = {}", safety_method_);
-    spdlog::info("velocity_method = {}", velocity_method_);
+    spdlog::info("velocity_method = {}", velocity_method);
     // Initialize the long term trajectory
     std::vector<Motion> long_term_traj;
     long_term_traj.push_back(Motion(0.0, init_qpos));
     if(safety_method_ == STANDARD) {
         long_term_trajectory_ = LongTermTraj(long_term_traj, sample_time_);
     } else {
-        long_term_trajectory_ = LongTermTraj(long_term_traj, sample_time_, *robot_reach_, velocity_method_);
+        long_term_trajectory_ = LongTermTraj(long_term_traj, sample_time_, *robot_reach_);
     }
     //////////// Build human reach
     YAML::Node human_config = YAML::LoadFile(mocap_config_file);
@@ -211,7 +212,7 @@ void SafetyShield::reset(bool activate_shield,
   if(safety_method_ == STANDARD) {
       long_term_trajectory_ = LongTermTraj(long_term_traj, sample_time_);
   } else {
-      long_term_trajectory_ = LongTermTraj(long_term_traj, sample_time_, *robot_reach_, velocity_method_);
+      long_term_trajectory_ = LongTermTraj(long_term_traj, sample_time_, *robot_reach_);
   }
   computesPotentialTrajectory(is_safe_, prev_dq, nullptr, nullptr);
   next_motion_ = determineNextMotion(is_safe_);
@@ -787,7 +788,7 @@ bool SafetyShield::calculateLongTermTrajectory(const std::vector<double>& start_
   if(safety_method_ == STANDARD) {
       ltt = LongTermTraj(new_traj, sample_time_, path_s_discrete_, sliding_window_k_);
   } else {
-      ltt = LongTermTraj(new_traj, sample_time_, *robot_reach_, velocity_method_, path_s_discrete_, sliding_window_k_);
+      ltt = LongTermTraj(new_traj, sample_time_, *robot_reach_, path_s_discrete_, sliding_window_k_);
   }
   return true;
 }
