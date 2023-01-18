@@ -137,15 +137,15 @@ double LongTermTraj::getMaxofMaximumCartesianVelocityWithS(double s) {
 
 
 void LongTermTraj::velocitiesOfAllMotions(RobotReach& robot_reach) {
-        ltt_maximum_ = 0;
-        // iterate through each motion
-        for (int i = 0; i < getLength(); i++) {
-            Motion& motion = long_term_traj_[i];
-            double motion_vel = robot_reach.velocityOfMotion(motion);
-            motion.setMaximumCartesianVelocity(motion_vel);
-            // save maximum of whole LTT for TRIVIAL_CARTESIAN
-            ltt_maximum_ = std::max(motion_vel, ltt_maximum_);
-        }
+    ltt_maximum_ = 0;
+    // iterate through each motion
+    for (int i = 0; i < getLength(); i++) {
+        Motion& motion = long_term_traj_[i];
+        double motion_vel = robot_reach.velocityOfMotion(motion);
+        motion.setMaximumCartesianVelocity(motion_vel);
+        // save maximum of whole LTT for TRIVIAL_CARTESIAN
+        ltt_maximum_ = std::max(motion_vel, ltt_maximum_);
+    }
 }
 
 } // namespace safety_shield

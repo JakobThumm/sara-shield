@@ -131,7 +131,7 @@ protected:
                                            0.0, 0.0, 0.0,
                                            secure_radius);
         robot_reach_approximate.setVelocityMethod(RobotReach::Velocity_method::APPROXIMATE);
-        robot_reach_approximate.setVelocityMethod(RobotReach::Velocity_method::EXACT);
+        robot_reach_exact.setVelocityMethod(RobotReach::Velocity_method::EXACT);
         std::vector<Motion> mo_vec;
         for(int i = 1; i < 100; ++i) {
             double dub = i;

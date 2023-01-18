@@ -460,7 +460,7 @@ void SafetyShield::computesPotentialTrajectory(bool v, const std::vector<double>
     if(safety_method_ == STANDARD) {
         potential_path_.getFinalMotion(final_s_d, final_ds_d, final_dds_d);
     } else if(safety_method_ == TRIVIAL_CARTESIAN) {
-        // v_max is maximum of LTT and s_dot is how much path velocity needs to be scaled to be under v_iso
+        // v_max is maximum of LTT and vel_s_dot is how much path velocity needs to be scaled to be under v_iso
         double v_max = long_term_trajectory_.getMaxofMaximumCartesianVelocity();
         is_under_iso_velocity = v_max <= v_iso_;
         if(!is_under_iso_velocity) {

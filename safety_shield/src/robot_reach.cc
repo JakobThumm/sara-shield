@@ -100,11 +100,12 @@ std::vector<reach_lib::Capsule> RobotReach::reach(Motion& start_config, Motion& 
 
 double RobotReach::velocityOfMotion(const Motion& motion) {
     calculateAllTransformationMatricesAndCapsules(motion.getAngleRef());
-    double capsule_vel = 0;
+    double max_capsule_vel = 0;
     for(int i = 0; i < nb_joints_; ++i) {
-        std::max(capsule_vel, velocityOfCapsule(i, motion.getVelocityRef()));
+        double capsule_vel = velocityOfCapsule(i, motion.getVelocityRef());
+        max_capsule_vel = std::max(max_capsule_vel, capsule_vel);
     }
-    return capsule_vel;
+    return max_capsule_vel;
 }
 
 void RobotReach::calculateAllTransformationMatricesAndCapsules(const std::vector<double>& q) {
@@ -130,12 +131,14 @@ double RobotReach::velocityOfCapsule(const int capsule, std::vector<double> q_do
     Eigen::Vector3d v = result.segment(0, 3);
     Eigen::Vector3d omega = result.segment(3, 3);
     // TODO: remove debug
+    /*
     std::cout << "q_dot" << std::endl;
     std::cout << velocity << std::endl;
     std::cout << "result" << std::endl;
     std::cout << result << std::endl;
     std::cout << "jacobian" << std::endl;
     std::cout << jacobian << std::endl;
+     */
     if (omega.norm() < epsilon) {
         // no angular velocity
         return v.norm();
@@ -180,6 +183,9 @@ double RobotReach::approximateVelOfCapsule(const int capsule, const Eigen::Vecto
     return std::max(q1, q2);
 }
 
+// TODO: check for cases when x=NaN might occur,
+// TODO: 1. scalar_v might be 0?
+// TODO: 2. LGS hat keine Lösung?
 double RobotReach::exactVelOfCapsule(const int capsule, const Eigen::Vector3d& v, const Eigen::Vector3d& omega) {
     Eigen::Vector3d n = omega.normalized();
     double scalar_v = v.transpose() * n;
@@ -187,8 +193,11 @@ double RobotReach::exactVelOfCapsule(const int capsule, const Eigen::Vector3d& v
     Eigen::Vector3d p2 = pointTo3dVector(robot_capsules_[capsule].p2_);
     // LSE solving to get offset o of screw axis: Ax = b, b = v - scalar_v * n, A = S(omega), o = -(x - p2)
     Eigen::Matrix3d A = getCrossProductAsMatrix(omega);
-    Eigen::Vector3d b = v - scalar_v * n;
+    Eigen::Vector3d b = v - (v.transpose() * n) * n;
     Eigen::Vector3d x = A.partialPivLu().solve(b); //colPivHouseholderQr()
+    if(std::isnan(x.norm())) {
+        spdlog::error("Error in RobotReach::exactVelOfCapsule x is NaN");
+    }
     Eigen::Vector3d o = p2 - x;
     // perpendicular distance between pi and screw axis
     Eigen::Vector3d p1_cross = n.cross(p1 - o);

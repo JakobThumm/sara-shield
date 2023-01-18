@@ -66,7 +66,7 @@ class RobotReach {
   /**
    * @brief if maximum cartesian velocities should be approximative or exact
    */
-  Velocity_method velocity_method_;
+  Velocity_method velocity_method_ = APPROXIMATE;
 
   /**
    * @brief enclosing capsules for velocity calculation
