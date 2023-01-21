@@ -111,8 +111,10 @@ double RobotReach::velocityOfMotion(const Motion& motion) {
 void RobotReach::calculateAllTransformationMatricesAndCapsules(const std::vector<double>& q) {
     robot_capsules_for_velocity_.clear();
     z_vectors_.clear();
+    transformation_matrices_q.clear();
     Eigen::Matrix4d T = transformation_matrices_[0];
     // push z-vector of transformation matrix
+    transformation_matrices_q.push_back(T);
     z_vectors_.emplace_back(T.block(0,2,3,1));
     for(int i = 0; i < nb_joints_; ++i) {
         forwardKinematic(q[i], i, T);
@@ -120,6 +122,7 @@ void RobotReach::calculateAllTransformationMatricesAndCapsules(const std::vector
         // push robot capsule and z-vector
         robot_capsules_for_velocity_.push_back(capsule);
         z_vectors_.emplace_back(T.block(0,2,3,1));
+        transformation_matrices_q.push_back(T);
     }
 }
 
@@ -154,13 +157,14 @@ double RobotReach::velocityOfCapsule(const int capsule, std::vector<double> q_do
     }
 }
 
+// TODO: p-Vektoren passen noch nicht
 Eigen::Matrix<double, 6, Eigen::Dynamic> RobotReach::getJacobian(const int joint) {
     Eigen::Matrix<double, 6, Eigen::Dynamic> jacobian;
     jacobian.setZero(6, joint+1);
     Eigen::Vector3d p_e = pointTo3dVector(robot_capsules_[joint].p2_);
     for(int i = 0; i < joint+1; ++i) {
-        Eigen::Vector3d z_i = z_vectors_[i];
-        Eigen::Vector3d p_i(robot_capsules_[i].p1_.x, robot_capsules_[i].p1_.y, robot_capsules_[i].p1_.z);
+        Eigen::Vector3d z_i = z_vectors_[i+1];
+        Eigen::Vector3d p_i = pointTo3dVector(robot_capsules_[i].p1_);
         Eigen::Vector3d upper = z_i.cross(p_e - p_i);
         Eigen::Vector<double, 6> column;
         column << upper, z_i;

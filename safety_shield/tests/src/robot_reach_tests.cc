@@ -40,7 +40,7 @@ TEST_F(RobotReachTestVelocity, JacobianTest0) {
     Eigen::Matrix<double, 6, Eigen::Dynamic> jacobian = robot_reach_->getJacobian(0);
     Eigen::Matrix<double, 6, 1> expect;
     expect << 0.0, 0.0, 0.0, 0.0, 0.0, 1.0;
-    std::cout << "jacobian_0 is" << std::endl;
+    std::cout << "jacobian_1 is" << std::endl;
     std::cout << jacobian << std::endl;
     EXPECT_TRUE(jacobian.isApprox(expect));
 }
@@ -55,7 +55,7 @@ TEST_F(RobotReachTestVelocity, JacobianTest1) {
                 0.00000, -0.84147,
                 0.00000, 0.54030,
                 1.00000, -0.00000;
-    std::cout << "jacobian_1 is" << std::endl;
+    std::cout << "jacobian_2 is" << std::endl;
     std::cout << jacobian << std::endl;
     EXPECT_TRUE(jacobian.isApprox(expect));
 }
@@ -71,7 +71,7 @@ TEST_F(RobotReachTestVelocity, JacobianTest2) {
         0.00000,  -0.84147, 0.84147,
         0.00000,  0.54030,  -0.54030,
         1.00000,  -0.00000, 0.00001;
-    std::cout << "jacobian_2 is" << std::endl;
+    std::cout << "jacobian_3 is" << std::endl;
     std::cout << jacobian << std::endl;
     EXPECT_TRUE(jacobian.isApprox(expect));
 }
@@ -87,7 +87,7 @@ TEST_F(RobotReachTestVelocity, JacobianTest3) {
         0.00000,  -0.84147, 0.84147,  -0.45465,
         0.00000,  0.54030,  -0.54030, -0.70807,
         1.00000,  -0.00000, 0.00001,  0.54030;
-        std::cout << "jacobian_3 is" << std::endl;
+        std::cout << "jacobian_4 is" << std::endl;
     std::cout << jacobian << std::endl;
     EXPECT_TRUE(jacobian.isApprox(expect));
 }
@@ -103,7 +103,7 @@ TEST_F(RobotReachTestVelocity, JacobianTest4) {
         0.00000,  -0.84147, 0.84147,  -0.45465, -0.77095,
         0.00000,  0.54030,  -0.54030, -0.70807, 0.00909,
         1.00000,  -0.00000, 0.00001,  0.54030,  -0.63683;
-        std::cout << "jacobian_4 is" << std::endl;
+        std::cout << "jacobian_5 is" << std::endl;
     std::cout << jacobian << std::endl;
     EXPECT_TRUE(jacobian.isApprox(expect));
 }
@@ -119,8 +119,24 @@ TEST_F(RobotReachTestVelocity, JacobianTest5) {
         0.00000,  -0.84147, 0.84147,  -0.45465, -0.77095, 0.29873,
         0.00000,  0.54030,  -0.54030, -0.70807, 0.00909,  -0.87793,
         1.00000,  -0.00000, 0.00001,  0.54030,  -0.63683, -0.37416;
-    std::cout << "jacobian_5 is" << std::endl;
-    std::cout << jacobian << std::endl;
+    std::cout << "jacobian_6 is" << std::endl;
+    std::cout << jacobian << std::endl << std::endl;
+    std::vector<reach_lib::Capsule> capsules = robot_reach_->getVelocityCapsules();
+    std::vector<Eigen::Vector3d> z_vectors = robot_reach_->getZvectors();
+    std::vector<Eigen::Matrix4d> transformation_matrices_q = robot_reach_->getTransformationMatricesQ();
+    for(int i = 0; i < capsules.size(); ++i) {
+        std::cout << "capsule_" << i << "_p1  = " << std::endl << "(" << capsules[i].p1_.x << ", " << capsules[i].p1_.y << ", " << capsules[i].p1_.z << ")" << std::endl;
+        std::cout << "capsule_" << i << "_p2  = " << std::endl << "(" << capsules[i].p2_.x << ", " << capsules[i].p2_.y << ", " << capsules[i].p2_.z << ")" << std::endl;
+        std::cout << std::endl;
+    }
+    for(int i = 0; i < z_vectors.size(); ++i) {
+        std::cout << "z_vector_" << i << " = " << std::endl << z_vectors[i] << std::endl;
+        std::cout << std::endl;
+    }
+    for(int i = 0; i < transformation_matrices_q.size(); ++i) {
+        std::cout << "transformation_matrix_" << i << " = " << std::endl << transformation_matrices_q[i] << std::endl;
+        std::cout << std::endl;
+    }
     EXPECT_TRUE(jacobian.isApprox(expect));
 }
 

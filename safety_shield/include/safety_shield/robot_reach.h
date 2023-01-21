@@ -78,6 +78,11 @@ class RobotReach {
    */
   std::vector<Eigen::Vector3d> z_vectors_;
 
+  /**
+   * @brief list of transformation matrices (only for debugging)
+   */
+   std::vector<Eigen::Matrix4d> transformation_matrices_q;
+
 public:
 
   /**
@@ -250,6 +255,18 @@ public:
                   vec(2), 0, -vec(0),
                 -vec(1), vec(0), 0;
       return cross;
+  }
+
+  inline std::vector<reach_lib::Capsule> getVelocityCapsules() {
+      return robot_capsules_for_velocity_;
+  }
+
+  inline std::vector<Eigen::Vector3d> getZvectors() {
+      return z_vectors_;
+  }
+
+  inline std::vector<Eigen::Matrix4d> getTransformationMatricesQ() {
+      return transformation_matrices_q;
   }
 
 };
