@@ -20,12 +20,13 @@ q4: [0.0]
 q5: [0.0]
 q6: [0.0]
 
+# safety-rated speed specified by iso-norm
 v_iso: 0.25
 
 # standard full stop criteria (STANDARD) == 0
 # maximum of LTT (TRIVIAL_CARTESIAN) == 1
 # maximum of STP (STP_MAXIMUM_CARTESIAN) == 2
-safety_method: 2
+safety_method: 0
 
 # APPROXIMATE == 0
 # EXACT == 1

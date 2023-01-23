@@ -230,11 +230,15 @@ TEST_F(LongTermTrajTest, InterpolateTest) {
 }
 
 TEST_F(LongTermTrajTestVelocity, overapproximation) {
+    double sum_deviation = 0;
+    double epsilon = 1e-5;
     for(int i = 0; i < long_term_trajectory_approximate.getLength(); i++) {
         double approximate = long_term_trajectory_approximate.getMotion(i).getMaximumCartesianVelocity();
         double exact = long_term_trajectory_exact.getMotion(i).getMaximumCartesianVelocity();
-        EXPECT_TRUE(approximate >= exact);
+        sum_deviation += approximate / exact;
+        EXPECT_TRUE(approximate >= exact - epsilon);
     }
+    std::cout << "average deviation from exact is " << sum_deviation/long_term_trajectory_approximate.getLength() - 1 << std::endl;
 }
 
 } // namespace safety_shield

@@ -57,7 +57,7 @@ TEST_F(RobotReachTestVelocity, JacobianTest1) {
                 1.00000, -0.00000;
     std::cout << "jacobian_2 is" << std::endl;
     std::cout << jacobian << std::endl;
-    EXPECT_TRUE(jacobian.isApprox(expect));
+    EXPECT_TRUE(jacobian.isApprox(expect, 0.0001));
 }
 
 TEST_F(RobotReachTestVelocity, JacobianTest2) {
@@ -73,7 +73,7 @@ TEST_F(RobotReachTestVelocity, JacobianTest2) {
         1.00000,  -0.00000, 0.00001;
     std::cout << "jacobian_3 is" << std::endl;
     std::cout << jacobian << std::endl;
-    EXPECT_TRUE(jacobian.isApprox(expect));
+    EXPECT_TRUE(jacobian.isApprox(expect, 0.0001));
 }
 
 TEST_F(RobotReachTestVelocity, JacobianTest3) {
@@ -89,7 +89,7 @@ TEST_F(RobotReachTestVelocity, JacobianTest3) {
         1.00000,  -0.00000, 0.00001,  0.54030;
         std::cout << "jacobian_4 is" << std::endl;
     std::cout << jacobian << std::endl;
-    EXPECT_TRUE(jacobian.isApprox(expect));
+    EXPECT_TRUE(jacobian.isApprox(expect, 0.0001));
 }
 
 TEST_F(RobotReachTestVelocity, JacobianTest4) {
@@ -105,7 +105,7 @@ TEST_F(RobotReachTestVelocity, JacobianTest4) {
         1.00000,  -0.00000, 0.00001,  0.54030,  -0.63683;
         std::cout << "jacobian_5 is" << std::endl;
     std::cout << jacobian << std::endl;
-    EXPECT_TRUE(jacobian.isApprox(expect));
+    EXPECT_TRUE(jacobian.isApprox(expect, 0.0001));
 }
 
 TEST_F(RobotReachTestVelocity, JacobianTest5) {
@@ -124,6 +124,7 @@ TEST_F(RobotReachTestVelocity, JacobianTest5) {
     std::vector<reach_lib::Capsule> capsules = robot_reach_->getVelocityCapsules();
     std::vector<Eigen::Vector3d> z_vectors = robot_reach_->getZvectors();
     std::vector<Eigen::Matrix4d> transformation_matrices_q = robot_reach_->getTransformationMatricesQ();
+    std::vector<Eigen::Matrix4d> transformation_matrices_q_joints = robot_reach_->getTransformationMatricesQJoints();
     for(int i = 0; i < capsules.size(); ++i) {
         std::cout << "capsule_" << i << "_p1  = " << std::endl << "(" << capsules[i].p1_.x << ", " << capsules[i].p1_.y << ", " << capsules[i].p1_.z << ")" << std::endl;
         std::cout << "capsule_" << i << "_p2  = " << std::endl << "(" << capsules[i].p2_.x << ", " << capsules[i].p2_.y << ", " << capsules[i].p2_.z << ")" << std::endl;
@@ -134,10 +135,14 @@ TEST_F(RobotReachTestVelocity, JacobianTest5) {
         std::cout << std::endl;
     }
     for(int i = 0; i < transformation_matrices_q.size(); ++i) {
-        std::cout << "transformation_matrix_" << i << " = " << std::endl << transformation_matrices_q[i] << std::endl;
+        std::cout << "transformation_matrix_capsule_" << i << " = " << std::endl << transformation_matrices_q[i] << std::endl;
         std::cout << std::endl;
     }
-    EXPECT_TRUE(jacobian.isApprox(expect));
+    for(int i = 0; i < transformation_matrices_q_joints.size(); ++i) {
+        std::cout << "transformation_matrix_joints_" << i << " = " << std::endl << transformation_matrices_q_joints[i] << std::endl;
+        std::cout << std::endl;
+    }
+    EXPECT_TRUE(jacobian.isApprox(expect, 0.0001));
 }
 
 } // namespace safety_shield

@@ -116,15 +116,18 @@ protected:
         YAML::Node robot_config = YAML::LoadFile(config_file.string());
         double nb_joints = robot_config["nb_joints"].as<int>();
         std::vector<double> transformation_matrices = robot_config["transformation_matrices"].as<std::vector<double>>();
+        std::vector<double> transformation_matrices_joints = robot_config["transformation_matrices_joints"].as<std::vector<double>>();
         std::vector<double>  enclosures = robot_config["enclosures"].as<std::vector<double>>();
         double secure_radius = robot_config["secure_radius"].as<double>();
         RobotReach robot_reach_approximate(transformation_matrices,
-                               nb_joints,
-                               enclosures,
-                               0.0, 0.0, 0.0,
-                               0.0, 0.0, 0.0,
-                               secure_radius);
+                                           transformation_matrices_joints,
+                                           nb_joints,
+                                            enclosures,
+                                            0.0, 0.0, 0.0,
+                                            0.0, 0.0, 0.0,
+                                            secure_radius);
         RobotReach robot_reach_exact(transformation_matrices,
+                                           transformation_matrices_joints,
                                            nb_joints,
                                            enclosures,
                                            0.0, 0.0, 0.0,
