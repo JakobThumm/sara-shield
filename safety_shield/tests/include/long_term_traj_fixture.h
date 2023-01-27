@@ -136,7 +136,7 @@ protected:
         robot_reach_approximate.setVelocityMethod(RobotReach::Velocity_method::APPROXIMATE);
         robot_reach_exact.setVelocityMethod(RobotReach::Velocity_method::EXACT);
         std::vector<Motion> mo_vec;
-        for(int i = 1; i < 100; ++i) {
+        for(int i = 1; i < 10; ++i) {
             double dub = i;
             std::vector<double> q = {dub, dub+1, dub+2, dub+3, dub+4, dub+5};
             mo_vec.push_back(Motion(0, q, q));

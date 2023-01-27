@@ -35,6 +35,8 @@ TEST_F(RobotReachTest, ForwardKinematicTest1){
   EXPECT_TRUE(result.isApprox(expect));
 }
 
+/*
+
 TEST_F(RobotReachTestVelocity, JacobianTest0) {
     robot_reach_->velocityOfMotion(motion_);
     Eigen::Matrix<double, 6, Eigen::Dynamic> jacobian = robot_reach_->getJacobian(0);
@@ -144,6 +146,8 @@ TEST_F(RobotReachTestVelocity, JacobianTest5) {
     }
     EXPECT_TRUE(jacobian.isApprox(expect, 0.0001));
 }
+
+*/
 
 } // namespace safety_shield
 

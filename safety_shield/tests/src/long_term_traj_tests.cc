@@ -237,6 +237,7 @@ TEST_F(LongTermTrajTestVelocity, overapproximation) {
         double exact = long_term_trajectory_exact.getMotion(i).getMaximumCartesianVelocity();
         sum_deviation += approximate / exact;
         EXPECT_TRUE(approximate >= exact - epsilon);
+        std::cout << "exact: " << exact << ", approximate: " << approximate << std::endl;
     }
     std::cout << "average deviation from exact is " << sum_deviation/long_term_trajectory_approximate.getLength() - 1 << std::endl;
 }
