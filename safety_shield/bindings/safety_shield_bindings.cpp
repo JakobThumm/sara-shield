@@ -23,8 +23,6 @@
 
 namespace py = pybind11;
 
-// TODO: bindings for new constructors
-
 PYBIND11_MODULE(safety_shield_py, handle) {
   handle.doc() = "This module contains the python bindings for the safety shield.";
   // Motion class

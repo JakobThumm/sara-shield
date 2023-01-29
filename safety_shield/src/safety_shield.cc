@@ -637,7 +637,7 @@ Motion SafetyShield::step(double cycle_begin_time) {
               // check if there is collision between now and time t, during that time velocity of robot is higher than v_iso_
               bool velocity_criteria;
               // velocity_criteria is true, when v_max <= v_iso
-              if(under_vel_motion.getTime() < 0) {
+              if(is_under_iso_velocity_) {
                    velocity_criteria = true;
               } else {
                   robot_capsules_ = robot_reach_->reach(current_motion, under_vel_motion, (under_vel_motion.getS()-current_motion.getS()), alpha_i_);

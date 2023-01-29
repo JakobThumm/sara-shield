@@ -59,6 +59,7 @@ void Path::getFinalMotion(double& final_pos, double& final_vel, double& final_ac
 
 void Path::getMotionUnderVel(double v_limit, double& time, double& pos, double& vel, double& acc, double& jerk) {
     if(vel_ < v_limit) {
+        // already under v_iso
         time = -10;
         return;
     }
@@ -93,6 +94,7 @@ void Path::getMotionUnderVel(double v_limit, double& time, double& pos, double& 
             } else if (right > 0) {
                 dt = right;
             } else {
+                // already under v_iso
                 time = -10;
                 if(std::isnan(square)) {
                     spdlog::error("Error in Path::getMotionUnderVel: square is NaN");
