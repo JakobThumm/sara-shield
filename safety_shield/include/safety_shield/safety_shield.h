@@ -272,8 +272,8 @@ class SafetyShield {
       // standard full stop criteria
       STANDARD,
       // maximum cartesian velocity criterias
-      TRIVIAL_CARTESIAN,
-      STP_MAXIMUM_CARTESIAN,
+      LTT_MAXIMUM,
+      STP_MAXIMUM,
   };
 
   /**
@@ -285,6 +285,11 @@ class SafetyShield {
    * @brief maximum cartesian velocity determined by iso
    */
   double v_iso_ = 0.25;
+
+  /**
+   * @brief if robot is under iso_velocity
+   */
+  bool is_under_iso_velocity_;
 
 protected:
   /**

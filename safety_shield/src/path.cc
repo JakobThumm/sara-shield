@@ -58,6 +58,10 @@ void Path::getFinalMotion(double& final_pos, double& final_vel, double& final_ac
 }
 
 void Path::getMotionUnderVel(double v_limit, double& time, double& pos, double& vel, double& acc, double& jerk) {
+    if(vel_ < v_limit) {
+        time = -10;
+        return;
+    }
     double prev_pos, next_pos = pos_;
     double prev_vel, next_vel = vel_;
     double prev_acc, next_acc = acc_;
@@ -89,11 +93,13 @@ void Path::getMotionUnderVel(double v_limit, double& time, double& pos, double& 
             } else if (right > 0) {
                 dt = right;
             } else {
-                time = -1;
+                time = -10;
                 if(std::isnan(square)) {
                     spdlog::error("Error in Path::getMotionUnderVel: square is NaN");
+                    return;
                 } else {
                     spdlog::error("Error in Path::getMotionUnderVel: Quadratic-Function only has negative zero-values");
+                    return;
                 }
             }
             time = phases_[i] + dt;

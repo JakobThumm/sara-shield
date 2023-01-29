@@ -321,9 +321,13 @@ public:
       return transformation_matrices_q_;
   }
 
-inline std::vector<Eigen::Matrix4d> getTransformationMatricesQJoints() {
-    return transformation_matrices_q_joints_;
-}
+  inline std::vector<Eigen::Matrix4d> getTransformationMatricesQJoints() {
+      return transformation_matrices_q_joints_;
+  }
+
+  inline Velocity_method getVelocityMethod() {
+      return velocity_method_;
+  }
 
 };
 } // namespace safety_shield 
