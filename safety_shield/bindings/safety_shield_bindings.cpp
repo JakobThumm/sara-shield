@@ -104,7 +104,12 @@ PYBIND11_MODULE(safety_shield_py, handle) {
     .def("humanMeasurement", static_cast<void (safety_shield::SafetyShield::*)(const std::vector<std::vector<double>> human_measurement, double time)>(&safety_shield::SafetyShield::humanMeasurement), py::arg("human_measurement"), py::arg("time"))
     .def("getRobotReachCapsules", &safety_shield::SafetyShield::getRobotReachCapsules)
     .def("getHumanReachCapsules", &safety_shield::SafetyShield::getHumanReachCapsules, py::arg("type") = 1)
+    .def("getRobotReachVelocityCapsules", &safety_shield::SafetyShield::getRobotReachVelocityCapsules)
+    .def("getHumanReachVelocityCapsules", &safety_shield::SafetyShield::getHumanReachVelocityCapsules, py::arg("type") = 1)
+    .def("getRobotReachStaticCapsules", &safety_shield::SafetyShield::getRobotReachStaticCapsules)
+    .def("getHumanReachStaticCapsules", &safety_shield::SafetyShield::getHumanReachStaticCapsules, py::arg("type") = 1)
     .def("getSafety", &safety_shield::SafetyShield::getSafety)
+    .def("getSafetyMethod", &safety_shield::SafetyShield::getSafetyMethod)
   ;
   
 }

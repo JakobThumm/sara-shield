@@ -253,16 +253,46 @@ class SafetyShield {
 
   //////// Reachable sets of human and robot //////
   /**
-   * @brief Vector of robot reachable set capsules (get updated in every step()).
+   * @brief Vector of robot reachable set capsules for full-stop criterion (get updated in every step()).
    */
   std::vector<reach_lib::Capsule> robot_capsules_;
 
   /**
-   * @brief Vector of human reachable set capsules (get updated in every step()).
+   * @brief Vector of human reachable set capsules for full-stop criterion (get updated in every step()).
    */
   std::vector<std::vector<reach_lib::Capsule>> human_capsules_;
 
-  //////// For replanning new trajectory //////
+  /**
+   * @brief Vector of robot reachable set capsules for velocity criterion (get updated in every step()).
+   */
+  std::vector<reach_lib::Capsule> robot_capsules_velocity_;
+
+  /**
+   * @brief Vector of human reachable set capsules for velocity criterion (get updated in every step()).
+   */
+  std::vector<std::vector<reach_lib::Capsule>> human_capsules_velocity_;
+
+  /**
+   * @brief Vector of robot reachable set capsules for static criterion (get updated in every step()).
+   */
+  std::vector<reach_lib::Capsule> robot_capsules_static_;
+
+  /**
+   * @brief Vector of human reachable set capsules for static criterion(get updated in every step()).
+   */
+  std::vector<std::vector<reach_lib::Capsule>> human_capsules_static_;
+
+  /**
+   * @brief human reachability calculator for static criterion
+   */
+  HumanReach* human_reach_static_;
+
+  /**
+   * @brief human reachability calculator for velocity criterion
+   */
+  HumanReach* human_reach_velocity_;
+
+    //////// For replanning new trajectory //////
   /**
    * @brief Trajecory planner
    */
@@ -528,7 +558,13 @@ protected:
    * @param[in] time The timestep of the measurement in seconds.
    */
   inline void humanMeasurement(const std::vector<reach_lib::Point> human_measurement, double time) {
-    human_reach_->measurement(human_measurement, time);
+    if(safety_method_ == STANDARD) {
+        human_reach_->measurement(human_measurement, time);
+    } else {
+        // safety_method == STP_MAXIMUM or LTT_MAXIMUM
+        human_reach_velocity_->measurement(human_measurement, time);
+        human_reach_static_->measurement(human_measurement, time);
+    }
   }
 
   /**
@@ -563,6 +599,38 @@ protected:
   }
 
   /**
+   * @brief Get the Robot Reach Capsules for the static criterion as a vector of [p1[0:3], p2[0:3], r]
+   * p1: Center point of half sphere 1
+   * p2: Center point of half sphere 2
+   * r: Radius of half spheres and cylinder
+   *
+   * @return std::vector<std::vector<double>> Capsules
+   */
+  inline std::vector<std::vector<double>> getRobotReachStaticCapsules() {
+    std::vector<std::vector<double>> capsules( robot_capsules_static_.size() , std::vector<double> (7));
+    for (int i = 0; i < robot_capsules_velocity_.size(); i++) {
+        capsules[i] = convertCapsule(robot_capsules_static_[i]);
+    }
+    return capsules;
+  }
+
+  /**
+   * @brief Get the Robot Reach Capsules for the velocity criterion as a vector of [p1[0:3], p2[0:3], r]
+   * p1: Center point of half sphere 1
+   * p2: Center point of half sphere 2
+   * r: Radius of half spheres and cylinder
+   *
+   * @return std::vector<std::vector<double>> Capsules
+   */
+  inline std::vector<std::vector<double>> getRobotReachVelocityCapsules() {
+    std::vector<std::vector<double>> capsules( robot_capsules_velocity_.size() , std::vector<double> (7));
+    for (int i = 0; i < robot_capsules_velocity_.size(); i++) {
+        capsules[i] = convertCapsule(robot_capsules_velocity_[i]);
+    }
+        return capsules;
+  }
+
+  /**
    * @brief Get the Human Reach Capsules as a vector of [p1[0:3], p2[0:3], r]
    * p1: Center point of half sphere 1
    * p2: Center point of half sphere 2
@@ -581,8 +649,50 @@ protected:
     return capsules;
   }
 
+  /**
+   * @brief Get the Human Reach Capsules for static criterion as a vector of [p1[0:3], p2[0:3], r]
+   * p1: Center point of half sphere 1
+   * p2: Center point of half sphere 2
+   * r: Radius of half spheres and cylinder
+   *
+   * @param type Type of capsule. Select 0 for POS, 1 for VEL, and 2 for ACCEL
+   *
+   * @return std::vector<std::vector<double>> Capsules
+   */
+  inline std::vector<std::vector<double>> getHumanReachStaticCapsules(int type=1) {
+     assert(type >= 0 && type <= human_capsules_static_.size());
+     std::vector<std::vector<double>> capsules( human_capsules_static_[type].size() , std::vector<double> (7));
+        for (int i = 0; i < human_capsules_static_[type].size(); i++) {
+            capsules[i] = convertCapsule(human_capsules_static_[type][i]);
+        }
+     return capsules;
+  }
+
+  /**
+   * @brief Get the Human Reach Capsules for velocity criterion as a vector of [p1[0:3], p2[0:3], r]
+   * p1: Center point of half sphere 1
+   * p2: Center point of half sphere 2
+   * r: Radius of half spheres and cylinder
+   *
+   * @param type Type of capsule. Select 0 for POS, 1 for VEL, and 2 for ACCEL
+   *
+   * @return std::vector<std::vector<double>> Capsules
+   */
+    inline std::vector<std::vector<double>> getHumanReachVelocityCapsules(int type=1) {
+        assert(type >= 0 && type <= human_capsules_velocity_.size());
+        std::vector<std::vector<double>> capsules( human_capsules_velocity_[type].size() , std::vector<double> (7));
+        for (int i = 0; i < human_capsules_velocity_[type].size(); i++) {
+            capsules[i] = convertCapsule(human_capsules_velocity_[type][i]);
+        }
+        return capsules;
+    }
+
   inline bool getSafety() {
     return is_safe_;
+  }
+
+  inline bool getSafetyMethod() {
+      return safety_method_ == STANDARD;
   }
 
 
