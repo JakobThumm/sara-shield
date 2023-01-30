@@ -645,14 +645,14 @@ Motion SafetyShield::step(double cycle_begin_time) {
               } else {
                   robot_capsules_velocity_ = robot_reach_->reach(current_motion, under_vel_motion, (under_vel_motion.getS()-current_motion.getS()), alpha_i_);
                   human_reach_velocity_->humanReachabilityAnalysis(cycle_begin_time_, under_vel_motion.getTime());
-                  human_capsules_velocity_ = human_reach_->getAllCapsules();
+                  human_capsules_velocity_ = human_reach_velocity_->getAllCapsules();
                   velocity_criteria = verify_->verify_human_reach(robot_capsules_velocity_, human_capsules_velocity_);
               }
               // check if robot doesnt run into static human
               robot_capsules_static_ = robot_reach_->reach(current_motion, goal_motion, (goal_motion.getS()-current_motion.getS()), alpha_i_);
               // TODO: 2. Parameter wrong? t_diff should be 0
               human_reach_static_->humanReachabilityAnalysis(cycle_begin_time_, 0);
-              human_capsules_static_ = human_reach_->getAllCapsules();
+              human_capsules_static_ = human_reach_static_->getAllCapsules();
               bool static_criteria = verify_->verify_human_reach(robot_capsules_static_, human_capsules_static_);
 
               // combine both criteria
