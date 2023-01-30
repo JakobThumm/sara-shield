@@ -461,7 +461,7 @@ void SafetyShield::computesPotentialTrajectory(bool v, const std::vector<double>
     double ddds_d = failsafe_path_.getJerk();
     // Calculate goal
     // if v_max is under v_iso, velocity_criteria is true and we can skip calculating getMotionUnderVel()
-    is_under_iso_velocity_ = true;
+    is_under_iso_velocity_ = false;
     if(safety_method_ == STANDARD) {
         potential_path_.getFinalMotion(final_s_d, final_ds_d, final_dds_d);
     } else {
@@ -469,16 +469,20 @@ void SafetyShield::computesPotentialTrajectory(bool v, const std::vector<double>
         // v_max is maximum of LTT or STP and vel_s_dot is how much path velocity needs to be scaled to be under v_iso
         potential_path_.getFinalMotion(final_s_d, final_ds_d, final_dds_d);
         double v_max;
-        if(safety_method_ == LTT_MAXIMUM) {
+        if(safety_method_ == LTT_MAXIMUM && !new_ltt_) {
             v_max = long_term_trajectory_.getMaxofMaximumCartesianVelocity();
-        } else {
-            // safety_method_ == STP_MAXIMUM
+        } else if(safety_method_ == LTT_MAXIMUM && new_ltt_) {
+            v_max = new_long_term_trajectory_.getMaxofMaximumCartesianVelocity();
+        } else if(safety_method_ == STP_MAXIMUM && !new_ltt_) {
             v_max = long_term_trajectory_.getMaxofMaximumCartesianVelocityWithS(final_s_d);
+        } else {
+            // safety_method_ == STP_MAXIMUM && new_ltt_
+            v_max = new_long_term_trajectory_.getMaxofMaximumCartesianVelocityWithS(final_s_d);
         }
         is_under_iso_velocity_ = v_max <= v_iso_;
         if(!is_under_iso_velocity_) {
-            vel_s_d = v_iso_ / v_max;
-            potential_path_.getMotionUnderVel(v_max, vel_time, vel_s_d, vel_ds_d, vel_dds_d, ddds_d);
+            double v_limit = v_iso_ / v_max;
+            potential_path_.getMotionUnderVel(v_limit, vel_time, vel_s_d, vel_ds_d, vel_dds_d, ddds_d);
             is_under_iso_velocity_ = vel_time < 0;
         }
     }
@@ -502,9 +506,6 @@ void SafetyShield::computesPotentialTrajectory(bool v, const std::vector<double>
     goal_motion->setTime(potential_path_.getPhase(3));
     if(!is_under_iso_velocity_) {
         under_vel_motion->setTime(vel_time);
-    } else {
-        // set to negative time so that step() knows, that velocity_criteria is already true
-        under_vel_motion->setTime(-10);
     }
   } catch (const std::exception &exc) {
     spdlog::error("Exception in SafetyShield::computesPotentialTrajectory: {}", exc.what());

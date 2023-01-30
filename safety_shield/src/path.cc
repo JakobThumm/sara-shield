@@ -58,9 +58,13 @@ void Path::getFinalMotion(double& final_pos, double& final_vel, double& final_ac
 }
 
 void Path::getMotionUnderVel(double v_limit, double& time, double& pos, double& vel, double& acc, double& jerk) {
+    // TODO: does that make sense, it time correct?
     if(vel_ < v_limit) {
-        // already under v_iso
-        time = -10;
+        time = phases_[0];
+        pos = pos_;
+        vel = vel_;
+        acc = acc_;
+        jerk = jerk_;
         return;
     }
     double prev_pos, next_pos = pos_;
