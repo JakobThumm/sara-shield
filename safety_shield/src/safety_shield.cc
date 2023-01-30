@@ -637,23 +637,28 @@ Motion SafetyShield::step(double cycle_begin_time) {
               is_safe_ = verify_->verify_human_reach(robot_capsules_, human_capsules_);
 
           } else if (safety_method_ == LTT_MAXIMUM || safety_method_ == STP_MAXIMUM) {
-              // check if there is collision between now and time t, during that time velocity of robot is higher than v_iso_
-              bool velocity_criteria;
-              // velocity_criteria is true, when v_max <= v_iso
-              if(is_under_iso_velocity_) {
-                   velocity_criteria = true;
-              } else {
-                  robot_capsules_velocity_ = robot_reach_->reach(current_motion, under_vel_motion, (under_vel_motion.getS()-current_motion.getS()), alpha_i_);
-                  human_reach_velocity_->humanReachabilityAnalysis(cycle_begin_time_, under_vel_motion.getTime());
-                  human_capsules_velocity_ = human_reach_velocity_->getAllCapsules();
-                  velocity_criteria = verify_->verify_human_reach(robot_capsules_velocity_, human_capsules_velocity_);
-              }
               // check if robot doesnt run into static human
               robot_capsules_static_ = robot_reach_->reach(current_motion, goal_motion, (goal_motion.getS()-current_motion.getS()), alpha_i_);
               // TODO: 2. Parameter wrong? t_diff should be 0
               human_reach_static_->humanReachabilityAnalysis(cycle_begin_time_, 0);
               human_capsules_static_ = human_reach_static_->getAllCapsules();
               bool static_criteria = verify_->verify_human_reach(robot_capsules_static_, human_capsules_static_);
+
+              // check if there is collision between now and time t, during that time velocity of robot is higher than v_iso_
+              bool velocity_criteria;
+              // velocity_criteria is true, when v_max <= v_iso
+              if(is_under_iso_velocity_) {
+                  velocity_criteria = true;
+                  // if v_max <= v_iso, no velocity capsules get calculated because velocity criterion is true
+                  // so we set the velocity capsules to the static capsules
+                  robot_capsules_velocity_ = robot_capsules_static_;
+                  human_capsules_velocity_ = human_capsules_static_;
+              } else {
+                  robot_capsules_velocity_ = robot_reach_->reach(current_motion, under_vel_motion, (under_vel_motion.getS()-current_motion.getS()), alpha_i_);
+                  human_reach_velocity_->humanReachabilityAnalysis(cycle_begin_time_, under_vel_motion.getTime());
+                  human_capsules_velocity_ = human_reach_velocity_->getAllCapsules();
+                  velocity_criteria = verify_->verify_human_reach(robot_capsules_velocity_, human_capsules_velocity_);
+              }
 
               // combine both criteria
               is_safe_ = static_criteria && velocity_criteria;
