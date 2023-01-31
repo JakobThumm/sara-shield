@@ -162,8 +162,6 @@ SafetyShield::SafetyShield(bool activate_shield,
       measurement_error_pos, 
       measurement_error_vel, 
       delay);
-    human_reach_static_ = new HumanReach(*human_reach_);
-    human_reach_velocity_ = new HumanReach(*human_reach_);
     ///////////// Build verifier
     verify_ = new safety_shield::VerifyISO();
     /////////// Other settings
@@ -192,8 +190,6 @@ void SafetyShield::reset(bool activate_shield,
       double current_time) {
   robot_reach_->reset(init_x, init_y, init_z, init_roll, init_pitch, init_yaw);
   human_reach_->reset();
-  human_reach_velocity_->reset();
-  human_reach_static_->reset();
   std::vector<double> prev_dq;
   for(int i = 0; i < 6; i++) {
       prev_dq.push_back(0.0);
@@ -641,8 +637,9 @@ Motion SafetyShield::step(double cycle_begin_time) {
               // check if robot doesnt run into static human
               robot_capsules_static_ = robot_reach_->reach(current_motion, goal_motion, (goal_motion.getS()-current_motion.getS()), alpha_i_);
               // TODO: 2. Parameter wrong? t_diff should be 0
-              human_reach_static_->humanReachabilityAnalysis(cycle_begin_time_, 0);
-              human_capsules_static_ = human_reach_static_->getAllCapsules();
+              // TODO: humanReach, immer die kleinste Kapsel ist wichtig
+              human_reach_->humanReachabilityAnalysis(cycle_begin_time_, 0); //t_brake is differentiell
+              human_capsules_static_ = human_reach_->getAllCapsules();
               bool static_criteria = verify_->verify_human_reach(robot_capsules_static_, human_capsules_static_);
 
               // check if there is collision between now and time t, during that time velocity of robot is higher than v_iso_
@@ -656,8 +653,8 @@ Motion SafetyShield::step(double cycle_begin_time) {
                   human_capsules_velocity_ = human_capsules_static_;
               } else {
                   robot_capsules_velocity_ = robot_reach_->reach(current_motion, under_vel_motion, (under_vel_motion.getS()-current_motion.getS()), alpha_i_);
-                  human_reach_velocity_->humanReachabilityAnalysis(cycle_begin_time_, under_vel_motion.getTime());
-                  human_capsules_velocity_ = human_reach_velocity_->getAllCapsules();
+                  human_reach_->humanReachabilityAnalysis(cycle_begin_time_, under_vel_motion.getTime());
+                  human_capsules_velocity_ = human_reach_->getAllCapsules();
                   velocity_criteria = verify_->verify_human_reach(robot_capsules_velocity_, human_capsules_velocity_);
               }
 

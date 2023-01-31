@@ -282,17 +282,7 @@ class SafetyShield {
    */
   std::vector<std::vector<reach_lib::Capsule>> human_capsules_static_;
 
-  /**
-   * @brief human reachability calculator for static criterion
-   */
-  HumanReach* human_reach_static_;
-
-  /**
-   * @brief human reachability calculator for velocity criterion
-   */
-  HumanReach* human_reach_velocity_;
-
-    //////// For replanning new trajectory //////
+  //////// For replanning new trajectory //////
   /**
    * @brief Trajecory planner
    */
@@ -558,13 +548,7 @@ protected:
    * @param[in] time The timestep of the measurement in seconds.
    */
   inline void humanMeasurement(const std::vector<reach_lib::Point> human_measurement, double time) {
-    if(safety_method_ == STANDARD) {
-        human_reach_->measurement(human_measurement, time);
-    } else {
-        // safety_method == STP_MAXIMUM or LTT_MAXIMUM
-        human_reach_velocity_->measurement(human_measurement, time);
-        human_reach_static_->measurement(human_measurement, time);
-    }
+    human_reach_->measurement(human_measurement, time);
   }
 
   /**
