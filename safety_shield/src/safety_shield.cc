@@ -514,8 +514,8 @@ void SafetyShield::computesPotentialTrajectoryForPFL(bool v_static, bool v_pfl, 
         failsafe_path_pfl_ = failsafe_path_2_pfl_;
         //repair path already incremented
     }
-    // if v_static, we can take the failsafe-path of the PFL criterion
-    else if(v_static) {
+    // if v_static but not v_pfl, we can take the failsafe-path of the PFL criterion
+    else if(v_static && !v_pfl) {
         failsafe_path_pfl_.setCurrent(true);
         failsafe_path_static_.setCurrent(false);
         //discard RepairPath
@@ -555,7 +555,7 @@ void SafetyShield::computesPotentialTrajectoryForPFL(bool v_static, bool v_pfl, 
             vel = failsafe_path_static_.getVelocity();
             acc = failsafe_path_static_.getAcceleration();
         } else {
-            spdlog::error("Error in computesPotentialTrajectoryForPFL: no failsafe-path is set?");
+            spdlog::error("Error in computesPotentialTrajectoryForPFL: no failsafe-path is set when planning repair path?");
         }
 
         // plan repair path and replace
@@ -622,13 +622,17 @@ void SafetyShield::computesPotentialTrajectoryForPFL(bool v_static, bool v_pfl, 
     double final_static_s_d, final_static_ds_d, final_static_dds_d;
     double final_pfl_s_d, final_pfl_ds_d, final_pfl_dds_d;
     double ddds_d;
+    // TODO: neither could be set because its old failsafe-path?
+    ddds_d = failsafe_path_static_.getJerk();
+    /*
     if(failsafe_path_pfl_.isCurrent()) {
         ddds_d = failsafe_path_pfl_.getJerk();
     } else if(failsafe_path_static_.isCurrent()) {
         ddds_d = failsafe_path_static_.getJerk();
     } else {
-        spdlog::error("Error in computesPotentialTrajectoryForPFL: no failsafe-path is set?");
+        spdlog::error("Error in computesPotentialTrajectoryForPFL: no failsafe-path is set when calculating motions?");
     }
+     */
     potential_path_static_.getFinalMotion(final_static_s_d, final_static_ds_d, final_static_dds_d);
     potential_path_pfl_.getFinalMotion(final_pfl_s_d, final_pfl_ds_d, final_pfl_dds_d);
 
@@ -707,6 +711,9 @@ Motion SafetyShield::determineNextMotionForPFL(bool is_safe_static, bool is_safe
     // TODO: depending on verification, set safe_path_ to potential_path_static or potential_path_pfl?
     // TODO: macht diese Unterteilung Sinn?
     double pos;
+    // TODO: neither could be set because its old failsafe-path?
+    pos = failsafe_path_static_.getPosition();
+    /*
     if(failsafe_path_pfl_.isCurrent()) {
         pos = failsafe_path_pfl_.getPosition();
     } else if(failsafe_path_static_.isCurrent()) {
@@ -714,6 +721,7 @@ Motion SafetyShield::determineNextMotionForPFL(bool is_safe_static, bool is_safe
     } else {
         spdlog::error("Error in determineNextMotionForPFL: no failsafe-path is set?");
     }
+     */
     if (is_safe_static && is_safe_pfl) {
         // Fill potential buffer with position and velocity from recovery path
         if (recovery_path_.getPosition() >= pos) {
@@ -741,7 +749,7 @@ Motion SafetyShield::determineNextMotionForPFL(bool is_safe_static, bool is_safe
         // Set potential path as new verified safe path
         safe_path_ = potential_path_pfl_;
 
-    } else if(is_safe_static) {
+    } else if(is_safe_static && !is_safe_pfl) {
         // Fill potential buffer with position and velocity from recovery path
         if (recovery_path_.getPosition() >= pos) {
             s_d = recovery_path_.getPosition();
