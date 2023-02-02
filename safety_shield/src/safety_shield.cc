@@ -546,6 +546,7 @@ void SafetyShield::computesPotentialTrajectoryForPFL(bool v_static, bool v_pfl, 
     // if not already on the repair path, plan a repair path
     if (!recovery_path_.isCurrent()) {
         double pos, vel, acc;
+        // TODO: potential mistake: neither could be set because its old failsafe-path? --> save which if failsafe_path_pfl or failsafe_path_static was used during that step?
         if(failsafe_path_pfl_.isCurrent()) {
             pos = failsafe_path_pfl_.getPosition();
             vel = failsafe_path_pfl_.getVelocity();
@@ -585,7 +586,7 @@ void SafetyShield::computesPotentialTrajectoryForPFL(bool v_static, bool v_pfl, 
         is_under_iso_velocity_ = v_max <= v_iso_;
         double v_limit;
         bool failsafe_2_pfl_planning_success = true;
-        // TODO: potential mistake: if its under iso-velocity, we dont need to compute the failsafe-path of the PFL-criterion
+        // TODO: potential mistake: if its under iso-velocity, we dont need to compute the failsafe-path of the PFL-criterion and maybe I do it wrong
         if(!is_under_iso_velocity_) {
             v_limit = v_iso_ / v_max;
             failsafe_2_pfl_planning_success = planSafetyShield(recovery_path_.getPosition(), recovery_path_.getVelocity(), recovery_path_.getAcceleration(), v_limit, a_max_manoeuvre, j_max_manoeuvre, failsafe_path_2_pfl_);
@@ -621,7 +622,7 @@ void SafetyShield::computesPotentialTrajectoryForPFL(bool v_static, bool v_pfl, 
     double final_static_s_d, final_static_ds_d, final_static_dds_d;
     double final_pfl_s_d, final_pfl_ds_d, final_pfl_dds_d;
     double ddds_d;
-    // TODO: potential mistake: neither could be set because its old failsafe-path? --> save which one was used during that step?
+    // TODO: potential mistake: neither could be set because its old failsafe-path? --> save which if failsafe_path_pfl or failsafe_path_static was used during that step?
     ddds_d = failsafe_path_static_.getJerk();
     /*
     if(failsafe_path_pfl_.isCurrent()) {
@@ -708,7 +709,7 @@ Motion SafetyShield::determineNextMotionForPFL(bool is_safe_static, bool is_safe
     Motion next_motion;
     double s_d, ds_d, dds_d, ddds_d;
     double pos;
-    // TODO: neither could be set because its old failsafe-path? --> save which one was used during that step?
+    // TODO: potential mistake: neither could be set because its old failsafe-path? --> save which if failsafe_path_pfl or failsafe_path_static was used during that step?
     pos = failsafe_path_static_.getPosition();
     /*
     if(failsafe_path_pfl_.isCurrent()) {
