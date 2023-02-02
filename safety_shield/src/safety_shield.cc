@@ -589,6 +589,9 @@ void SafetyShield::computesPotentialTrajectoryForPFL(bool v_static, bool v_pfl, 
         // TODO: potential mistake: if its under iso-velocity, we dont need to compute the failsafe-path of the PFL-criterion and maybe I do it wrong
         if(!is_under_iso_velocity_) {
             v_limit = v_iso_ / v_max;
+            if(v_limit >= 1 || v_limit <= 0) {
+                spdlog::error("v_limit not between 0 and 1");
+            }
             failsafe_2_pfl_planning_success = planSafetyShield(recovery_path_.getPosition(), recovery_path_.getVelocity(), recovery_path_.getAcceleration(), v_limit, a_max_manoeuvre, j_max_manoeuvre, failsafe_path_2_pfl_);
         }
 
