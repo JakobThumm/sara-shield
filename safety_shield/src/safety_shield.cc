@@ -937,6 +937,7 @@ Motion SafetyShield::PFLstep(double cycle_begin_time) {
         Motion goal_motion_pfl;
         computesPotentialTrajectoryForPFL(is_static_safe_, is_PFL_safe_, next_motion_.getVelocity(), &goal_motion_static, &goal_motion_pfl);
         if (activate_shield_) {
+            // TODO: potential mistake: Kapseln werden nicht richtig gesetted/berechnet wenn die Geschwindigkeit zu hoch ist?
             // Check motion for joint limits
             bool pfl_joint_limit = true;
             if(!is_under_iso_velocity_) {
