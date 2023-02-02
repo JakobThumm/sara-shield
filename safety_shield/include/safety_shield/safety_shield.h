@@ -85,11 +85,15 @@ private:
      * @brief fail-safe path of the current path
      */
     Path failsafe_path_;
+    Path failsafe_path_static_;
+    Path failsafe_path_pfl_;
 
     /**
      * @brief fail-safe path of the repair path
      */
     Path failsafe_path_2_;
+    Path failsafe_path_2_static_;
+    Path failsafe_path_2_pfl_;
 
     /**
      * @brief verified safe path
@@ -100,6 +104,8 @@ private:
      * @brief the constructed failsafe path
      */
     Path potential_path_;
+    Path potential_path_static_;
+    Path potential_path_pfl_;
 
     /**
      * @brief Whether or not to use the formal verification.
@@ -132,6 +138,16 @@ private:
      * @brief Was the last timestep safe
      */
     bool is_safe_;
+
+    /**
+     * @brief Was the last timestep safe according to PFL criterion
+     */
+    bool is_PFL_safe_;
+
+    /**
+     * @brief Was the last timestep safe according to static criterion
+     */
+    bool is_static_safe_;
 
     /**
      * @brief Indicates if the last replanning was successful or not.
@@ -345,6 +361,14 @@ protected:
     Motion determineNextMotion(bool is_safe);
 
     /**
+     * @brief Calculate the next desired joint position based on verification of recovery path.
+     * @param is_safe_static Last recovery path + potential path are verified static-safe.
+     * @param is_safe_static Last recovery path + potential path are verified pfl-safe.
+     * @return next motion
+     */
+    Motion determineNextMotionForPFL(bool is_safe_static, bool is_safe_pfl);
+
+    /**
      * @brief Check a given motion if it exceeds the joint limits.
      *
      * @param motion Motion to check
@@ -506,10 +530,19 @@ public:
      * @brief Computes the new trajectory depending on dq and if the previous path is safe and publishes it
      * @param[in] v is the previous path safe
      * @param[in] prev_speed the velocity of the previous point
-     * @param[out] goal_motion: goal position, velocity, acceleration and time of the computed trajectory to execute.
-     * @param[out] under_vel_motion: motion when robot is under ISO-norm velocity
+     * @return goal_motion: goal position, velocity, acceleration and time of the computed trajectory to execute.
      */
-    void computesPotentialTrajectory(bool v, const std::vector<double> &prev_speed, Motion* goal_motion, Motion* under_vel_motion);
+    Motion computesPotentialTrajectory(bool v, const std::vector<double> &prev_speed);
+
+    /**
+     * @brief Computes the new trajectory depending on dq and if the previous path is safe and publishes it
+     * @param[in] v_static is the previous path static-safe
+     * @param[in] v_pfl is the previous path pfl-safe
+     * @param[in] prev_speed the velocity of the previous point
+     * @param[out] goal_motion_static: goal position, velocity, acceleration and time of the computed static trajectory to execute.
+     * @param[out] goal_motion_pfl: goal position, velocity, acceleration and time of the computed pfl trajectory to execute.
+     */
+    void computesPotentialTrajectoryForPFL(bool v_static, bool v_pfl, const std::vector<double>& prev_speed, Motion *goal_motion_static, Motion *goal_motion_pfl);
 
     /**
      * @brief Gets the information that the next simulation cycle (sample time) has started
@@ -517,7 +550,19 @@ public:
      *
      * @return next motion to be executed
      */
+    Motion standardStep(double cycle_begin_time);
+
+    /**
+     * @brief calls standardStep or PFLstep depending on safety_method_
+     */
     Motion step(double cycle_begin_time);
+
+    /**
+     * @brief Gets the information that the next simulation cycle (sample time) has started
+     * @param cycle_begin_time timestep of begin of current cycle in seconds.
+     * @return next motion to be executed
+     */
+    Motion PFLstep(double cycle_begin_time);
 
     /**
      * @brief Calculates a new trajectory from current joint state to desired goal state.
