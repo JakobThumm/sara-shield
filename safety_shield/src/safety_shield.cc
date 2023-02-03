@@ -112,6 +112,7 @@ SafetyShield::SafetyShield(bool activate_shield,
     j_max_ltt_ = trajectory_config["j_max_ltt"].as<std::vector<double>>();
     ltp_ = long_term_planner::LongTermPlanner(nb_joints_, sample_time, q_min_allowed_, q_max_allowed_, v_max_allowed_, a_max_ltt_, j_max_ltt_);
     v_iso_ = trajectory_config["v_iso"].as<double>();
+    // TODO: safety_method nicht in config setten, sondern über constructor
     safety_method_ = static_cast<Safety_method>(trajectory_config["safety_method"].as<int>());
     RobotReach::Velocity_method velocity_method = static_cast<RobotReach::Velocity_method>(trajectory_config["velocity_method"].as<int>());
     robot_reach_->setVelocityMethod(velocity_method);
@@ -506,7 +507,7 @@ void SafetyShield::computesPotentialTrajectoryForPFL(bool v_static, bool v_pfl, 
         path_s_discrete_++;
     }
     //If verified safe, take the recovery path, otherwise, take the failsafe path
-    // TODO: potential mistake: maybe I'm setting the paths in the wrong way?
+    // TODO: extra if-Unterscheidung, weil man nicht zwischen failsafe-paths switchen können sollte?
     if (v_static && v_pfl && recovery_path_correct_) {
         recovery_path_.setCurrent(true);
         //discard old FailsafePath and replace with new one
@@ -546,7 +547,6 @@ void SafetyShield::computesPotentialTrajectoryForPFL(bool v_static, bool v_pfl, 
     // if not already on the repair path, plan a repair path
     if (!recovery_path_.isCurrent()) {
         double pos, vel, acc;
-        // TODO: potential mistake: neither could be set because its old failsafe-path? --> save which if failsafe_path_pfl or failsafe_path_static was used during that step?
         if(failsafe_path_pfl_.isCurrent()) {
             pos = failsafe_path_pfl_.getPosition();
             vel = failsafe_path_pfl_.getVelocity();
@@ -615,7 +615,6 @@ void SafetyShield::computesPotentialTrajectoryForPFL(bool v_static, bool v_pfl, 
         potential_path_pfl_ = failsafe_path_2_pfl_;
     }
     else {
-        // TODO: weitere Fallunterscheidung: je nachdem welches planning failed?
         // If planning failed, use previous failsafe path
         potential_path_static_ = failsafe_path_static_;
         potential_path_pfl_ = failsafe_path_pfl_;
@@ -702,18 +701,7 @@ Motion SafetyShield::determineNextMotion(bool is_safe) {
 Motion SafetyShield::determineNextMotionForPFL(bool is_safe_static, bool is_safe_pfl) {
     Motion next_motion;
     double s_d, ds_d, dds_d, ddds_d;
-    double pos;
-    // TODO: potential mistake: neither could be set because its old failsafe-path? --> save which if failsafe_path_pfl or failsafe_path_static was used during that step?
-    pos = failsafe_path_static_.getPosition();
-    /*
-    if(failsafe_path_pfl_.isCurrent()) {
-        pos = failsafe_path_pfl_.getPosition();
-    } else if(failsafe_path_static_.isCurrent()) {
-        pos = failsafe_path_static_.getPosition();
-    } else {
-        spdlog::error("Error in determineNextMotionForPFL: no failsafe-path is set?");
-    }
-     */
+    double pos = failsafe_path_static_.getPosition();
     if (is_safe_static && is_safe_pfl) {
         // Fill potential buffer with position and velocity from recovery path
         if (recovery_path_.getPosition() >= pos) {
@@ -931,20 +919,17 @@ Motion SafetyShield::PFLstep(double cycle_begin_time) {
         Motion goal_motion_pfl;
         computesPotentialTrajectoryForPFL(is_static_safe_, is_PFL_safe_, next_motion_.getVelocity(), &goal_motion_static, &goal_motion_pfl);
         if (activate_shield_) {
-            // TODO: potential mistake: Kapseln werden nicht richtig gesetted/berechnet wenn die Geschwindigkeit zu hoch ist?
             // Check motion for joint limits
             bool pfl_joint_limit = true;
             if(!is_under_iso_velocity_) {
                 pfl_joint_limit = checkMotionForJointLimits(goal_motion_pfl);
             }
-            // TODO: very conservative, could improve this depending on verification?
             if (!(checkMotionForJointLimits(goal_motion_static) && pfl_joint_limit)) {
                 is_static_safe_ = false;
                 is_PFL_safe_ = false;
             } else {
                 // check if robot doesnt run into static human
                 robot_capsules_static_ = robot_reach_->reach(current_motion, goal_motion_static, (goal_motion_static.getS()-current_motion.getS()), alpha_i_);
-                // TODO: humanReach, immer die kleinste Kapsel ist wichtig
                 human_reach_->humanReachabilityAnalysis(cycle_begin_time_, 0); //t_brake is differentiell
                 human_capsules_static_ = human_reach_->getAllCapsules();
                 is_static_safe_ = verify_->verify_human_reach(robot_capsules_static_, human_capsules_static_);
