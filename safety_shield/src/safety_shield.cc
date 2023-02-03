@@ -564,42 +564,48 @@ void SafetyShield::computesPotentialTrajectoryForPFL(bool v_static, bool v_pfl, 
     }
     // Only plan new failsafe trajectory if the recovery path planning was successful.
     if (recovery_path_correct_) {
-        //advance one step on repair path
+        // advance one step on intended path
         recovery_path_.increment(sample_time_);
-
-        double s_d, ds_d, dds_d;
-        // Calculate goal
+        // Check the maximum cartesian velocity at this point
+        double recovery_path_pos = recovery_path_.getPosition();
+        // \dot{s} value of the recovery path at the current position
+        double recovery_path_vel = recovery_path_.getVelocity();
         is_under_iso_velocity_ = false;
-        // v_max is maximum of LTT or STP and vel_s_dot is how much path velocity needs to be scaled to be under v_iso
-        failsafe_path_2_pfl_.getFinalMotion(s_d, ds_d, dds_d);
         double v_max;
         if(safety_method_ == LTT_MAXIMUM && !new_ltt_) {
             v_max = long_term_trajectory_.getMaxofMaximumCartesianVelocity();
         } else if(safety_method_ == LTT_MAXIMUM && new_ltt_) {
             v_max = new_long_term_trajectory_.getMaxofMaximumCartesianVelocity();
         } else if(safety_method_ == STP_MAXIMUM && !new_ltt_) {
-            v_max = long_term_trajectory_.getMaxofMaximumCartesianVelocityWithS(s_d);
+            v_max = long_term_trajectory_.getMaxofMaximumCartesianVelocityWithS(recovery_path_pos);
         } else {
             // safety_method_ == STP_MAXIMUM && new_ltt_
-            v_max = new_long_term_trajectory_.getMaxofMaximumCartesianVelocityWithS(s_d);
+            v_max = new_long_term_trajectory_.getMaxofMaximumCartesianVelocityWithS(recovery_path_pos);
         }
-        is_under_iso_velocity_ = v_max <= v_iso_;
-        double v_limit;
+        // Calculate max \dot{s} that is still under the ISO-velocity and add a small buffer.
+        double ds_limit = v_iso_ / v_max;
+        if(ds_limit < 0) {
+            spdlog::error("ds_limit = {} smaller than zero.", ds_limit);
+            ds_limit = 0.0;
+        }
+        ds_limit = std::max(ds_limit - 1e-5, 0.0);
+        is_under_iso_velocity_ = recovery_path_vel <= ds_limit;
         bool failsafe_2_pfl_planning_success = true;
-        // TODO: potential mistake: if its under iso-velocity, we dont need to compute the failsafe-path of the PFL-criterion and maybe I do it wrong
         if(!is_under_iso_velocity_) {
-            v_limit = v_iso_ / v_max;
-            if(v_limit >= 1 || v_limit <= 0) {
-                spdlog::error("v_limit not between 0 and 1");
-            }
-            failsafe_2_pfl_planning_success = planSafetyShield(recovery_path_.getPosition(), recovery_path_.getVelocity(), recovery_path_.getAcceleration(), v_limit, a_max_manoeuvre, j_max_manoeuvre, failsafe_path_2_pfl_);
+            // If we are not under the ISO-velocity, we plan a failsafe path to the ISO velocity.
+            failsafe_2_pfl_planning_success = planSafetyShield(recovery_path_.getPosition(), recovery_path_.getVelocity(), recovery_path_.getAcceleration(), ds_limit, a_max_manoeuvre, j_max_manoeuvre, failsafe_path_2_pfl_);
+        } else {
+            // Otherwise, we use a dummy failsafe path to the current \dot{s} value.
+            failsafe_2_pfl_planning_success = planSafetyShield(recovery_path_.getPosition(), recovery_path_.getVelocity(), recovery_path_.getAcceleration(), recovery_path_vel-0.01, a_max_manoeuvre, j_max_manoeuvre, failsafe_path_2_pfl_);
         }
-
-        // plan new failsafe path for STP
+        // plan new failsafe path for the static case
         bool failsafe_2_static_planning_success = planSafetyShield(recovery_path_.getPosition(), recovery_path_.getVelocity(), recovery_path_.getAcceleration(), 0, a_max_manoeuvre, j_max_manoeuvre, failsafe_path_2_static_);
 
         // Check the validity of the planned path
-        if (!failsafe_2_static_planning_success || !failsafe_2_pfl_planning_success || recovery_path_.getPosition() < failsafe_path_static_.getPosition() || recovery_path_.getPosition() < failsafe_path_pfl_.getPosition()) {
+        if (!failsafe_2_static_planning_success ||
+            !failsafe_2_pfl_planning_success || 
+            (failsafe_path_static_.isCurrent() && recovery_path_.getPosition() < failsafe_path_static_.getPosition()) || 
+            (failsafe_path_pfl_.isCurrent() && recovery_path_.getPosition() < failsafe_path_pfl_.getPosition())) {
             recovery_path_correct_ = false;
         }
     }
@@ -617,43 +623,28 @@ void SafetyShield::computesPotentialTrajectoryForPFL(bool v_static, bool v_pfl, 
 
     if(goal_motion_static == nullptr) {
         // if its nullptr, we dont need to calculate the goal motions
+        spdlog::info("goal_motion_static is nullptr");
         return;
     }
 
     //// Calculate start and goal pos of intended motion
-    // Fill potential buffer with position and velocity from last failsafe path. This value is not really used.
+    // Fill potential buffer with position and velocity from last failsafe path.
     double final_static_s_d, final_static_ds_d, final_static_dds_d;
     double final_pfl_s_d, final_pfl_ds_d, final_pfl_dds_d;
     double ddds_d;
-    // TODO: potential mistake: neither could be set because its old failsafe-path? --> save which if failsafe_path_pfl or failsafe_path_static was used during that step?
     ddds_d = failsafe_path_static_.getJerk();
-    /*
-    if(failsafe_path_pfl_.isCurrent()) {
-        ddds_d = failsafe_path_pfl_.getJerk();
-    } else if(failsafe_path_static_.isCurrent()) {
-        ddds_d = failsafe_path_static_.getJerk();
-    } else {
-        spdlog::error("Error in computesPotentialTrajectoryForPFL: no failsafe-path is set when calculating motions?");
-    }
-     */
     potential_path_static_.getFinalMotion(final_static_s_d, final_static_ds_d, final_static_dds_d);
     potential_path_pfl_.getFinalMotion(final_pfl_s_d, final_pfl_ds_d, final_pfl_dds_d);
 
     if (new_ltt_) {
         *goal_motion_static = new_long_term_trajectory_.interpolate(final_static_s_d, final_static_ds_d, final_static_dds_d, ddds_d, v_max_allowed_, a_max_allowed_, j_max_allowed_);
-        if(!is_under_iso_velocity_) {
-            *goal_motion_pfl = new_long_term_trajectory_.interpolate(final_pfl_s_d, final_pfl_ds_d, final_pfl_dds_d, ddds_d, v_max_allowed_, a_max_allowed_, j_max_allowed_);
-        }
+        *goal_motion_pfl = new_long_term_trajectory_.interpolate(final_pfl_s_d, final_pfl_ds_d, final_pfl_dds_d, ddds_d, v_max_allowed_, a_max_allowed_, j_max_allowed_);
     } else {
         *goal_motion_static = long_term_trajectory_.interpolate(final_static_s_d, final_static_ds_d, final_static_dds_d, ddds_d, v_max_allowed_, a_max_allowed_, j_max_allowed_);
-        if(!is_under_iso_velocity_) {
-            *goal_motion_pfl = long_term_trajectory_.interpolate(final_pfl_s_d, final_pfl_ds_d, final_pfl_dds_d, ddds_d, v_max_allowed_, a_max_allowed_, j_max_allowed_);
-        }
+        *goal_motion_pfl = long_term_trajectory_.interpolate(final_pfl_s_d, final_pfl_ds_d, final_pfl_dds_d, ddds_d, v_max_allowed_, a_max_allowed_, j_max_allowed_);
     }
     goal_motion_static->setTime(potential_path_static_.getPhase(3));
-    if(!is_under_iso_velocity_) {
-        goal_motion_pfl->setTime(potential_path_pfl_.getPhase(3));
-    }
+    goal_motion_pfl->setTime(potential_path_pfl_.getPhase(3));
 }
 
 bool SafetyShield::checkMotionForJointLimits(Motion& motion) {
