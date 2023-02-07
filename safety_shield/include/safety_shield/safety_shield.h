@@ -89,6 +89,11 @@ private:
     Path failsafe_path_pfl_;
 
     /**
+     * @brief saves trajectory velocities of all returned motions of step()
+     */
+    std::vector<double> s_dots_;
+
+    /**
      * @brief fail-safe path of the repair path
      */
     Path failsafe_path_2_;
@@ -724,6 +729,9 @@ public:
         return safety_method_ == STANDARD;
     }
 
+    inline std::vector<double> getVelocityScaling() {
+        return s_dots_;
+    }
 
 };
 } // namespace safety_shield

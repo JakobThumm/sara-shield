@@ -215,6 +215,7 @@ void SafetyShield::reset(bool activate_shield,
     is_safe_ = !activate_shield_;
     is_static_safe_ = is_safe_;
     is_PFL_safe_ = is_safe_;
+    s_dots_.clear();
     new_ltt_ = false;
     new_goal_ = false;
     new_ltt_processed_ = false;
@@ -507,7 +508,8 @@ void SafetyShield::computesPotentialTrajectoryForPFL(bool v_static, bool v_pfl, 
         path_s_discrete_++;
     }
     //If verified safe, take the recovery path, otherwise, take the failsafe path
-    // TODO: extra if-Unterscheidung, weil man nicht zwischen failsafe-paths switchen können sollte?
+    // TODO: extra if-Unterscheidung, weil man nicht zwischen failsafe-paths switchen können sollte
+    // TODO: only increment correct failsafe path
     if (v_static && v_pfl && recovery_path_correct_) {
         recovery_path_.setCurrent(true);
         //discard old FailsafePath and replace with new one
@@ -694,6 +696,7 @@ Motion SafetyShield::determineNextMotion(bool is_safe) {
     }
     /// !!! Set s to the new path position !!!
     path_s_ = s_d;
+    s_dots_.push_back(ds_d);
     // Return the calculated next motion
     return next_motion;
 }
@@ -701,6 +704,7 @@ Motion SafetyShield::determineNextMotion(bool is_safe) {
 Motion SafetyShield::determineNextMotionForPFL(bool is_safe_static, bool is_safe_pfl) {
     Motion next_motion;
     double s_d, ds_d, dds_d, ddds_d;
+    // TODO: pos wrong?
     double pos = failsafe_path_static_.getPosition();
     if (is_safe_static && is_safe_pfl) {
         // Fill potential buffer with position and velocity from recovery path
@@ -766,6 +770,7 @@ Motion SafetyShield::determineNextMotionForPFL(bool is_safe_static, bool is_safe
     }
     /// !!! Set s to the new path position !!!
     path_s_ = s_d;
+    s_dots_.push_back(ds_d);
     // Return the calculated next motion
     return next_motion;
 }

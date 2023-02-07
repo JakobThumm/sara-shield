@@ -141,10 +141,10 @@ protected:
         std::vector<Motion> mo_vec;
 
         //std::random_device dev;
-        std::mt19937 rng(5);
+        std::mt19937 rng(10);
         std::uniform_real_distribution<> dist6(1.0,6.0); // distribution in range [1, 6]
 
-        for(int i = 1; i < 1000; ++i) {
+        for(int i = 1; i < 10000; ++i) {
             std::vector<double> q = {dist6(rng), dist6(rng), dist6(rng), dist6(rng), dist6(rng), dist6(rng)};
             mo_vec.push_back(Motion(0, q, q));
         }

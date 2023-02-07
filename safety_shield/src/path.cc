@@ -57,8 +57,8 @@ void Path::getFinalMotion(double& final_pos, double& final_vel, double& final_ac
   }
 }
 
+// legacy method for old implementation of velocity safety-shield
 void Path::getMotionUnderVel(double v_limit, double& time, double& pos, double& vel, double& acc, double& jerk) {
-    // TODO: does that make sense, it time correct?
     if(vel_ < v_limit) {
         time = phases_[0];
         pos = pos_;
