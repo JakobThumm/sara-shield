@@ -35,6 +35,9 @@ TEST_F(RobotReachTest, ForwardKinematicTest1){
   EXPECT_TRUE(result.isApprox(expect));
 }
 
+/// commented out jacobian tests, because jacobian from pinocchio is different to the jacobians we calculate
+/// because the joint positions are different in the urdf model and the capsule model
+
 /*
 
 TEST_F(RobotReachTestVelocity, JacobianTest0) {

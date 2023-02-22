@@ -119,18 +119,15 @@ protected:
         YAML::Node robot_config = YAML::LoadFile(config_file.string());
         double nb_joints = robot_config["nb_joints"].as<int>();
         std::vector<double> transformation_matrices = robot_config["transformation_matrices"].as<std::vector<double>>();
-        std::vector<double> transformation_matrices_joints = robot_config["transformation_matrices_joints"].as<std::vector<double>>();
         std::vector<double>  enclosures = robot_config["enclosures"].as<std::vector<double>>();
         double secure_radius = robot_config["secure_radius"].as<double>();
         RobotReach robot_reach_approximate(transformation_matrices,
-                                           transformation_matrices_joints,
                                            nb_joints,
                                             enclosures,
                                             0.0, 0.0, 0.0,
                                             0.0, 0.0, 0.0,
                                             secure_radius);
         RobotReach robot_reach_exact(transformation_matrices,
-                                           transformation_matrices_joints,
                                            nb_joints,
                                            enclosures,
                                            0.0, 0.0, 0.0,
@@ -140,10 +137,10 @@ protected:
         robot_reach_exact.setVelocityMethod(RobotReach::Velocity_method::EXACT);
         std::vector<Motion> mo_vec;
 
-        //std::random_device dev;
         std::mt19937 rng(10);
         std::uniform_real_distribution<> dist6(1.0,6.0); // distribution in range [1, 6]
 
+        // fill trajectory with random values
         for(int i = 1; i < 10000; ++i) {
             std::vector<double> q = {dist6(rng), dist6(rng), dist6(rng), dist6(rng), dist6(rng), dist6(rng)};
             mo_vec.push_back(Motion(0, q, q));

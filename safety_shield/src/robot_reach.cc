@@ -39,48 +39,6 @@ RobotReach::RobotReach(std::vector<double> transformation_matrices, int nb_joint
   }
 }
 
-// constructor for velocity functionality
-RobotReach::RobotReach(std::vector<double> transformation_matrices, std::vector<double> transformation_matrices_joints, int nb_joints, std::vector<double> geom_par,
-                       double x = 0, double y = 0, double z = 0, double roll = 0, double pitch = 0, double yaw = 0, double secure_radius=0.0):
-        nb_joints_(nb_joints),
-        secure_radius_(secure_radius)
-{
-    Eigen::Matrix4d transformation_matrix_first;
-    double cr = cos(roll); double sr = sin(roll);
-    double cp = cos(pitch); double sp = sin(pitch);
-    double cy = cos(yaw); double sy = sin(yaw);
-    transformation_matrix_first << cr*cp, cr*sp*sy-sr*cy, cr*sp*cy+sr*sy, x,
-            sr*cp, sr*sp*sy+cr*cy, sr*sp*cy-cr*sy, y,
-            -sp, cp*sy, cp*cy, z,
-            0, 0, 0, 1;
-    transformation_matrices_.push_back(transformation_matrix_first);
-    transformation_matrices_joints_.push_back(transformation_matrix_first);
-    for (int joint = 0; joint < nb_joints; joint++) {
-        // Fill transformation matrix
-        Eigen::Matrix4d transformation_matrix;
-        Eigen::Matrix4d transformation_matrix_joint;
-        for (int i = 0; i < 4; i++) {
-            for (int j = 0; j < 4; j++) {
-                transformation_matrix(i, j) = transformation_matrices[16*joint + 4*i + j];
-                transformation_matrix_joint(i, j) = transformation_matrices_joints[16*joint + 4*i + j];
-            }
-        }
-        transformation_matrices_.push_back(transformation_matrix);
-        transformation_matrices_joints_.push_back(transformation_matrix_joint);
-
-        // Fill capsules
-        Eigen::Vector4d p1;
-        Eigen::Vector4d p2;
-        for (int i = 0; i < 3; i++) {
-            p1(i) = geom_par[7*joint + i];
-            p2(i) = geom_par[7*joint + 3 + i];
-        }
-        double radius = geom_par[7*joint + 6];
-        reach_lib::Capsule capsule(vectorToPoint(p1), vectorToPoint(p2), radius);
-        robot_capsules_.push_back(capsule);
-    }
-}
-
 void RobotReach::reset(double x, double y, double z, 
       double roll, double pitch, double yaw) {
   Eigen::Matrix4d transformation_matrix;
@@ -92,7 +50,6 @@ void RobotReach::reset(double x, double y, double z,
             -sp, cp*sy, cp*cy, z,
             0, 0, 0, 1;
   transformation_matrices_[0] = transformation_matrix;
-  transformation_matrices_joints_[0] = transformation_matrix;
 }
 
 reach_lib::Capsule RobotReach::transformCapsule(const int& n_joint, const Eigen::Matrix4d &T) {
@@ -154,23 +111,14 @@ double RobotReach::velocityOfMotion(const Motion& motion) {
 void RobotReach::calculateAllTransformationMatricesAndCapsules(const std::vector<double>& q) {
     robot_capsules_for_velocity_.clear();
     z_vectors_.clear();
-    transformation_matrices_q_.clear();
-    transformation_matrices_q_joints_.clear();
     Eigen::Matrix4d T_capsule = transformation_matrices_[0];
-    Eigen::Matrix4d T_joint = transformation_matrices_joints_[0];
-    // push z-vector of transformation matrix
-    transformation_matrices_q_.push_back(T_capsule);
-    transformation_matrices_q_joints_.push_back(T_joint);
     z_vectors_.emplace_back(T_capsule.block(0,2,3,1));
     for(int i = 0; i < nb_joints_; ++i) {
         forwardKinematic(q[i], i, T_capsule);
-        forwardKinematicJoints(q[i], i, T_joint);
         reach_lib::Capsule capsule = transformCapsule(i, T_capsule);
         // push robot capsule and z-vector
         robot_capsules_for_velocity_.push_back(capsule);
         z_vectors_.emplace_back(T_capsule.block(0,2,3,1));
-        transformation_matrices_q_.push_back(T_capsule);
-        transformation_matrices_q_joints_.push_back(T_joint);
     }
 }
 
@@ -199,12 +147,9 @@ double RobotReach::velocityOfCapsule(const int capsule, std::vector<double> q_do
 Eigen::Matrix<double, 6, Eigen::Dynamic> RobotReach::getJacobian(const int joint) {
     Eigen::Matrix<double, 6, Eigen::Dynamic> jacobian;
     jacobian.setZero(6, joint+1);
-    //Eigen::Vector3d p_e = transformation_matrices_q_joints_[joint+1].block(0, 3, 3, 1);
     Eigen::Vector3d p_e = pointTo3dVector(robot_capsules_for_velocity_[joint].p2_);
     for(int i = 0; i < joint+1; ++i) {
-        //Eigen::Vector3d z_i = transformation_matrices_q_joints_[i+1].block(0, 2, 3, 1);
         Eigen::Vector3d z_i = z_vectors_[i+1];
-        //Eigen::Vector3d p_i = transformation_matrices_q_joints_[i+1].block(0, 3, 3, 1);
         Eigen::Vector3d p_i = pointTo3dVector(robot_capsules_for_velocity_[i].p1_);
         Eigen::Vector3d upper = z_i.cross(p_e - p_i);
         Eigen::Vector<double, 6> column;
@@ -216,9 +161,7 @@ Eigen::Matrix<double, 6, Eigen::Dynamic> RobotReach::getJacobian(const int joint
 
 double RobotReach::approximateVelOfCapsule(const int capsule, const Eigen::Vector3d& v, const Eigen::Vector3d& omega) {
     Eigen::Vector3d p1 = pointTo3dVector(robot_capsules_for_velocity_[capsule].p1_);
-    //Eigen::Vector3d p1 = transformation_matrices_q_joints_[capsule+1].block(0, 3, 3, 1);
     Eigen::Vector3d p2 = pointTo3dVector(robot_capsules_for_velocity_[capsule].p2_);
-    //Eigen::Vector3d p2 = transformation_matrices_q_joints_[capsule+2].block(0, 3, 3, 1);
     Eigen::Vector3d link = p1 - p2;
     // radius of capsule
     double r = robot_capsules_for_velocity_[capsule].r_;
@@ -234,9 +177,7 @@ double RobotReach::exactVelOfCapsule(const int capsule, const Eigen::Vector3d& v
     Eigen::Vector3d n = omega.normalized();
     double scalar_v = v.transpose() * n;
     Eigen::Vector3d p1 = pointTo3dVector(robot_capsules_for_velocity_[capsule].p1_);
-    //Eigen::Vector3d p1 = transformation_matrices_q_joints_[capsule+1].block(0, 3, 3, 1);
     Eigen::Vector3d p2 = pointTo3dVector(robot_capsules_for_velocity_[capsule].p2_);
-    //Eigen::Vector3d p2 = transformation_matrices_q_joints_[capsule+2].block(0, 3, 3, 1);
     // LSE solving to get offset o of screw axis: Ax = b, b = v - scalar_v * n, A = S(omega), o = -(x - p2)
     Eigen::Matrix3d A = getCrossProductAsMatrix(omega);
     Eigen::Vector3d b = v - (v.transpose() * n) * n;

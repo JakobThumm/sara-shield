@@ -90,11 +90,9 @@ SafetyShield::SafetyShield(bool activate_shield,
     std::string robot_name = robot_config["robot_name"].as<std::string>();
     nb_joints_ = robot_config["nb_joints"].as<int>();
     std::vector<double> transformation_matrices = robot_config["transformation_matrices"].as<std::vector<double>>();
-    std::vector<double> transformation_matrices_joints = robot_config["transformation_matrices_joints"].as<std::vector<double>>();
     std::vector<double> enclosures = robot_config["enclosures"].as<std::vector<double>>();
     double secure_radius = robot_config["secure_radius"].as<double>();
     robot_reach_ = new RobotReach(transformation_matrices,
-                                  transformation_matrices_joints,
                                   nb_joints_,
                                   enclosures,
                                   init_x, init_y, init_z,
@@ -945,13 +943,13 @@ Motion SafetyShield::PFLstep(double cycle_begin_time) {
                     is_PFL_safe_ = true;
                     // if v_max <= v_iso, no velocity capsules get calculated because velocity criterion is true
                     // so we set the velocity capsules to the static capsules
-                    robot_capsules_velocity_ = robot_capsules_static_;
-                    human_capsules_velocity_ = human_capsules_static_;
+                    robot_capsules_PFL_ = robot_capsules_static_;
+                    human_capsules_PFL_ = human_capsules_static_;
                 } else {
-                    robot_capsules_velocity_ = robot_reach_->reach(current_motion, goal_motion_pfl, (goal_motion_pfl.getS()-current_motion.getS()), alpha_i_);
+                    robot_capsules_PFL_ = robot_reach_->reach(current_motion, goal_motion_pfl, (goal_motion_pfl.getS()-current_motion.getS()), alpha_i_);
                     human_reach_->humanReachabilityAnalysis(cycle_begin_time_, goal_motion_pfl.getTime());
-                    human_capsules_velocity_ = human_reach_->getAllCapsules();
-                    is_PFL_safe_ = verify_->verify_human_reach(robot_capsules_velocity_, human_capsules_velocity_);
+                    human_capsules_PFL_ = human_reach_->getAllCapsules();
+                    is_PFL_safe_ = verify_->verify_human_reach(robot_capsules_PFL_, human_capsules_PFL_);
                 }
 
             }

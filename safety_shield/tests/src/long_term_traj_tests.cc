@@ -229,6 +229,7 @@ TEST_F(LongTermTrajTest, InterpolateTest) {
     EXPECT_NEAR(motion_int3.getJerk()[0], 1.561990000000000, 1e-5);
 }
 
+// test if overapproximation >= exact and how the accuracy is
 TEST_F(LongTermTrajTestVelocity, overapproximation) {
     double sum_deviation = 0;
     double epsilon = 1e-5;

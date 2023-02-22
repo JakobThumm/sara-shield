@@ -85,7 +85,15 @@ private:
      * @brief fail-safe path of the current path
      */
     Path failsafe_path_;
+
+    /**
+     * @brief full stop fail-safe path of the current path
+     */
     Path failsafe_path_static_;
+
+    /**
+     * @brief PFL fail-safe path of the current path
+     */
     Path failsafe_path_pfl_;
 
     /**
@@ -97,7 +105,15 @@ private:
      * @brief fail-safe path of the repair path
      */
     Path failsafe_path_2_;
+
+    /**
+     * @brief full stop fail-safe path of the repair path
+     */
     Path failsafe_path_2_static_;
+
+    /**
+     * @brief PFL fail-safe path of the repair path
+     */
     Path failsafe_path_2_pfl_;
 
     /**
@@ -109,7 +125,15 @@ private:
      * @brief the constructed failsafe path
      */
     Path potential_path_;
+
+    /**
+     * @brief the constructed full stop failsafe path
+     */
     Path potential_path_static_;
+
+    /**
+     * @brief the constructed PFL failsafe path
+     */
     Path potential_path_pfl_;
 
     /**
@@ -150,7 +174,7 @@ private:
     bool is_PFL_safe_;
 
     /**
-     * @brief Was the last timestep safe according to static criterion
+     * @brief Was the last timestep safe according to static human criterion
      */
     bool is_static_safe_;
 
@@ -274,32 +298,32 @@ private:
 
     //////// Reachable sets of human and robot //////
     /**
-     * @brief Vector of robot reachable set capsules for full-stop criterion (get updated in every step()).
+     * @brief Vector of robot reachable set capsules for SSM criterion (get updated in every step()).
      */
     std::vector<reach_lib::Capsule> robot_capsules_;
 
     /**
-     * @brief Vector of human reachable set capsules for full-stop criterion (get updated in every step()).
+     * @brief Vector of human reachable set capsules for SSM criterion (get updated in every step()).
      */
     std::vector<std::vector<reach_lib::Capsule>> human_capsules_;
 
     /**
-     * @brief Vector of robot reachable set capsules for velocity criterion (get updated in every step()).
+     * @brief Vector of robot reachable set capsules for PFL criterion (get updated in every step()).
      */
-    std::vector<reach_lib::Capsule> robot_capsules_velocity_;
+    std::vector<reach_lib::Capsule> robot_capsules_PFL_;
 
     /**
-     * @brief Vector of human reachable set capsules for velocity criterion (get updated in every step()).
+     * @brief Vector of human reachable set capsules for PFL criterion (get updated in every step()).
      */
-    std::vector<std::vector<reach_lib::Capsule>> human_capsules_velocity_;
+    std::vector<std::vector<reach_lib::Capsule>> human_capsules_PFL_;
 
     /**
-     * @brief Vector of robot reachable set capsules for static criterion (get updated in every step()).
+     * @brief Vector of robot reachable set capsules for static human criterion (get updated in every step()).
      */
     std::vector<reach_lib::Capsule> robot_capsules_static_;
 
     /**
-     * @brief Vector of human reachable set capsules for static criterion(get updated in every step()).
+     * @brief Vector of human reachable set capsules for static human criterion (get updated in every step()).
      */
     std::vector<std::vector<reach_lib::Capsule>> human_capsules_static_;
 
@@ -310,7 +334,7 @@ private:
     long_term_planner::LongTermPlanner ltp_;
 
     enum Safety_method {
-        // standard full stop criteria
+        // standard SSM criterion
         STANDARD,
         // maximum cartesian velocity criterias
         LTT_MAXIMUM,
@@ -540,7 +564,7 @@ public:
     Motion computesPotentialTrajectory(bool v, const std::vector<double> &prev_speed);
 
     /**
-     * @brief Computes the new trajectory depending on dq and if the previous path is safe and publishes it
+     * @brief Computes the new trajectory depending on dq and the verification of the safety criteria of the previous path and publishes it
      * @param[in] v_static is the previous path static-safe
      * @param[in] v_pfl is the previous path pfl-safe
      * @param[in] prev_speed the velocity of the previous point
@@ -563,7 +587,7 @@ public:
     Motion step(double cycle_begin_time);
 
     /**
-     * @brief Gets the information that the next simulation cycle (sample time) has started
+     * @brief completes one step of the PFL safety shield
      * @param cycle_begin_time timestep of begin of current cycle in seconds.
      * @return next motion to be executed
      */
@@ -633,7 +657,7 @@ public:
     }
 
     /**
-     * @brief Get the Robot Reach Capsules for the static criterion as a vector of [p1[0:3], p2[0:3], r]
+     * @brief Get the Robot Reach Capsules for the static human criterion as a vector of [p1[0:3], p2[0:3], r]
      * p1: Center point of half sphere 1
      * p2: Center point of half sphere 2
      * r: Radius of half spheres and cylinder
@@ -642,24 +666,24 @@ public:
      */
     inline std::vector<std::vector<double>> getRobotReachStaticCapsules() {
         std::vector<std::vector<double>> capsules( robot_capsules_static_.size() , std::vector<double> (7));
-        for (int i = 0; i < robot_capsules_velocity_.size(); i++) {
+        for (int i = 0; i < robot_capsules_static_.size(); i++) {
             capsules[i] = convertCapsule(robot_capsules_static_[i]);
         }
         return capsules;
     }
 
     /**
-     * @brief Get the Robot Reach Capsules for the velocity criterion as a vector of [p1[0:3], p2[0:3], r]
+     * @brief Get the Robot Reach Capsules for the PFL criterion as a vector of [p1[0:3], p2[0:3], r]
      * p1: Center point of half sphere 1
      * p2: Center point of half sphere 2
      * r: Radius of half spheres and cylinder
      *
      * @return std::vector<std::vector<double>> Capsules
      */
-    inline std::vector<std::vector<double>> getRobotReachVelocityCapsules() {
-        std::vector<std::vector<double>> capsules( robot_capsules_velocity_.size() , std::vector<double> (7));
-        for (int i = 0; i < robot_capsules_velocity_.size(); i++) {
-            capsules[i] = convertCapsule(robot_capsules_velocity_[i]);
+    inline std::vector<std::vector<double>> getRobotReachPFLCapsules() {
+        std::vector<std::vector<double>> capsules( robot_capsules_PFL_.size() , std::vector<double> (7));
+        for (int i = 0; i < robot_capsules_PFL_.size(); i++) {
+            capsules[i] = convertCapsule(robot_capsules_PFL_[i]);
         }
         return capsules;
     }
@@ -684,7 +708,7 @@ public:
     }
 
     /**
-     * @brief Get the Human Reach Capsules for static criterion as a vector of [p1[0:3], p2[0:3], r]
+     * @brief Get the Human Reach Capsules for static human criterion as a vector of [p1[0:3], p2[0:3], r]
      * p1: Center point of half sphere 1
      * p2: Center point of half sphere 2
      * r: Radius of half spheres and cylinder
@@ -703,7 +727,7 @@ public:
     }
 
     /**
-     * @brief Get the Human Reach Capsules for velocity criterion as a vector of [p1[0:3], p2[0:3], r]
+     * @brief Get the Human Reach Capsules for PFL criterion as a vector of [p1[0:3], p2[0:3], r]
      * p1: Center point of half sphere 1
      * p2: Center point of half sphere 2
      * r: Radius of half spheres and cylinder
@@ -712,23 +736,33 @@ public:
      *
      * @return std::vector<std::vector<double>> Capsules
      */
-    inline std::vector<std::vector<double>> getHumanReachVelocityCapsules(int type=1) {
-        assert(type >= 0 && type <= human_capsules_velocity_.size());
-        std::vector<std::vector<double>> capsules( human_capsules_velocity_[type].size() , std::vector<double> (7));
-        for (int i = 0; i < human_capsules_velocity_[type].size(); i++) {
-            capsules[i] = convertCapsule(human_capsules_velocity_[type][i]);
+    inline std::vector<std::vector<double>> getHumanReachPFLCapsules(int type=1) {
+        assert(type >= 0 && type <= human_capsules_PFL_.size());
+        std::vector<std::vector<double>> capsules( human_capsules_PFL_[type].size() , std::vector<double> (7));
+        for (int i = 0; i < human_capsules_PFL_[type].size(); i++) {
+            capsules[i] = convertCapsule(human_capsules_PFL_[type][i]);
         }
         return capsules;
     }
 
+    /**
+     * @brief returns if last timestep was safe
+     */
     inline bool getSafety() {
         return is_safe_;
     }
 
+    /**
+     * @brief returns if standard SSM safety method is used
+     */
     inline bool getSafetyMethod() {
         return safety_method_ == STANDARD;
     }
 
+    /**
+     * @brief returns list of s_dot values of each step (for plotting)
+     * @return sdt::vector<double> list of s_dot values of each step
+     */
     inline std::vector<double> getVelocityScaling() {
         return s_dots_;
     }

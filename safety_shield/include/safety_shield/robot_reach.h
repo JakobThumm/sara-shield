@@ -78,21 +78,6 @@ class RobotReach {
    */
   std::vector<Eigen::Vector3d> z_vectors_;
 
-  /**
-   * @brief list of transformation matrices (only for debugging)
-   */
-   std::vector<Eigen::Matrix4d> transformation_matrices_q_;
-
-   /**
-    * @brief list of transformation matrices of joints
-    */
-    std::vector<Eigen::Matrix4d> transformation_matrices_q_joints_;
-
-    /**
-    * @brief List of transforamtion matrices from joint to joint for velocity functionality (fixed description, not including joint movements)
-    */
-    std::vector<Eigen::Matrix4d> transformation_matrices_joints_;
-
 public:
 
   /**
@@ -121,30 +106,6 @@ public:
       double x, double y, double z, 
       double roll, double pitch, double yaw,
       double secure_radius);
-
-    /**
-    * @brief A robot basic constructor for velocity functionality
-    *
-    * @param transformation_matrices the transformation matrices
-    * @param transformation_matrices_joints the transformation matrices for the joints
-    * @param nb_joints the number of joints of the robot
-    * @param geom_param the robot occupancy matrix
-    * @param x initial x position of base
-    * @param y initial y position of base
-    * @param z initial z position of base
-    * @param roll initial roll of base
-    * @param pitch initial pitch of base
-    * @param yaw initial yaw of base
-    * @param secure_radius Expand the radius of the robot capsules by this amount to
-    *  account for measurement and modelling errors.
-    */
-    RobotReach(std::vector<double> transformation_matrices,
-               std::vector<double> transformation_matrices_joints,
-               int nb_joints,
-               std::vector<double> geom_par,
-               double x, double y, double z,
-               double roll, double pitch, double yaw,
-               double secure_radius);
 
   /**
    *  @brief A robot destructor
@@ -183,35 +144,26 @@ public:
   }
 
   /**
-   * @brief Computes the global transformation matrix of a given joint.
-   *
-   * @param q The joint angle
-   * @param n_joint The number of joint
-   * @param T The current transformation matrix (Start with Identity). T will be modified in this function.
+   * @brief returns 4d Eigen::Vector from reach_lib::Point
    */
-  inline void forwardKinematicJoints(const double &q, const int& n_joint, Eigen::Matrix4d &T) {
-      // Transform T to new joint coordinate system
-      T = T * transformation_matrices_joints_[n_joint+1];;
-      Eigen::Matrix4d Rz;
-      Rz << cos(q), -sin(q), 0, 0,
-              sin(q), cos(q) , 0, 0,
-              0     , 0      , 1, 0,
-              0     , 0      , 0, 1;
-      T = T * Rz;
-  }
-
   Eigen::Vector4d pointToVector(const reach_lib::Point& p) {
       Eigen::Vector4d vec;
       vec << p.x, p.y, p.z, 1.0;
       return vec;
   }
 
+  /**
+   * @brief returns 3d Eigen::Vector from reach_lib::Point
+   */
   Eigen::Vector3d pointTo3dVector(const reach_lib::Point& p) {
       Eigen::Vector3d vec;
       vec << p.x, p.y, p.z;
       return vec;
-}
+  }
 
+  /**
+   * @brief returns reach_lib::Point from Eigen::Vector
+   */
   reach_lib::Point vectorToPoint(const Eigen::Vector4d& vec) {
       return reach_lib::Point(vec(0), vec(1), vec(2));
   }
@@ -254,7 +206,7 @@ public:
   double velocityOfMotion(const Motion& motion);
 
   /**
-   * @brief calculates maximum cartesian velocity for a specific capsule
+   * @brief calculates maximum cartesian velocity for a specific capsule depending on velocity method (approximate or exact)
    * @param capsule which capsule
    * @param q_dot velocity configuration of robot
    * @return maximum cartesian velocity of capsule
@@ -309,20 +261,14 @@ public:
       return cross;
   }
 
+  /// getters for debugging purposes
+
   inline std::vector<reach_lib::Capsule> getVelocityCapsules() {
       return robot_capsules_for_velocity_;
   }
 
   inline std::vector<Eigen::Vector3d> getZvectors() {
       return z_vectors_;
-  }
-
-  inline std::vector<Eigen::Matrix4d> getTransformationMatricesQ() {
-      return transformation_matrices_q_;
-  }
-
-  inline std::vector<Eigen::Matrix4d> getTransformationMatricesQJoints() {
-      return transformation_matrices_q_joints_;
   }
 
   inline Velocity_method getVelocityMethod() {
