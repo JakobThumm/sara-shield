@@ -68,6 +68,7 @@ SafetyShield::SafetyShield(bool activate_shield,
     spdlog::info("Safety shield created.");
 }
 
+// TODO: neuer Konstruktor delegated to alter Konstruktor
 SafetyShield::SafetyShield(bool activate_shield,
                            double sample_time,
                            std::string trajectory_config_file,

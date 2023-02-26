@@ -112,5 +112,10 @@ PYBIND11_MODULE(safety_shield_py, handle) {
     .def("getSafetyMethod", &safety_shield::SafetyShield::getSafetyMethod)
     .def("getVelocityScaling", &safety_shield::SafetyShield::getVelocityScaling)
   ;
-  
+
+  py::enum_<safety_shield::SafetyShield::Safety_method>(handle, "Safety_method")
+          .value("STANDARD", safety_shield::SafetyShield::STANDARD)
+          .value("LTT_MAXIMUM", safety_shield::SafetyShield::LTT_MAXIMUM)
+          .value("STP_MAXIMUM", safety_shield::SafetyShield::STP_MAXIMUM)
+          .export_values();
 }

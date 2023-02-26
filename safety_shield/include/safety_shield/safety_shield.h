@@ -333,6 +333,10 @@ private:
      */
     long_term_planner::LongTermPlanner ltp_;
 
+public:
+    /**
+     * enum of all safety modes
+     */
     enum Safety_method {
         // standard SSM criterion
         STANDARD,
@@ -340,6 +344,8 @@ private:
         LTT_MAXIMUM,
         STP_MAXIMUM,
     };
+
+private:
 
     /**
      * @brief which safety method should be used
