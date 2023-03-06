@@ -588,6 +588,22 @@ Motion SafetyShield::step(double cycle_begin_time) {
   }
 }
 
+std::vector<std::vector<double>> SafetyShield::getCustomHumanPrediction(
+    double cycle_begin_time,
+    double time_horizon,
+    int type=1
+) {
+    assert(type >= 0 && type <= human_capsules_.size());
+    human_reach_->humanReachabilityAnalysis(cycle_begin_time, cycle_begin_time + time_horizon);
+    std::vector<std::vector<reach_lib::Capsule>> all_capsules = human_reach_->getAllCapsules();
+    
+    std::vector<std::vector<double>> capsules(all_capsules[type].size() , std::vector<double> (7));
+    for (int i = 0; i < all_capsules[type].size(); i++) {
+      capsules[i] = convertCapsule(all_capsules[type][i]);
+    }
+    return capsules;
+}
+
 Motion SafetyShield::getCurrentMotion() {
   Motion current_pos;
   if (!recovery_path_.isCurrent()) {

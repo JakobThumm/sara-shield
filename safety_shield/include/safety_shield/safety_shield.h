@@ -476,6 +476,21 @@ protected:
   Motion step(double cycle_begin_time);
 
   /**
+   * @brief Predict the human reachable occupancy for the given time horizon.
+   * @details This function can be used to alter the robot's trajectory to avoid the human in the future.
+   * Get the Human Reach Capsules as a vector of [p1[0:3], p2[0:3], r]
+   * p1: Center point of half sphere 1
+   * p2: Center point of half sphere 2
+   * r: Radius of half spheres and cylinder
+   * 
+   * @param cycle_begin_time timestep of begin of current cycle in seconds.
+   * @param horizon_length time horizon in which to predict the human reachable occupancy.
+   * @param type Type of capsule. Select 0 for POS, 1 for VEL, and 2 for ACCEL
+   * @return std::vector<std::vector<double>> Capsules
+   */
+  std::vector<std::vector<double>> getCustomHumanPrediction(double cycle_begin_time, double time_horizon, int type=1);
+
+  /**
    * @brief Calculates a new trajectory from current joint state to desired goal state.
    * Sets new trajectory as desired new long term trajectory.
    * @param goal_position Desired joint angles to move to
