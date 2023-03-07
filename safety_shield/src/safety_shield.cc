@@ -591,7 +591,7 @@ Motion SafetyShield::step(double cycle_begin_time) {
 std::vector<std::vector<double>> SafetyShield::getCustomHumanPrediction(
     double cycle_begin_time,
     double time_horizon,
-    int type=1
+    int type
 ) {
     assert(type >= 0 && type <= human_capsules_.size());
     human_reach_->humanReachabilityAnalysis(cycle_begin_time, cycle_begin_time + time_horizon);
