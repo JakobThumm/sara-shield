@@ -594,7 +594,7 @@ std::vector<std::vector<double>> SafetyShield::getCustomHumanPrediction(
     int type
 ) {
     assert(type >= 0 && type <= human_capsules_.size());
-    human_reach_->humanReachabilityAnalysis(cycle_begin_time, cycle_begin_time + time_horizon);
+    human_reach_->humanReachabilityAnalysis(cycle_begin_time, time_horizon);
     std::vector<std::vector<reach_lib::Capsule>> all_capsules = human_reach_->getAllCapsules();
     
     std::vector<std::vector<double>> capsules(all_capsules[type].size() , std::vector<double> (7));
