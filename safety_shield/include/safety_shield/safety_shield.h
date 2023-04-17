@@ -362,6 +362,30 @@ private:
      */
     bool is_under_iso_velocity_;
 
+    /**
+     * @brief constructs safety_shield object with config file
+     * @param trajectory_config_file Path to config file defining the trajectory parameters
+     * @param robot_config_file Path to config file defining the robot transformation matrices and capsules
+     * @param mocap_config_file Path to config file defining the human motion capture
+     * @param init_x Base x pos
+     * @param init_y Base y pos
+     * @param init_z Base z pos
+     * @param init_roll Base roll
+     * @param init_pitch Base pitch
+     * @param init_yaw Base yaw
+     * @param init_qpos Initial joint position of the robot
+     */
+    void constructWithConfig(std::string trajectory_config_file,
+                             std::string robot_config_file,
+                             std::string mocap_config_file,
+                             double init_x,
+                             double init_y,
+                             double init_z,
+                             double init_roll,
+                             double init_pitch,
+                             double init_yaw,
+                             const std::vector<double> &init_qpos);
+
 protected:
     /**
      * @brief Calculate max acceleration and jerk based on previous velocity
@@ -533,6 +557,38 @@ public:
                           double init_yaw,
                           const std::vector<double> &init_qpos);
 
+    /**
+      * @brief Construct a new Safety Shield object from config files + activate PFL mode
+      *
+      * @param activate_shield If the safety function should be active or not.
+      * @param sample_time Sample time of shield
+      * @param trajectory_config_file Path to config file defining the trajectory parameters
+      * @param robot_config_file Path to config file defining the robot transformation matrices and capsules
+      * @param mocap_config_file Path to config file defining the human motion capture
+      * @param init_x Base x pos
+      * @param init_y Base y pos
+      * @param init_z Base z pos
+      * @param init_roll Base roll
+      * @param init_pitch Base pitch
+      * @param init_yaw Base yaw
+      * @param init_qpos Initial joint position of the robot
+      * @param safety_method PFL mode or SSM mode
+      * @param velocity_method if PFL mode, which velocity method
+      */
+    explicit SafetyShield(bool activate_shield,
+                          double sample_time,
+                          std::string trajectory_config_file,
+                          std::string robot_config_file,
+                          std::string mocap_config_file,
+                          double init_x,
+                          double init_y,
+                          double init_z,
+                          double init_roll,
+                          double init_pitch,
+                          double init_yaw,
+                          const std::vector<double> &init_qpos,
+                          Safety_method safety_method,
+                          RobotReach::Velocity_method velocity_method);
     /**
      * @brief A SafetyShield destructor
      */

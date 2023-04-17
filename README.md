@@ -8,6 +8,8 @@ main things which are changed in comparison to SSM safety shield (cartesian_velo
 - robot_reach.cc with new methods to calculate joint jacobians and velocities for a specific motion
 - commented out tests in robot_reach_tests because jacobian of pinocchio-urdf is different than of capsule-model
 
+TODO: compilation problems because new version of spdlog throws an error message?
+
 # SaRA-shield
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 

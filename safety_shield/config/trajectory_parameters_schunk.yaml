@@ -20,14 +20,4 @@ q4: [0.0]
 q5: [0.0]
 q6: [0.0]
 
-# safety-rated speed specified by iso-norm, its actually 0.25 but lower speed is better
-v_iso: 0.25
 
-# standard full stop criteria (STANDARD) == 0
-# maximum of LTT (LTT_MAXIMUM) == 1
-# maximum of STP (STP_MAXIMUM) == 2
-safety_method: 0
-
-# APPROXIMATE == 0
-# EXACT == 1
-velocity_method: 0

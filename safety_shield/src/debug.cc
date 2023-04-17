@@ -36,7 +36,10 @@ int main () {
       init_roll, 
       init_pitch, 
       init_yaw,
-      init_qpos);
+      init_qpos,
+      safety_shield::SafetyShield::Safety_method::STP_MAXIMUM,
+      safety_shield::RobotReach::Velocity_method::APPROXIMATE);
+
 
     // Dummy human measurement
     std::vector<reach_lib::Point> dummy_human_meas(21);

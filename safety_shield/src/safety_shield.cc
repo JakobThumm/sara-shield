@@ -68,24 +68,17 @@ SafetyShield::SafetyShield(bool activate_shield,
     spdlog::info("Safety shield created.");
 }
 
-// TODO: neuer Konstruktor delegated to alter Konstruktor
-SafetyShield::SafetyShield(bool activate_shield,
-                           double sample_time,
-                           std::string trajectory_config_file,
-                           std::string robot_config_file,
-                           std::string mocap_config_file,
-                           double init_x,
-                           double init_y,
-                           double init_z,
-                           double init_roll,
-                           double init_pitch,
-                           double init_yaw,
-                           const std::vector<double> &init_qpos):
-        activate_shield_(activate_shield),
-        sample_time_(sample_time),
-        path_s_(0),
-        path_s_discrete_(0)
-{
+void SafetyShield::constructWithConfig(std::string trajectory_config_file,
+                                       std::string robot_config_file,
+                                       std::string mocap_config_file,
+                                       double init_x,
+                                       double init_y,
+                                       double init_z,
+                                       double init_roll,
+                                       double init_pitch,
+                                       double init_yaw,
+                                       const std::vector<double> &init_qpos) {
+
     ///////////// Build robot reach
     YAML::Node robot_config = YAML::LoadFile(robot_config_file);
     std::string robot_name = robot_config["robot_name"].as<std::string>();
@@ -109,14 +102,7 @@ SafetyShield::SafetyShield(bool activate_shield,
     j_max_allowed_ = trajectory_config["j_max_allowed"].as<std::vector<double>>();
     a_max_ltt_ = trajectory_config["a_max_ltt"].as<std::vector<double>>();
     j_max_ltt_ = trajectory_config["j_max_ltt"].as<std::vector<double>>();
-    ltp_ = long_term_planner::LongTermPlanner(nb_joints_, sample_time, q_min_allowed_, q_max_allowed_, v_max_allowed_, a_max_ltt_, j_max_ltt_);
-    v_iso_ = trajectory_config["v_iso"].as<double>();
-    // TODO: safety_method nicht in config setten, sondern über constructor
-    safety_method_ = static_cast<Safety_method>(trajectory_config["safety_method"].as<int>());
-    RobotReach::Velocity_method velocity_method = static_cast<RobotReach::Velocity_method>(trajectory_config["velocity_method"].as<int>());
-    robot_reach_->setVelocityMethod(velocity_method);
-    spdlog::info("safety_method = {}", safety_method_);
-    spdlog::info("velocity_method = {}", velocity_method);
+    ltp_ = long_term_planner::LongTermPlanner(nb_joints_, sample_time_, q_min_allowed_, q_max_allowed_, v_max_allowed_, a_max_ltt_, j_max_ltt_);
     // Initialize the long term trajectory
     std::vector<Motion> long_term_traj;
     long_term_traj.push_back(Motion(0.0, init_qpos));
@@ -192,6 +178,72 @@ SafetyShield::SafetyShield(bool activate_shield,
         next_motion_ = determineNextMotionForPFL(is_static_safe_, is_PFL_safe_);
     }
     spdlog::info("Safety shield created.");
+}
+
+// TODO: neue Methode mit constructWithConfig
+// TODO: neuer Konstruktor mit safety_method
+SafetyShield::SafetyShield(bool activate_shield,
+                           double sample_time,
+                           std::string trajectory_config_file,
+                           std::string robot_config_file,
+                           std::string mocap_config_file,
+                           double init_x,
+                           double init_y,
+                           double init_z,
+                           double init_roll,
+                           double init_pitch,
+                           double init_yaw,
+                           const std::vector<double> &init_qpos):
+        activate_shield_(activate_shield),
+        sample_time_(sample_time),
+        path_s_(0),
+        path_s_discrete_(0)
+{
+    constructWithConfig(trajectory_config_file,
+                        robot_config_file,
+                        mocap_config_file,
+                        init_x,
+                        init_y,
+                        init_z,
+                        init_roll,
+                        init_pitch,
+                        init_yaw,
+                        init_qpos);
+}
+
+SafetyShield::SafetyShield(bool activate_shield,
+                           double sample_time,
+                           std::string trajectory_config_file,
+                           std::string robot_config_file,
+                           std::string mocap_config_file,
+                           double init_x,
+                           double init_y,
+                           double init_z,
+                           double init_roll,
+                           double init_pitch,
+                           double init_yaw,
+                           const std::vector<double> &init_qpos,
+                           Safety_method safety_method,
+                           RobotReach::Velocity_method velocity_method):
+     activate_shield_(activate_shield),
+     sample_time_(sample_time),
+     path_s_(0),
+     path_s_discrete_(0),
+     safety_method_(safety_method)
+{
+    constructWithConfig(trajectory_config_file,
+                        robot_config_file,
+                        mocap_config_file,
+                        init_x,
+                        init_y,
+                        init_z,
+                        init_roll,
+                        init_pitch,
+                        init_yaw,
+                        init_qpos);
+    robot_reach_->setVelocityMethod(velocity_method);
+    spdlog::info("safety_method = {}", safety_method_);
+    spdlog::info("velocity_method = {}", velocity_method);
 }
 
 void SafetyShield::reset(bool activate_shield,
