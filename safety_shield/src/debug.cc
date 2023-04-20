@@ -37,8 +37,8 @@ int main () {
       init_pitch, 
       init_yaw,
       init_qpos,
-      safety_shield::SafetyShield::Safety_method::STP_MAXIMUM,
-      safety_shield::RobotReach::Velocity_method::APPROXIMATE);
+      safety_shield::SafetyShield::Safety_method::STP_MAXIMUM, // "STP_MAXIMUM"
+      safety_shield::RobotReach::Velocity_method::APPROXIMATE); // true
 
 
     // Dummy human measurement

@@ -88,6 +88,37 @@ PYBIND11_MODULE(safety_shield_py, handle) {
       py::arg("init_pitch"),
       py::arg("init_yaw"),
       py::arg("init_qpos"))
+    .def(py::init<bool, double, std::string, std::string, std::string, double, double, double, double, double, double, const std::vector<double>&, std::string, bool>(),
+       py::arg("activate_shield"),
+       py::arg("sample_time"),
+       py::arg("trajectory_config_file"),
+       py::arg("robot_config_file"),
+       py::arg("mocap_config_file"),
+       py::arg("init_x"),
+       py::arg("init_y"),
+       py::arg("init_z"),
+       py::arg("init_roll"),
+       py::arg("init_pitch"),
+       py::arg("init_yaw"),
+       py::arg("init_qpos"),
+       py::arg("safety_method"),
+       py::arg("velocity_method"))
+    .def(py::init<bool, double, std::string, std::string, std::string, double, double, double, double, double, double, const std::vector<double>&,
+            safety_shield::SafetyShield::Safety_method, safety_shield::RobotReach::Velocity_method>(),
+       py::arg("activate_shield"),
+       py::arg("sample_time"),
+       py::arg("trajectory_config_file"),
+       py::arg("robot_config_file"),
+       py::arg("mocap_config_file"),
+       py::arg("init_x"),
+       py::arg("init_y"),
+       py::arg("init_z"),
+       py::arg("init_roll"),
+       py::arg("init_pitch"),
+       py::arg("init_yaw"),
+       py::arg("init_qpos"),
+       py::arg("safety_method"),
+       py::arg("velocity_method"))
     .def("reset", &safety_shield::SafetyShield::reset, 
       py::arg("activate_shield"),
       py::arg("init_x"),
@@ -117,5 +148,10 @@ PYBIND11_MODULE(safety_shield_py, handle) {
           .value("STANDARD", safety_shield::SafetyShield::STANDARD)
           .value("LTT_MAXIMUM", safety_shield::SafetyShield::LTT_MAXIMUM)
           .value("STP_MAXIMUM", safety_shield::SafetyShield::STP_MAXIMUM)
+          .export_values();
+
+  py::enum_<safety_shield::RobotReach::Velocity_method>(handle, "Velocity_method")
+          .value("APPROXIMATE", safety_shield::RobotReach::APPROXIMATE)
+          .value("EXACT", safety_shield::RobotReach::EXACT)
           .export_values();
 }

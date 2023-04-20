@@ -180,8 +180,7 @@ void SafetyShield::constructWithConfig(std::string trajectory_config_file,
     spdlog::info("Safety shield created.");
 }
 
-// TODO: neue Methode mit constructWithConfig
-// TODO: neuer Konstruktor mit safety_method
+
 SafetyShield::SafetyShield(bool activate_shield,
                            double sample_time,
                            std::string trajectory_config_file,
@@ -245,6 +244,46 @@ SafetyShield::SafetyShield(bool activate_shield,
     spdlog::info("safety_method = {}", safety_method_);
     spdlog::info("velocity_method = {}", velocity_method);
 }
+
+
+    SafetyShield::SafetyShield(bool activate_shield,
+                               double sample_time,
+                               std::string trajectory_config_file,
+                               std::string robot_config_file,
+                               std::string mocap_config_file,
+                               double init_x,
+                               double init_y,
+                               double init_z,
+                               double init_roll,
+                               double init_pitch,
+                               double init_yaw,
+                               const std::vector<double> &init_qpos,
+                               std::string safety_method,
+                               bool velocity_method):
+            activate_shield_(activate_shield),
+            sample_time_(sample_time),
+            path_s_(0),
+            path_s_discrete_(0),
+            safety_method_(stringToEnum(safety_method))
+    {
+        constructWithConfig(trajectory_config_file,
+                            robot_config_file,
+                            mocap_config_file,
+                            init_x,
+                            init_y,
+                            init_z,
+                            init_roll,
+                            init_pitch,
+                            init_yaw,
+                            init_qpos);
+        if(velocity_method) {
+            robot_reach_->setVelocityMethod(RobotReach::Velocity_method::APPROXIMATE);
+        } else {
+            robot_reach_->setVelocityMethod(RobotReach::Velocity_method::EXACT);
+        }
+        spdlog::info("safety_method = {}", safety_method_);
+        spdlog::info("velocity_method = {}", velocity_method);
+    }
 
 void SafetyShield::reset(bool activate_shield,
                          double init_x,
