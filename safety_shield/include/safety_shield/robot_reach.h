@@ -36,6 +36,9 @@ namespace safety_shield {
 class RobotReach {
 
  public:
+    /**
+     * @brief if velocities are calculated approximately or exact
+     */
     enum Velocity_method {
         APPROXIMATE,
         EXACT,
@@ -215,7 +218,7 @@ public:
 
   /**
    * @brief calculates all transformation matrices and capsules for a specific robot configuration and sets them
-   * @assumption velocityOfMotion was called before
+   * @assumption velocityOfMotion() was called before
    * @param q vector of robot angles
    */
   void calculateAllTransformationMatricesAndCapsules(const std::vector<double>& q);
@@ -241,7 +244,7 @@ public:
   /**
    * @brief computes approximate maximum cartesian velocity of a specific capsule
    * @assumption calculateAlltransformationMatricesAndCapsules() was called before
-   * @param capsule
+   * @param capsule which capsule of robot
    * @param v linear velocity at joint
    * @param omega angular velocity at joint
    * @return approximate maximum cartesian velocity of capsule

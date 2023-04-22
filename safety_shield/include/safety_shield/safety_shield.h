@@ -340,8 +340,9 @@ public:
     enum Safety_method {
         // standard SSM criterion
         STANDARD,
-        // maximum cartesian velocity criterias
+        // PFL mode with maximum of LTT
         LTT_MAXIMUM,
+        // PFL mode with maximum of STP
         STP_MAXIMUM,
     };
 

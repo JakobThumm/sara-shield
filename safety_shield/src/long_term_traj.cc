@@ -136,7 +136,6 @@ double LongTermTraj::getMaxofMaximumCartesianVelocityWithS(double s) {
     }
 }
 
-
 void LongTermTraj::velocitiesOfAllMotions(RobotReach& robot_reach) {
     ltt_maximum_ = 0;
     // iterate through each motion

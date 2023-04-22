@@ -598,8 +598,8 @@ void SafetyShield::computesPotentialTrajectoryForPFL(bool v_static, bool v_pfl, 
         path_s_discrete_++;
     }
     //If verified safe, take the recovery path, otherwise, take the failsafe path
-    // TODO: extra if-Unterscheidung, weil man nicht zwischen failsafe-paths switchen können sollte
-    // TODO: only increment correct failsafe path
+    // TODO: extra if-Unterscheidung, weil man nicht zwischen failsafe-paths switchen können sollte?
+    // TODO: only increment correct failsafe path?
     if (v_static && v_pfl && recovery_path_correct_) {
         recovery_path_.setCurrent(true);
         //discard old FailsafePath and replace with new one
