@@ -1,14 +1,5 @@
-# PFL Safety Shield
 
-main things which are changed in comparison to SSM safety shield (cartesian_velocity_experimental is my up-to-date branch):
 
-- safety_shield.cc with new method for step, computesPotentialTrajectory, determineNextMotion
-- long_term_traj.cc with new constructor and method which takes robot_reach-object to calculate velocities of all motions
-- motion.cc saves maximum cartesian velocity
-- robot_reach.cc with new methods to calculate joint jacobians and velocities for a specific motion
-- commented out tests in robot_reach_tests because jacobian of pinocchio-urdf is different than of capsule-model
-
-TODO: compilation problems because new version of spdlog throws an error message?
 
 # SaRA-shield
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
@@ -45,4 +36,13 @@ python setup.py install
 pytest safety_shield/tests
 ```
 
+# PFL Safety Shield
+
+main things which are changed in comparison to SSM safety shield
+
+- safety_shield.cc with new method for step, computesPotentialTrajectory, determineNextMotion
+- long_term_traj.cc with new constructor and method which takes robot_reach-object to calculate velocities of all motions
+- motion.cc saves maximum cartesian velocity
+- robot_reach.cc with new methods to calculate joint jacobians and velocities for a specific motion
+- commented out tests in robot_reach_tests because jacobian of pinocchio-urdf is different than of capsule-model
 
