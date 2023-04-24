@@ -2,34 +2,64 @@
 
 namespace safety_shield {
 
+// TODO: several PFL actions
 
-bool VerifyISO::robotHumanCollision(const std::vector<reach_lib::Capsule>& robot_capsules, 
-      const std::vector<reach_lib::Capsule>& human_capsules) {
-  // Check position capsules
-  for(auto& human_capsule : human_capsules) {
-    for (auto& robot_capsule : robot_capsules) {
-      // If there is a collision, return true
-      if (capsuleCollisionCheck(robot_capsule, human_capsule)) {
-        return true;
-      }
+bool VerifyISO::robotHumanCollision(const std::vector<reach_lib::Capsule>& robot_capsules,
+                                  const std::vector<reach_lib::Capsule>& human_capsules) {
+ // Check position capsules
+ for (auto &human_capsule: human_capsules) {
+    for (auto &robot_capsule: robot_capsules) {
+       // If there is a collision, return true
+       if (capsuleCollisionCheck(robot_capsule, human_capsule)) {
+          return true;
+       }
     }
-  }
-  return false;
+ }
+ return false;
 }
 
-bool VerifyISO::verify_human_reach(const std::vector<reach_lib::Capsule>& robot_capsules, 
-      std::vector<std::vector<reach_lib::Capsule>> human_capsules) {
-  try {
-    for (const auto& capsule_list : human_capsules) {
-      // If no collision occured, we are safe and don't have to check the rest.
-      if(!robotHumanCollision(robot_capsules, capsule_list)) {
-        return true;
-      }
+bool VerifyISO::verify_human_reach(const std::vector<reach_lib::Capsule>& robot_capsules,
+                                 std::vector<std::vector<reach_lib::Capsule>> human_capsules) {
+ try {
+    for (const auto& capsule_list: human_capsules) {
+       // If no collision occured, we are safe and don't have to check the rest.
+       if (!robotHumanCollision(robot_capsules, capsule_list)) {
+          return true;
+       }
     }
     return false;
-  } catch (const std::exception &exc) {
+ } catch (const std::exception &exc) {
     spdlog::error("Exception in VerifyISO::verify_human_reach: {}", exc.what());
     return false;
-  }
+ }
 }
+
+void VerifyISO::PFL_robotHumanCollision(const std::vector<reach_lib::Capsule>& robot_capsules,
+                                      const std::vector<reach_lib::Capsule>& human_capsules,
+                                      std::vector<reach_lib::Capsule>& collision_capsules) {
+ // Check position capsules
+ for (auto &human_capsule: human_capsules) {
+    for (auto &robot_capsule: robot_capsules) {
+       // If there is a collision, return true
+       if (capsuleCollisionCheck(robot_capsule, human_capsule)) {
+          collision_capsules.push_back(human_capsule);
+       }
+    }
+ }
+}
+
+
+std::vector<reach_lib::Capsule> VerifyISO::PFL_verify_human_reach(const std::vector<reach_lib::Capsule>& robot_capsules,
+                                std::vector<std::vector<reach_lib::Capsule>> human_capsules) {
+ try {
+    std::vector<reach_lib::Capsule> collision_capsules;
+    for (const auto &capsule_list: human_capsules) {
+       PFL_robotHumanCollision(robot_capsules, capsule_list, collision_capsules);
+    }
+    return collision_capsules;
+ } catch (const std::exception &exc) {
+    spdlog::error("Exception in VerifyISO::PFL_verify_human_reach: {}", exc.what());
+ }
+}
+
 } // namespace safety_shield

@@ -1041,6 +1041,7 @@ Motion SafetyShield::PFLstep(double cycle_begin_time) {
                     robot_capsules_PFL_ = robot_reach_->reach(current_motion, goal_motion_pfl, (goal_motion_pfl.getS()-current_motion.getS()), alpha_i_);
                     human_reach_->humanReachabilityAnalysis(cycle_begin_time_, goal_motion_pfl.getTime());
                     human_capsules_PFL_ = human_reach_->getAllCapsules();
+                    // TODO: several PFL actions
                     is_PFL_safe_ = verify_->verify_human_reach(robot_capsules_PFL_, human_capsules_PFL_);
                 }
 
