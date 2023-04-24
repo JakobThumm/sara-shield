@@ -64,7 +64,6 @@ target_link_libraries(debug ${PROJECT_NAME} long_term_planner spdlog yaml-cpp)
 
 add_executable(debug_PFL src/debug_PFL.cc)
 target_link_libraries(debug_PFL ${PROJECT_NAME} long_term_planner spdlog yaml-cpp)
-
 #############
 ## GTest ##
 #############

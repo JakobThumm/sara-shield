@@ -1,6 +1,3 @@
-
-
-
 # SaRA-shield
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
@@ -19,7 +16,10 @@ Set the path to your eigen3 installation to this env variable, e.g.,
 ```
 export EIGEN3_INCLUDE_DIR="/usr/include/eigen3/eigen-3.4.0"
 ```
-
+Install gtest
+```
+sudo apt-get install libgtest-dev
+```
 ```
 cd safety_shield
 mkdir build && cd build
@@ -45,4 +45,3 @@ main things which are changed in comparison to SSM safety shield
 - motion.cc saves maximum cartesian velocity
 - robot_reach.cc with new methods to calculate joint jacobians and velocities for a specific motion
 - commented out tests in robot_reach_tests because jacobian of pinocchio-urdf is different than of capsule-model
-
