@@ -268,6 +268,11 @@ class SafetyShield {
    */
   long_term_planner::LongTermPlanner ltp_;
 
+  /**
+   * @brief Axis-aligned bounding boxes of the environment elements.
+   */
+  std::vector<reach_lib::AABB> environment_elements_;
+
 protected:
   /**
    * @brief Calculate max acceleration and jerk based on previous velocity
@@ -387,6 +392,7 @@ protected:
    * @param robot_reach Robot reachable set calculation object
    * @param human_reach Human reachable set calculation object
    * @param verify Verification of reachable sets object
+   * @param environment_elements Elements of the environment (as AABB)
    */
   SafetyShield(bool activate_shield,
       int nb_joints, 
@@ -400,7 +406,8 @@ protected:
       const LongTermTraj &long_term_trajectory, 
       RobotReach* robot_reach,
       HumanReach* human_reach,
-      Verify* verify);
+      Verify* verify,
+      const std::vector<reach_lib::AABB> &environment_elements);
 
   /**
    * @brief Construct a new Safety Shield object from config files.
@@ -417,6 +424,7 @@ protected:
    * @param init_pitch Base pitch
    * @param init_yaw Base yaw
    * @param init_qpos Initial joint position of the robot
+   * @param environment_elements Elements of the environment (as AABB)
    */
   explicit SafetyShield(bool activate_shield,
       double sample_time,
@@ -429,7 +437,8 @@ protected:
       double init_roll, 
       double init_pitch, 
       double init_yaw,
-      const std::vector<double> &init_qpos);
+      const std::vector<double> &init_qpos,
+      const std::vector<reach_lib::AABB> &environment_elements);
 
   /**
    * @brief A SafetyShield destructor
@@ -448,6 +457,7 @@ protected:
    * @param init_yaw Base yaw
    * @param init_qpos Initial joint position of the robot
    * @param current_time Initial time
+   * @param environment_elements Elements of the environment (as AABB)
    */
   void reset(bool activate_shield,
       double init_x, 
@@ -457,7 +467,8 @@ protected:
       double init_pitch, 
       double init_yaw,
       const std::vector<double> &init_qpos,
-      double current_time);
+      double current_time,
+      const std::vector<reach_lib::AABB> &environment_elements);
 
   /**
    * @brief Computes the new trajectory depending on dq and if the previous path is safe and publishes it

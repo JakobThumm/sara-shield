@@ -21,7 +21,7 @@ Changelog:
 """
 import os
 import pytest
-from safety_shield_py import Motion, LongTermTraj, SafetyShield
+from safety_shield_py import Motion, LongTermTraj, AABB, SafetyShield
 
 
 class TestSafetyShield:
@@ -38,7 +38,7 @@ class TestSafetyShield:
         """
         dir_path = os.path.dirname(os.path.realpath(__file__))
         print(dir_path)
-
+        table = AABB([-1.0, -1.0, -0.1], [1.0, 1.0, 0.0])
         shield = SafetyShield(
             activate_shield=True,
             sample_time=0.004,
@@ -53,6 +53,7 @@ class TestSafetyShield:
             init_pitch=0.0,
             init_yaw=0.0,
             init_qpos=[0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            environment_elements=[table]
         )
         return shield
 
@@ -67,7 +68,7 @@ class TestSafetyShield:
         """
         dir_path = os.path.dirname(os.path.realpath(__file__))
         print(dir_path)
-
+        table = AABB([-1.0, -1.0, -0.1], [1.0, 1.0, 0.0])
         shield = SafetyShield(
             activate_shield=True,
             sample_time=0.004,
@@ -82,6 +83,7 @@ class TestSafetyShield:
             init_pitch=0.0,
             init_yaw=0.0,
             init_qpos=[0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+            environment_elements=[table]
         )
         return shield
 
@@ -91,6 +93,7 @@ class TestSafetyShield:
         
     def test_reset_safety_shield(self, shield):
         """Test the reset function."""
+        table = AABB([-1.0, -1.0, -0.1], [1.0, 1.0, 0.0])
         shield.reset(activate_shield=True,
                      init_x=0.0,
                      init_y=0.0,
@@ -99,7 +102,8 @@ class TestSafetyShield:
                      init_pitch=0.0,
                      init_yaw=0.0,
                      init_qpos=[0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
-                     current_time=0.0
+                     current_time=0.0,
+                     environment_elements=[table]
                     )
         assert shield is not None   
 

@@ -49,7 +49,8 @@ class SafetyShieldExposed : public SafetyShield {
       double init_roll, 
       double init_pitch, 
       double init_yaw,
-      const std::vector<double> &init_qpos) : SafetyShield(
+      const std::vector<double> &init_qpos,
+      const std::vector<reach_lib::AABB> &environment_elements) : SafetyShield(
         activate_shield,
         sample_time, 
         trajectory_config_file,
@@ -61,7 +62,8 @@ class SafetyShieldExposed : public SafetyShield {
         init_roll, 
         init_pitch, 
         init_yaw,
-        init_qpos) {}
+        init_qpos,
+        environment_elements) {}
 };
 
 /**
@@ -90,7 +92,8 @@ class SafetyShieldTest : public ::testing::Test {
     double init_pitch = 0.0;
     double init_yaw = 0.0;
     std::vector<double> init_qpos = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
-
+    reach_lib::AABB table = reach_lib::AABB({-1.0, -1.0, -0.1}, {1.0, 1.0, 0.0});
+    std::vector<reach_lib::AABB> environment_elements = {table};
     shield_ = SafetyShieldExposed(activate_shield,
       sample_time, 
       trajectory_config_file,
@@ -102,7 +105,8 @@ class SafetyShieldTest : public ::testing::Test {
       init_roll, 
       init_pitch, 
       init_yaw,
-      init_qpos);
+      init_qpos,
+      environment_elements);
   }
 };
 } // namespace safety_shield

@@ -20,6 +20,7 @@
 #include <pybind11/stl.h>
 
 #include "safety_shield/safety_shield.h"
+#include "reach_lib.hpp"
 
 namespace py = pybind11;
 
@@ -72,10 +73,17 @@ PYBIND11_MODULE(safety_shield_py, handle) {
     .def("getMaxJerkWindow", &safety_shield::LongTermTraj::getMaxJerkWindow)
     .def("calculate_max_acc_jerk_window", &safety_shield::LongTermTraj::calculate_max_acc_jerk_window, py::arg("long_term_traj"), py::arg("k"))
     ;
+  // Axis-aligned bounding box class
+  py::class_<reach_lib::AABB>(handle, "AABB")
+    .def(py::init<>())
+    .def(py::init<std::vector<double>, std::vector<double>>(), py::arg("min"), py::arg("max"))
+    ;
   // Safety shield class
   py::class_<safety_shield::SafetyShield>(handle, "SafetyShield")
     .def(py::init<>())
-    .def(py::init<bool, double, std::string, std::string, std::string, double, double, double, double, double, double, const std::vector<double>&>(),
+    .def(py::init<bool, double, std::string, std::string, std::string,
+         double, double, double, double, double, double,
+         const std::vector<double>&, const std::vector<reach_lib::AABB>&>(),
       py::arg("activate_shield"),
       py::arg("sample_time"),
       py::arg("trajectory_config_file"),
@@ -87,7 +95,8 @@ PYBIND11_MODULE(safety_shield_py, handle) {
       py::arg("init_roll"),
       py::arg("init_pitch"),
       py::arg("init_yaw"),
-      py::arg("init_qpos"))
+      py::arg("init_qpos"),
+      py::arg("environment_elements"))
     .def("reset", &safety_shield::SafetyShield::reset, 
       py::arg("activate_shield"),
       py::arg("init_x"),
@@ -97,7 +106,8 @@ PYBIND11_MODULE(safety_shield_py, handle) {
       py::arg("init_pitch"),
       py::arg("init_yaw"),
       py::arg("init_qpos"),
-      py::arg("current_time"))
+      py::arg("current_time"),
+      py::arg("environment_elements"))
     .def("step", &safety_shield::SafetyShield::step, py::arg("cycle_begin_time"))
     .def("newLongTermTrajectory", &safety_shield::SafetyShield::newLongTermTrajectory, py::arg("goal_position"), py::arg("goal_velocity"))
     .def("setLongTermTrajectory", &safety_shield::SafetyShield::setLongTermTrajectory, py::arg("traj"))

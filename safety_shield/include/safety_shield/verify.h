@@ -58,6 +58,19 @@ class Verify {
    */
   virtual bool verify_human_reach(const std::vector<reach_lib::Capsule>& robot_capsules, 
       std::vector<std::vector<reach_lib::Capsule>> human_capsules) = 0;
+
+  /**
+   * @brief Verify if clamping between the robot, human, and environment is possible.
+   * 
+   * @param robot_capsules Reachable capsules of the robot
+   * @param human_capsules List of list of capsules. Each list of capsules corresponds to a human reachable set model.
+   * @param environment_elements List of environment elements
+   * @return true: if no clamping can occur
+   * @return false: if clamping can occur
+   */
+  virtual bool verify_clamping(const std::vector<reach_lib::Capsule>& robot_capsules, 
+      const std::vector<std::vector<reach_lib::Capsule>>& human_capsules,
+      const std::vector<reach_lib::AABB>& environment_elements) = 0;
 };
 } // namespace safety_shield
 

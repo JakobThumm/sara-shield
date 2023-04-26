@@ -18,6 +18,8 @@ int main () {
     std::string trajectory_config_file = std::string("../safety_shield/config/trajectory_parameters_schunk.yaml");
     std::string robot_config_file = std::string("../safety_shield/config/robot_parameters_schunk.yaml");
     std::string mocap_config_file = std::string("../safety_shield/config/cmu_mocap_no_hand.yaml");
+    reach_lib::AABB table = reach_lib::AABB({-1.0, -1.0, -0.1}, {1.0, 1.0, 0.0});
+    std::vector<reach_lib::AABB> environment_elements = {table};
     double init_x = 0.0;
     double init_y = 0.0;
     double init_z = 0.0;
@@ -37,7 +39,8 @@ int main () {
       init_roll, 
       init_pitch, 
       init_yaw,
-      init_qpos);
+      init_qpos,
+      environment_elements);
 
     // Dummy human measurement
     std::vector<reach_lib::Point> dummy_human_meas(21);
@@ -61,7 +64,7 @@ int main () {
         }
         safety_shield::Motion next_motion = shield.step(t);
       }
-      shield.reset(true, init_x, init_y, init_z, init_roll, init_pitch, init_yaw, init_qpos, t);
+      shield.reset(true, init_x, init_y, init_z, init_roll, init_pitch, init_yaw, init_qpos, t, environment_elements);
     }
     spdlog::info("Debug finished.");
     return 0;

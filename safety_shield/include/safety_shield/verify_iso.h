@@ -60,6 +60,44 @@ class VerifyISO : public Verify {
    */
   bool verify_human_reach(const std::vector<reach_lib::Capsule>& robot_capsules, 
       std::vector<std::vector<reach_lib::Capsule>> human_capsules);
+
+  /**
+   * @brief Verify if clamping between the robot, human, and environment is possible.
+   * 
+   * @details This function checks two types of constrained collisions.
+   *    1) A human body part is clamped between the robot and the environment.
+   *       We refer to this as an environmentally constrained collision (ECC).
+   *    2) A human body part is clamped between two robot links.
+   *       We refer to this as an internally constrained collision (ICC).
+   * 
+   * @param robot_capsules Reachable capsules of the robot
+   * @param human_capsules List of human reachable set capsules.
+   * @param environment_elements List of environment elements
+   * @return true: if clamping between the given human model and the robot can occur
+   * @return false: if no clamping can occur
+   */
+  bool clamping_possible(const std::vector<reach_lib::Capsule>& robot_capsules, 
+      const std::vector<reach_lib::Capsule>& human_capsules,
+      const std::vector<reach_lib::AABB>& environment_elements);
+
+  /**
+   * @brief Verify if clamping between the robot, human, and environment is possible.
+   * 
+   * @details This function checks two types of constrained collisions.
+   *    1) A human body part is clamped between the robot and the environment.
+   *       We refer to this as an environmentally constrained collision (ECC).
+   *    2) A human body part is clamped between two robot links.
+   *       We refer to this as an internally constrained collision (ICC).
+   * 
+   * @param robot_capsules Reachable capsules of the robot
+   * @param human_capsules List of list of capsules. Each list of capsules corresponds to a human reachable set model.
+   * @param environment_elements List of environment elements
+   * @return true: if no clamping can occur
+   * @return false: if clamping can occur
+   */
+  bool verify_clamping(const std::vector<reach_lib::Capsule>& robot_capsules, 
+      const std::vector<std::vector<reach_lib::Capsule>>& human_capsules,
+      const std::vector<reach_lib::AABB>& environment_elements);
 };
 } // namespace safety_shield
 

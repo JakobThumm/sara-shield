@@ -26,7 +26,8 @@ SafetyShield::SafetyShield(bool activate_shield,
       const LongTermTraj &long_term_trajectory, 
       RobotReach* robot_reach,
       HumanReach* human_reach,
-      Verify* verify):
+      Verify* verify,
+      const std::vector<reach_lib::AABB> &environment_elements):
   activate_shield_(activate_shield),
   nb_joints_(nb_joints),
   max_s_stop_(max_s_stop),
@@ -41,7 +42,8 @@ SafetyShield::SafetyShield(bool activate_shield,
   long_term_trajectory_(long_term_trajectory),
   robot_reach_(robot_reach),
   human_reach_(human_reach),
-  verify_(verify)
+  verify_(verify),
+  environment_elements_(environment_elements)
 {
   sliding_window_k_ = (int) std::floor(max_s_stop_/sample_time_);
   std::vector<double> prev_dq;
@@ -71,11 +73,13 @@ SafetyShield::SafetyShield(bool activate_shield,
       double init_roll, 
       double init_pitch, 
       double init_yaw,
-      const std::vector<double> &init_qpos):
+      const std::vector<double> &init_qpos,
+      const std::vector<reach_lib::AABB>& environment_elements):
     activate_shield_(activate_shield),
     sample_time_(sample_time),
     path_s_(0),
-    path_s_discrete_(0)
+    path_s_discrete_(0),
+    environment_elements_(environment_elements)
   {
     ///////////// Build robot reach
     YAML::Node robot_config = YAML::LoadFile(robot_config_file);
@@ -174,9 +178,11 @@ void SafetyShield::reset(bool activate_shield,
       double init_pitch, 
       double init_yaw,
       const std::vector<double> &init_qpos,
-      double current_time) {
+      double current_time,
+      const std::vector<reach_lib::AABB> &environment_elements) {
   robot_reach_->reset(init_x, init_y, init_z, init_roll, init_pitch, init_yaw);
   human_reach_->reset();
+  environment_elements_ = environment_elements;
   std::vector<double> prev_dq;
   for(int i = 0; i < 6; i++) {
       prev_dq.push_back(0.0);
@@ -573,7 +579,8 @@ Motion SafetyShield::step(double cycle_begin_time) {
         human_reach_->humanReachabilityAnalysis(cycle_begin_time_, goal_motion.getTime());
         human_capsules_ = human_reach_->getAllCapsules();
         // Verify if the robot and human reachable sets are collision free
-        is_safe_ = verify_->verify_human_reach(robot_capsules_, human_capsules_);
+        // is_safe_ = verify_->verify_human_reach(robot_capsules_, human_capsules_);
+        is_safe_ = verify_->verify_clamping(robot_capsules_, human_capsules_, environment_elements_);
       }
     } else {
       is_safe_ = true;
