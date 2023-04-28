@@ -23,14 +23,14 @@ include_directories(
 
 ## Declare a C++ library
 add_library(${PROJECT_NAME}
-  src/safety_shield.cc
-  src/long_term_traj.cc
-  src/motion.cc
-  src/path.cc
-  src/robot_reach.cc
-  src/human_reach.cc
-  src/verify_iso.cc
-  #src/advanced_verify_iso.cc
+    src/safety_shield.cc
+    src/long_term_traj.cc
+    src/motion.cc
+    src/path.cc
+    src/robot_reach.cc
+    src/human_reach.cc
+    src/verify_iso.cc
+    #src/advanced_verify_iso.cc
   )
 
 # Add external subdirectories
@@ -41,18 +41,18 @@ add_subdirectory(external/spdlog)
 add_subdirectory(external/yaml-cpp)
 
 target_include_directories(${PROJECT_NAME}
-  PUBLIC external/pybind11/include
-  PUBLIC external/ReachLib/include
-  PUBLIC external/LongTermPlanner/include
-  PUBLIC external/spdlog/include
-  PUBLIC external/yaml-cpp/include
+    PUBLIC external/pybind11/include
+    PUBLIC external/ReachLib/include
+    PUBLIC external/LongTermPlanner/include
+    PUBLIC external/spdlog/include
+    PUBLIC external/yaml-cpp/include
   )
 
 target_link_directories(${PROJECT_NAME}
-  PUBLIC external/ReachLib/src
-  PUBLIC external/LongTermPlanner/src
-  PUBLIC external/spdlog/src
-  PUBLIC external/yaml-cpp/src
+    PUBLIC external/ReachLib/src
+    PUBLIC external/LongTermPlanner/src
+    PUBLIC external/spdlog/src
+    PUBLIC external/yaml-cpp/src
   )
 
 target_link_libraries(${PROJECT_NAME} SaRA long_term_planner spdlog yaml-cpp)
