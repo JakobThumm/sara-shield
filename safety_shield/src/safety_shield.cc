@@ -598,8 +598,8 @@ void SafetyShield::computesPotentialTrajectoryForPFL(bool v_static, bool v_pfl, 
         path_s_discrete_++;
     }
     //If verified safe, take the recovery path, otherwise, take the failsafe path
-    // TODO: extra if-Unterscheidung, weil man nicht zwischen failsafe-paths switchen können sollte?
-    // TODO: only increment correct failsafe path?
+    // TODO: extra if-Unterscheidung für switching failsafe problem, ich muss wissen welcher Pfad vorher genommen wurde
+    // TODO: Reihenfolge verwirrt mich grad, computesPotentialTrajectory() berechnet Pfad, aber danach bei step() wird wieder verifiziert oder ist das für den (über)nächsten Schritt schon?
     if (v_static && v_pfl && recovery_path_correct_) {
         recovery_path_.setCurrent(true);
         //discard old FailsafePath and replace with new one
@@ -614,7 +614,6 @@ void SafetyShield::computesPotentialTrajectoryForPFL(bool v_static, bool v_pfl, 
         //discard RepairPath
         recovery_path_.setCurrent(false);
         failsafe_path_pfl_.increment(sample_time_);
-        failsafe_path_static_.increment(sample_time_);
     }
     // if no criterion is safe, we take the failsafe-path of the static criterion
     else {
@@ -622,7 +621,6 @@ void SafetyShield::computesPotentialTrajectoryForPFL(bool v_static, bool v_pfl, 
         failsafe_path_static_.setCurrent(true);
         //discard RepairPath
         recovery_path_.setCurrent(false);
-        failsafe_path_pfl_.increment(sample_time_);
         failsafe_path_static_.increment(sample_time_);
     }
 
@@ -975,7 +973,7 @@ Motion SafetyShield::PFLstep(double cycle_begin_time) {
             if (is_plannable) {
                 // Check if the starting position of the last replanning was very close to the current position
                 bool last_close = true;
-                if (new_ltt_ == true) {
+                if (new_ltt_) {
                     for (int i = 0; i < current_motion.getAngle().size(); i++) {
                         if (std::abs(current_motion.getAngle()[i] - last_replan_start_motion_.getAngle()[i]) > 0.01) {
                             last_close = false;
