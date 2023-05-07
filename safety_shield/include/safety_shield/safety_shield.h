@@ -660,7 +660,7 @@ public:
     Motion computesPotentialTrajectory(bool v, const std::vector<double> &prev_speed);
 
     /**
-     * @brief Computes the new trajectory depending on dq and the verification of the safety criteria of the previous path and publishes it
+     * @brief For PFL mode: computes the new trajectory depending on dq and the verification of the safety criteria of the previous path and publishes it
      * @param[in] v_static is the previous path static-safe
      * @param[in] v_pfl is the previous path pfl-safe
      * @param[in] prev_speed the velocity of the previous point

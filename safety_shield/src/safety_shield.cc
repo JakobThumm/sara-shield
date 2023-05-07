@@ -789,6 +789,7 @@ Motion SafetyShield::determineNextMotion(bool is_safe) {
     return next_motion;
 }
 
+// TODO: I have to determine the correct failsafe path
 Motion SafetyShield::determineNextMotionForPFL(bool is_safe_static, bool is_safe_pfl) {
     Motion next_motion;
     double s_d, ds_d, dds_d, ddds_d;
@@ -802,6 +803,7 @@ Motion SafetyShield::determineNextMotionForPFL(bool is_safe_static, bool is_safe
             dds_d = recovery_path_.getAcceleration();
             ddds_d = recovery_path_.getJerk();
         } else {
+           // TODO: I increment both here???
             potential_path_pfl_.increment(sample_time_);
             potential_path_static_.increment(sample_time_);
             s_d = potential_path_pfl_.getPosition();
@@ -891,7 +893,7 @@ Motion SafetyShield::standardStep(double cycle_begin_time) {
             if (is_plannable) {
                 // Check if the starting position of the last replanning was very close to the current position
                 bool last_close = true;
-                if (new_ltt_ == true) {
+                if (new_ltt_) {
                     for (int i = 0; i < current_motion.getAngle().size(); i++) {
                         if (std::abs(current_motion.getAngle()[i] - last_replan_start_motion_.getAngle()[i]) > 0.01) {
                             last_close = false;
