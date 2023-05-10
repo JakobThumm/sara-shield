@@ -69,11 +69,32 @@ bool VerifyISO::clamping_possible(const std::vector<reach_lib::Capsule>& robot_c
   for (const auto& robot_collisions : robot_collision_map) {
     if (robot_collisions.second.size() >= 2) {
       // Self-constrained collision possible
+      // Check distance between the two links
       return true;
     }
     if (environment_collision_map.find(robot_collisions.first) != environment_collision_map.end()) {
       // Environment collision possible
-      return true;
+      // Check distance between link and environment
+      // by expanding the link capsule by the human body diameter
+      // and checking for intersection with the environment element.
+      // diameter of the human lower leg. #TODO: make this a parameter
+      double d_human = 0.132;
+      for (const auto& environment_collision : environment_collision_map[robot_collisions.first]) {
+        reach_lib::Capsule expanded_robot_capsule(
+          reach_lib::Point(
+            robot_capsules[robot_collisions.second[0]].p1_.x,
+            robot_capsules[robot_collisions.second[0]].p1_.y,
+            robot_capsules[robot_collisions.second[0]].p1_.z),
+          reach_lib::Point(
+            robot_capsules[robot_collisions.second[0]].p2_.x,
+            robot_capsules[robot_collisions.second[0]].p2_.y,
+            robot_capsules[robot_collisions.second[0]].p2_.z),
+          robot_capsules[robot_collisions.second[0]].r_ + d_human);
+        if (reach_lib::intersections::capsule_aabb_intersection(expanded_robot_capsule,
+            environment_elements[environment_collision])) {
+          return true;
+        }
+      }
     }
   }
   return false;
