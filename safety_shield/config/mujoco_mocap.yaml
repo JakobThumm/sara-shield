@@ -42,7 +42,7 @@ bodies:
   - name: "L_Hand"
     proximal: "L_Wrist"
     distal: "L_Hand"
-    thickness: 0.205
+    thickness: 0.1
 
   - name: "R_UpperArm" 
     proximal: "R_ShouLder"
@@ -57,7 +57,7 @@ bodies:
   - name: "R_Hand"
     proximal: "R_Wrist"
     distal: "R_Hand"
-    thickness: 0.205
+    thickness: 0.1
 
   - name: "Torso"
     proximal: "Torso"
