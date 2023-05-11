@@ -578,9 +578,10 @@ Motion SafetyShield::step(double cycle_begin_time) {
         // humanReachabilityAnalysis(t_command, t_brake)
         human_reach_->humanReachabilityAnalysis(cycle_begin_time_, goal_motion.getTime());
         human_capsules_ = human_reach_->getAllCapsules();
+        std::vector<std::vector<double>> human_radii = human_reach_->getAllHumanRadii();
         // Verify if the robot and human reachable sets are collision free
         // is_safe_ = verify_->verify_human_reach(robot_capsules_, human_capsules_);
-        is_safe_ = verify_->verify_clamping(robot_capsules_, human_capsules_, environment_elements_);
+        is_safe_ = verify_->verify_clamping(robot_capsules_, human_capsules_, environment_elements_, human_radii);
       }
     } else {
       is_safe_ = true;
@@ -592,6 +593,7 @@ Motion SafetyShield::step(double cycle_begin_time) {
     return next_motion_;
   } catch (const std::exception &exc) {
     spdlog::error("Exception in SafetyShield::getNextCycle: {}", exc.what());
+    return getCurrentMotion();
   }
 }
 

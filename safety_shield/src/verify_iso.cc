@@ -35,7 +35,8 @@ bool VerifyISO::verify_human_reach(const std::vector<reach_lib::Capsule>& robot_
 
 bool VerifyISO::clamping_possible(const std::vector<reach_lib::Capsule>& robot_capsules, 
       const std::vector<reach_lib::Capsule>& human_capsules,
-      const std::vector<reach_lib::AABB>& environment_elements) {
+      const std::vector<reach_lib::AABB>& environment_elements,
+      const std::vector<double>& human_radii) {
   // Build a map that maps the robot capsule/environment indices in collision with the human capsules
   // We choose this indexing to be in line with the paper.
   std::map<int, std::vector<int>> robot_collision_map;
@@ -67,19 +68,20 @@ bool VerifyISO::clamping_possible(const std::vector<reach_lib::Capsule>& robot_c
     }
   }
   for (const auto& robot_collisions : robot_collision_map) {
+    int human_index = robot_collisions.first;
     if (robot_collisions.second.size() >= 2) {
       // Self-constrained collision possible
       // Check distance between the two links
       return true;
     }
-    if (environment_collision_map.find(robot_collisions.first) != environment_collision_map.end()) {
+    if (environment_collision_map.find(human_index) != environment_collision_map.end()) {
       // Environment collision possible
       // Check distance between link and environment
       // by expanding the link capsule by the human body diameter
       // and checking for intersection with the environment element.
       // diameter of the human lower leg. #TODO: make this a parameter
-      double d_human = 0.132;
-      for (const auto& environment_collision : environment_collision_map[robot_collisions.first]) {
+      double d_human = 2 * human_radii[human_index];
+      for (const auto& environment_collision : environment_collision_map[human_index]) {
         reach_lib::Capsule expanded_robot_capsule(
           reach_lib::Point(
             robot_capsules[robot_collisions.second[0]].p1_.x,
@@ -102,11 +104,12 @@ bool VerifyISO::clamping_possible(const std::vector<reach_lib::Capsule>& robot_c
 
 bool VerifyISO::verify_clamping(const std::vector<reach_lib::Capsule>& robot_capsules, 
       const std::vector<std::vector<reach_lib::Capsule>>& human_capsules,
-      const std::vector<reach_lib::AABB>& environment_elements) {
+      const std::vector<reach_lib::AABB>& environment_elements,
+      const std::vector<std::vector<double>>& human_radii) {
   try {
-    for (const auto& capsule_list : human_capsules) {
+    for (int i = 0; i < human_capsules.size(); i++) {
       // If no collision occured, we are safe and don't have to check the rest.
-      if(!clamping_possible(robot_capsules, capsule_list, environment_elements)) {
+      if(!clamping_possible(robot_capsules, human_capsules[i], environment_elements, human_radii[i])) {
         return true;
       }
     }

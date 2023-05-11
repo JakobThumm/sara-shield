@@ -196,6 +196,25 @@ public:
   }
 
   /**
+   * @brief Get the the radii of the human body parts in all motion models.
+   * 
+   * @return std::vector<std::vector<double>> 
+   */
+  inline std::vector<std::vector<double>> getAllHumanRadii() {
+    std::vector<std::vector<double>> radii;
+    for (auto& extremity : human_p_.get_occupancy()) {
+      radii[0].push_back(extremity.get_thickness());
+    }
+    for (auto& body_part : human_v_.get_occupancy()) {
+      radii[1].push_back(body_part.get_thicknes());
+    }
+    for (auto& body_part : human_a_.get_occupancy()) {
+      radii[2].push_back(body_part.get_thicknes());
+    }
+    return radii;
+  }
+
+  /**
    * @brief Get the Last Meas Timestep object
    * 
    * @return double 
