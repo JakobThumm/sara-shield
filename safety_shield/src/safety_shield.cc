@@ -88,12 +88,17 @@ SafetyShield::SafetyShield(bool activate_shield,
     std::vector<double> transformation_matrices = robot_config["transformation_matrices"].as<std::vector<double>>();
     std::vector<double> enclosures = robot_config["enclosures"].as<std::vector<double>>();
     double secure_radius = robot_config["secure_radius"].as<double>();
+    std::vector<std::pair<int, int>> unclampable_enclosures;
+    if (robot_config["unclampable_enclosures"]) {
+      unclampable_enclosures = robot_config["unclampable_enclosures"].as<std::vector<std::pair<int, int>>>();
+    }
     robot_reach_ = new RobotReach(transformation_matrices, 
       nb_joints_, 
       enclosures, 
       init_x, init_y, init_z, 
       init_roll, init_pitch, init_yaw,
-      secure_radius);
+      secure_radius,
+      unclampable_enclosures);
     ////////////// Setting trajectory variables
     YAML::Node trajectory_config = YAML::LoadFile(trajectory_config_file);
     max_s_stop_ = trajectory_config["max_s_stop"].as<double>();

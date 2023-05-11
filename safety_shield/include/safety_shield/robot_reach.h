@@ -56,6 +56,11 @@ class RobotReach {
    */
   std::vector<reach_lib::Capsule> robot_capsules_;
 
+  /**
+   * @brief Clamping between these capsule pairs is not possible
+   */
+  std::vector<std::pair<int, int>> unclampable_enclosures_;
+
 public:
 
   /**
@@ -77,13 +82,15 @@ public:
    * @param yaw initial yaw of base
    * @param secure_radius Expand the radius of the robot capsules by this amount to
    *  account for measurement and modelling errors.
+   * @param unclampable_enclosures Clamping between these capsule pairs is not possible
    */
   RobotReach(std::vector<double> transformation_matrices, 
       int nb_joints, 
       std::vector<double> geom_par, 
       double x, double y, double z, 
       double roll, double pitch, double yaw,
-      double secure_radius);
+      double secure_radius,
+      std::vector<std::pair<int, int>> unclampable_enclosures = {});
 
   /**
    *  @brief A robot destructor
@@ -152,6 +159,15 @@ public:
    */
   std::vector<reach_lib::Capsule> reach(Motion& start_config, Motion& goal_config,
     double s_diff, std::vector<double> alpha_i);
+  
+  /**
+   * @brief Get the unclampable enclosures object
+   * 
+   * @return std::vector<std::pair<int, int>> 
+   */
+  inline std::vector<std::pair<int, int>> getUnclampableEnclosures() {
+    return unclampable_enclosures_;
+  }
 };
 } // namespace safety_shield 
 
