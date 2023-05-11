@@ -17,6 +17,7 @@
 #include <vector>
 #include <algorithm>
 #include <exception>
+#include <set>
 
 #include <Eigen/Dense>
 #include "spdlog/spdlog.h" 
@@ -59,7 +60,7 @@ class RobotReach {
   /**
    * @brief Clamping between these capsule pairs is not possible
    */
-  std::vector<std::pair<int, int>> unclampable_enclosures_;
+  std::unordered_map<int, std::set<int>> unclampable_enclosures_map_;
 
 public:
 
@@ -82,7 +83,7 @@ public:
    * @param yaw initial yaw of base
    * @param secure_radius Expand the radius of the robot capsules by this amount to
    *  account for measurement and modelling errors.
-   * @param unclampable_enclosures Clamping between these capsule pairs is not possible
+   * @param unclampable_enclosures_map Clamping between these capsule pairs is not possible
    */
   RobotReach(std::vector<double> transformation_matrices, 
       int nb_joints, 
@@ -90,7 +91,7 @@ public:
       double x, double y, double z, 
       double roll, double pitch, double yaw,
       double secure_radius,
-      std::vector<std::pair<int, int>> unclampable_enclosures = {});
+      std::unordered_map<int, std::set<int>> unclampable_enclosures_map = std::unordered_map<int, std::set<int>>());
 
   /**
    *  @brief A robot destructor
@@ -163,10 +164,10 @@ public:
   /**
    * @brief Get the unclampable enclosures object
    * 
-   * @return std::vector<std::pair<int, int>> 
+   * @return std::unordered_map<int, std::set<int>>
    */
-  inline std::vector<std::pair<int, int>> getUnclampableEnclosures() {
-    return unclampable_enclosures_;
+  inline std::unordered_map<int, std::set<int>> getUnclampableEnclosures() {
+    return unclampable_enclosures_map_;
   }
 };
 } // namespace safety_shield 

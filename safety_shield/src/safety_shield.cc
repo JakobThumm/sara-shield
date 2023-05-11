@@ -92,13 +92,17 @@ SafetyShield::SafetyShield(bool activate_shield,
     if (robot_config["unclampable_enclosures"]) {
       unclampable_enclosures = robot_config["unclampable_enclosures"].as<std::vector<std::pair<int, int>>>();
     }
+    std::unordered_map<int, std::set<int>> unclampable_enclosures_map;
+    for (auto const& enclosure : unclampable_enclosures) {
+      unclampable_enclosures_map[enclosure.first].insert(enclosure.second);
+    }
     robot_reach_ = new RobotReach(transformation_matrices, 
       nb_joints_, 
       enclosures, 
       init_x, init_y, init_z, 
       init_roll, init_pitch, init_yaw,
       secure_radius,
-      unclampable_enclosures);
+      unclampable_enclosures_map);
     ////////////// Setting trajectory variables
     YAML::Node trajectory_config = YAML::LoadFile(trajectory_config_file);
     max_s_stop_ = trajectory_config["max_s_stop"].as<double>();
@@ -121,7 +125,7 @@ SafetyShield::SafetyShield(bool activate_shield,
     double delay = human_config["delay"].as<double>();
 
     std::vector<std::string> joint_name_vec = human_config["joint_names"].as<std::vector<std::string>>();
-    std::map<std::string, int> joint_names;
+    std::unordered_map<std::string, int> joint_names;
     for(std::size_t i = 0; i < joint_name_vec.size(); ++i) {
         joint_names[joint_name_vec[i]] = i;
     }
@@ -583,10 +587,9 @@ Motion SafetyShield::step(double cycle_begin_time) {
         // humanReachabilityAnalysis(t_command, t_brake)
         human_reach_->humanReachabilityAnalysis(cycle_begin_time_, goal_motion.getTime());
         human_capsules_ = human_reach_->getAllCapsules();
-        std::vector<std::vector<double>> human_radii = human_reach_->getAllHumanRadii();
         // Verify if the robot and human reachable sets are collision free
         // is_safe_ = verify_->verify_human_reach(robot_capsules_, human_capsules_);
-        is_safe_ = verify_->verify_clamping(robot_capsules_, human_capsules_, environment_elements_, human_radii);
+        is_safe_ = verify_->verify_clamping(robot_capsules_, human_capsules_, environment_elements_, human_reach_->getAllHumanRadii(), robot_reach_->getUnclampableEnclosures());
       }
     } else {
       is_safe_ = true;

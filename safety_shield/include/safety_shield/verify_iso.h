@@ -18,6 +18,7 @@
 
 #include <algorithm>
 #include <vector>
+#include <set>
 
 #include "spdlog/spdlog.h" // https://github.com/gabime/spdlog
 
@@ -74,13 +75,15 @@ class VerifyISO : public Verify {
    * @param human_capsules List of human reachable set capsules.
    * @param environment_elements List of environment elements
    * @param human_radii List of radii of human body parts/extremities.
+   * @param unclampable_enclosures_map List of pairs of robot links that cannot cause clamping.
    * @return true: if clamping between the given human model and the robot can occur
    * @return false: if no clamping can occur
    */
   bool clamping_possible(const std::vector<reach_lib::Capsule>& robot_capsules, 
       const std::vector<reach_lib::Capsule>& human_capsules,
       const std::vector<reach_lib::AABB>& environment_elements,
-      const std::vector<double>& human_radii);
+      const std::vector<double>& human_radii,
+      const std::unordered_map<int, std::set<int>>& unclampable_enclosures_map);
 
   /**
    * @brief Verify if clamping between the robot, human, and environment is possible.
@@ -95,13 +98,15 @@ class VerifyISO : public Verify {
    * @param human_capsules List of list of capsules. Each list of capsules corresponds to a human reachable set model.
    * @param environment_elements List of environment elements
    * @param human_radii List of list of radii. Each list of radii corresponds to a human reachable set model.
+   * @param unclampable_enclosures_map List of pairs of robot links that cannot cause clamping.
    * @return true: if no clamping can occur
    * @return false: if clamping can occur
    */
   bool verify_clamping(const std::vector<reach_lib::Capsule>& robot_capsules, 
       const std::vector<std::vector<reach_lib::Capsule>>& human_capsules,
       const std::vector<reach_lib::AABB>& environment_elements,
-      const std::vector<std::vector<double>>& human_radii);
+      const std::vector<std::vector<double>>& human_radii,
+      const std::unordered_map<int, std::set<int>>& unclampable_enclosures_map);
 };
 } // namespace safety_shield
 

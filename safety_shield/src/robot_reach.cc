@@ -4,10 +4,10 @@ namespace safety_shield {
 
 RobotReach::RobotReach(std::vector<double> transformation_matrices, int nb_joints, std::vector<double> geom_par, 
     double x = 0, double y = 0, double z = 0, double roll = 0, double pitch = 0, double yaw = 0, double secure_radius=0.0,
-    std::vector<std::pair<int, int>> unclampable_enclosures):
+    std::unordered_map<int, std::set<int>> unclampable_enclosures_map):
   nb_joints_(nb_joints),
   secure_radius_(secure_radius),
-  unclampable_enclosures_(unclampable_enclosures)
+  unclampable_enclosures_map_(unclampable_enclosures_map)
 {
   Eigen::Matrix4d transformation_matrix;
   double cr = cos(roll); double sr = sin(roll);

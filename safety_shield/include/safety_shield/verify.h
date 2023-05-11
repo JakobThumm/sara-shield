@@ -16,6 +16,7 @@
 
 #include <algorithm>
 #include <vector>
+#include <set>
 
 #include "reach_lib.hpp"
 
@@ -72,7 +73,8 @@ class Verify {
   virtual bool verify_clamping(const std::vector<reach_lib::Capsule>& robot_capsules, 
       const std::vector<std::vector<reach_lib::Capsule>>& human_capsules,
       const std::vector<reach_lib::AABB>& environment_elements,
-      const std::vector<std::vector<double>>& human_radii) = 0;
+      const std::vector<std::vector<double>>& human_radii,
+      const std::unordered_map<int, std::set<int>>& unclampable_enclosures_map) = 0;
 };
 } // namespace safety_shield
 

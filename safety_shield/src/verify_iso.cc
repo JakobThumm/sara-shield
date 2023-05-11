@@ -36,11 +36,12 @@ bool VerifyISO::verify_human_reach(const std::vector<reach_lib::Capsule>& robot_
 bool VerifyISO::clamping_possible(const std::vector<reach_lib::Capsule>& robot_capsules, 
       const std::vector<reach_lib::Capsule>& human_capsules,
       const std::vector<reach_lib::AABB>& environment_elements,
-      const std::vector<double>& human_radii) {
+      const std::vector<double>& human_radii,
+      const std::unordered_map<int, std::set<int>>& unclampable_enclosures_map) {
   // Build a map that maps the robot capsule/environment indices in collision with the human capsules
   // We choose this indexing to be in line with the paper.
-  std::map<int, std::vector<int>> robot_collision_map;
-  std::map<int, std::vector<int>> environment_collision_map;
+  std::unordered_map<int, std::vector<int>> robot_collision_map;
+  std::unordered_map<int, std::vector<int>> environment_collision_map;
   for (int j = 0; j < human_capsules.size(); j++) {
     // Collisions with robot links
     for (int i = 0; i < robot_capsules.size(); i++) {
@@ -71,8 +72,35 @@ bool VerifyISO::clamping_possible(const std::vector<reach_lib::Capsule>& robot_c
     int human_index = robot_collisions.first;
     if (robot_collisions.second.size() >= 2) {
       // Self-constrained collision possible
-      // Check distance between the two links
-      return true;
+      // Create pairs of robot links from list of links in collision
+      for (int i = 0; i < robot_collisions.second.size(); i++) {
+        for (int j = i + 1; j < robot_collisions.second.size(); j++) {
+          // Check if the two links cannot cause a self-constrained collision
+          int link1 = robot_collisions.second[i];
+          int link2 = robot_collisions.second[j];
+          if ((unclampable_enclosures_map.find(link1) != unclampable_enclosures_map.end() &&
+              unclampable_enclosures_map.at(link1).find(link2) != unclampable_enclosures_map.at(link1).end()) ||
+              (unclampable_enclosures_map.find(link2) != unclampable_enclosures_map.end() &&
+              unclampable_enclosures_map.at(link2).find(link1) != unclampable_enclosures_map.at(link2).end())) {
+            continue;
+          }
+          // Check if the two links can cause a self-constrained collision
+          double d_human = 2 * human_radii[human_index];
+          reach_lib::Capsule expanded_robot_capsule(
+            reach_lib::Point(
+              robot_capsules[link1].p1_.x,
+              robot_capsules[link1].p1_.y,
+              robot_capsules[link1].p1_.z),
+            reach_lib::Point(
+              robot_capsules[link1].p2_.x,
+              robot_capsules[link1].p2_.y,
+              robot_capsules[link1].p2_.z),
+            robot_capsules[link1].r_ + d_human);
+          if (capsuleCollisionCheck(expanded_robot_capsule, robot_capsules[link2])) {
+            return true;
+          }
+        }
+      }
     }
     if (environment_collision_map.find(human_index) != environment_collision_map.end()) {
       // Environment collision possible
@@ -105,11 +133,12 @@ bool VerifyISO::clamping_possible(const std::vector<reach_lib::Capsule>& robot_c
 bool VerifyISO::verify_clamping(const std::vector<reach_lib::Capsule>& robot_capsules, 
       const std::vector<std::vector<reach_lib::Capsule>>& human_capsules,
       const std::vector<reach_lib::AABB>& environment_elements,
-      const std::vector<std::vector<double>>& human_radii) {
+      const std::vector<std::vector<double>>& human_radii,
+      const std::unordered_map<int, std::set<int>>& unclampable_enclosures_map) {
   try {
     for (int i = 0; i < human_capsules.size(); i++) {
       // If no collision occured, we are safe and don't have to check the rest.
-      if(!clamping_possible(robot_capsules, human_capsules[i], environment_elements, human_radii[i])) {
+      if(!clamping_possible(robot_capsules, human_capsules[i], environment_elements, human_radii[i], unclampable_enclosures_map)) {
         return true;
       }
     }
