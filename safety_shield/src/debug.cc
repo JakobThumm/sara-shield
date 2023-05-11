@@ -15,9 +15,10 @@
 int main () {
     bool activate_shield = true;
     double sample_time = 0.001; 
-    std::string trajectory_config_file = std::string("../safety_shield/config/trajectory_parameters_schunk.yaml");
-    std::string robot_config_file = std::string("../safety_shield/config/robot_parameters_schunk.yaml");
-    std::string mocap_config_file = std::string("../safety_shield/config/cmu_mocap_no_hand.yaml");
+    // path depends on where your build folder is. Maybe you need to replace `../` with `../safety_shield/`
+    std::string trajectory_config_file = std::string("../config/trajectory_parameters_schunk.yaml");
+    std::string robot_config_file = std::string("../config/robot_parameters_schunk.yaml");
+    std::string mocap_config_file = std::string("../config/cmu_mocap_no_hand.yaml");
     reach_lib::AABB table = reach_lib::AABB({-1.0, -1.0, -0.1}, {1.0, 1.0, 0.0});
     std::vector<reach_lib::AABB> environment_elements = {table};
     double init_x = 0.0;

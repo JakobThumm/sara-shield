@@ -202,6 +202,7 @@ public:
    */
   inline std::vector<std::vector<double>> getAllHumanRadii() {
     std::vector<std::vector<double>> radii;
+    radii.resize(3);
     for (auto& extremity : human_p_.get_occupancy()) {
       radii[0].push_back(extremity.get_thickness());
     }
