@@ -65,12 +65,14 @@ class Verify {
    * @param robot_capsules Reachable capsules of the robot
    * @param human_capsules List of list of capsules. Each list of capsules corresponds to a human reachable set model.
    * @param environment_elements List of environment elements
+   * @param human_radii List of list of radii. Each list of radii corresponds to a human reachable set model.
    * @return true: if no clamping can occur
    * @return false: if clamping can occur
    */
   virtual bool verify_clamping(const std::vector<reach_lib::Capsule>& robot_capsules, 
       const std::vector<std::vector<reach_lib::Capsule>>& human_capsules,
-      const std::vector<reach_lib::AABB>& environment_elements) = 0;
+      const std::vector<reach_lib::AABB>& environment_elements,
+      const std::vector<std::vector<double>>& human_radii) = 0;
 };
 } // namespace safety_shield
 
