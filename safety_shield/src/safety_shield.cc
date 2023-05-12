@@ -597,9 +597,8 @@ void SafetyShield::computesPotentialTrajectoryForPFL(bool v_static, bool v_pfl, 
         }
         path_s_discrete_++;
     }
+    // TODO: nur ein criterion
     //If verified safe, take the recovery path, otherwise, take the failsafe path
-    // TODO: extra if-Unterscheidung für switching failsafe problem, ich muss wissen welcher Pfad vorher genommen wurde
-    // TODO: Reihenfolge verwirrt mich grad, computesPotentialTrajectory() berechnet Pfad, aber danach bei step() wird wieder verifiziert oder ist das für den (über)nächsten Schritt schon?
     if (v_static && v_pfl && recovery_path_correct_) {
         recovery_path_.setCurrent(true);
         //discard old FailsafePath and replace with new one
@@ -688,6 +687,7 @@ void SafetyShield::computesPotentialTrajectoryForPFL(bool v_static, bool v_pfl, 
             // Otherwise, we use a dummy failsafe path to the current \dot{s} value.
             failsafe_2_pfl_planning_success = planSafetyShield(recovery_path_.getPosition(), recovery_path_.getVelocity(), recovery_path_.getAcceleration(), recovery_path_vel-0.01, a_max_manoeuvre, j_max_manoeuvre, failsafe_path_2_pfl_);
         }
+        // TODO: nur ein failsafe path
         // plan new failsafe path for the static case
         bool failsafe_2_static_planning_success = planSafetyShield(recovery_path_.getPosition(), recovery_path_.getVelocity(), recovery_path_.getAcceleration(), 0, a_max_manoeuvre, j_max_manoeuvre, failsafe_path_2_static_);
 
@@ -1023,6 +1023,7 @@ Motion SafetyShield::PFLstep(double cycle_begin_time) {
                 is_static_safe_ = false;
                 is_PFL_safe_ = false;
             } else {
+               // TODO: Verifizierung in einem Schritt und im nächsten erst das setten der Pfade?
                 // check if robot doesnt run into static human
                 robot_capsules_static_ = robot_reach_->reach(current_motion, goal_motion_static, (goal_motion_static.getS()-current_motion.getS()), alpha_i_);
                 human_reach_->humanReachabilityAnalysis(cycle_begin_time_, 0); //t_brake is differentiell
@@ -1041,7 +1042,6 @@ Motion SafetyShield::PFLstep(double cycle_begin_time) {
                     robot_capsules_PFL_ = robot_reach_->reach(current_motion, goal_motion_pfl, (goal_motion_pfl.getS()-current_motion.getS()), alpha_i_);
                     human_reach_->humanReachabilityAnalysis(cycle_begin_time_, goal_motion_pfl.getTime());
                     human_capsules_PFL_ = human_reach_->getAllCapsules();
-                    // TODO: several PFL actions
                     is_PFL_safe_ = verify_->verify_human_reach(robot_capsules_PFL_, human_capsules_PFL_);
                 }
 
