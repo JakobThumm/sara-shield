@@ -91,6 +91,11 @@ private:
     Path recovery_path_;
 
     /**
+     * @brief path to reduce speed to fulfill PFL criterion
+     */
+    Path pfl_path_;
+
+    /**
      * @brief fail-safe path of the current path
      */
     Path failsafe_path_;
@@ -105,6 +110,11 @@ private:
      * @brief fail-safe path of the repair path
      */
     Path failsafe_path_2_;
+
+    /**
+     * @brief fail-safe path of the PFL path
+     */
+     Path failsafe_path_2_pfl_;
 
     /**
      * @brief verified safe path

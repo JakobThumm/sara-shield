@@ -588,40 +588,7 @@ Motion SafetyShield::computesPotentialTrajectory(bool v, const std::vector<doubl
     }
 }
 
-bool SafetyShield::computesPotentialTrajectoryForPFL(Verification_level v, const std::vector<double>& prev_speed, int path_pair) {
-    // s_int indicates the index of the entire traveled way
-    while (path_s_ >= (path_s_discrete_+1)*sample_time_) {
-        long_term_trajectory_.increasePosition();
-        if (new_ltt_) {
-            new_long_term_trajectory_.increasePosition();
-        }
-        path_s_discrete_++;
-    }
-    //If verified safe, take the recovery path, otherwise, take the failsafe path
-    if (v_static && v_pfl && recovery_path_correct_) {
-        recovery_path_.setCurrent(true);
-        //discard old FailsafePath and replace with new one
-        failsafe_path_static_ = failsafe_path_2_static_;
-        failsafe_path_pfl_ = failsafe_path_2_pfl_;
-        //repair path already incremented
-    }
-    // if v_static but not v_pfl, we can take the failsafe-path of the PFL criterion
-    else if(v_static && !v_pfl) {
-        failsafe_path_pfl_.setCurrent(true);
-        failsafe_path_static_.setCurrent(false);
-        //discard RepairPath
-        recovery_path_.setCurrent(false);
-        failsafe_path_pfl_.increment(sample_time_);
-    }
-    // if no criterion is safe, we take the failsafe-path of the static criterion
-    else {
-        failsafe_path_pfl_.setCurrent(false);
-        failsafe_path_static_.setCurrent(true);
-        //discard RepairPath
-        recovery_path_.setCurrent(false);
-        failsafe_path_static_.increment(sample_time_);
-    }
-
+bool SafetyShield::computesPotentialTrajectoryAndVerifies(Verification_level v, const std::vector<double>& prev_speed, int path_pair) {
     //find maximum acceleration and jerk authorised
     double a_max_manoeuvre, j_max_manoeuvre;
     // One could use new_long_term_trajectory_.getMaxAccelerationWindow(path_s_discrete_) instead of a_max_ltt but there are many bugs to be solved before.
@@ -648,11 +615,11 @@ bool SafetyShield::computesPotentialTrajectoryForPFL(Verification_level v, const
         }
 
         // plan repair path and replace
-        // TODO: wie plan ich zwei intended paths?
         recovery_path_correct_ = planSafetyShield(pos, vel, acc, 1, a_max_manoeuvre, j_max_manoeuvre, recovery_path_);
     }
     // Only plan new failsafe trajectory if the recovery path planning was successful.
     if (recovery_path_correct_) {
+        // TODO: v_max Berechnung nur für die pfl Pfade?
         // advance one step on intended path
         recovery_path_.increment(sample_time_);
         // Check the maximum cartesian velocity at this point
@@ -728,6 +695,48 @@ bool SafetyShield::computesPotentialTrajectoryForPFL(Verification_level v, const
     }
     goal_motion_static->setTime(potential_path_static_.getPhase(3));
     goal_motion_pfl->setTime(potential_path_pfl_.getPhase(3));
+
+
+   // Compute a new potential trajectory
+   Motion goal_motion_static;
+   Motion goal_motion_pfl;
+   computesPotentialTrajectoryForPFL(is_static_safe_, is_PFL_safe_, next_motion_.getVelocity(), &goal_motion_static, &goal_motion_pfl);
+   if (activate_shield_) {
+      // Check motion for joint limits
+      bool pfl_joint_limit = true;
+      if(!is_under_iso_velocity_) {
+         pfl_joint_limit = checkMotionForJointLimits(goal_motion_pfl);
+      }
+      if (!(checkMotionForJointLimits(goal_motion_static) && pfl_joint_limit)) {
+         is_static_safe_ = false;
+         is_PFL_safe_ = false;
+      } else {
+         // check if robot doesnt run into static human
+         robot_capsules_static_ = robot_reach_->reach(current_motion, goal_motion_static, (goal_motion_static.getS()-current_motion.getS()), alpha_i_);
+         human_reach_->humanReachabilityAnalysis(cycle_begin_time_, 0); //t_brake is differentiell
+         human_capsules_static_ = human_reach_->getAllCapsules();
+         is_static_safe_ = verify_->verify_human_reach(robot_capsules_static_, human_capsules_static_);
+
+         // check if there is collision between now and time t, during that time velocity of robot is higher than v_iso_
+         // velocity_criteria is true, when v_max <= v_iso
+         if(is_under_iso_velocity_) {
+            is_PFL_safe_ = true;
+            // if v_max <= v_iso, no velocity capsules get calculated because velocity criterion is true
+            // so we set the velocity capsules to the static capsules
+            robot_capsules_PFL_ = robot_capsules_static_;
+            human_capsules_PFL_ = human_capsules_static_;
+         } else {
+            robot_capsules_PFL_ = robot_reach_->reach(current_motion, goal_motion_pfl, (goal_motion_pfl.getS()-current_motion.getS()), alpha_i_);
+            human_reach_->humanReachabilityAnalysis(cycle_begin_time_, goal_motion_pfl.getTime());
+            human_capsules_PFL_ = human_reach_->getAllCapsules();
+            is_PFL_safe_ = verify_->verify_human_reach(robot_capsules_PFL_, human_capsules_PFL_);
+         }
+
+      }
+   } else {
+      is_static_safe_ = true;
+      is_PFL_safe_ = true;
+   }
 }
 
 bool SafetyShield::checkMotionForJointLimits(Motion& motion) {
@@ -856,56 +865,6 @@ Motion SafetyShield::determineNextMotionForPFL(Verification_level is_safe) {
     s_dots_.push_back(ds_d);
     // Return the calculated next motion
     return next_motion;
-
-   // TODO: alles ab unten in eine separate Methode machen aber nur für jeweils ein t_safe_i Pfad?
-   // TODO: obere Methode sequentiell aufrufen bis ein sicherer Pfad gefunden wurde wie in Jakobs Pseudocode?
-   // TODO: neue Methode muss Path-end-vel als Parameter haben (intended=1 etc.), weil dann ansonsten Code komplett gleich?
-   // Compute a new potential trajectory
-   Motion goal_motion_static;
-   Motion goal_motion_pfl;
-   computesPotentialTrajectoryForPFL(is_static_safe_, is_PFL_safe_, next_motion_.getVelocity(), &goal_motion_static, &goal_motion_pfl);
-   if (activate_shield_) {
-      // Check motion for joint limits
-      bool pfl_joint_limit = true;
-      if(!is_under_iso_velocity_) {
-         pfl_joint_limit = checkMotionForJointLimits(goal_motion_pfl);
-      }
-      if (!(checkMotionForJointLimits(goal_motion_static) && pfl_joint_limit)) {
-         is_static_safe_ = false;
-         is_PFL_safe_ = false;
-      } else {
-         // check if robot doesnt run into static human
-         robot_capsules_static_ = robot_reach_->reach(current_motion, goal_motion_static, (goal_motion_static.getS()-current_motion.getS()), alpha_i_);
-         human_reach_->humanReachabilityAnalysis(cycle_begin_time_, 0); //t_brake is differentiell
-         human_capsules_static_ = human_reach_->getAllCapsules();
-         is_static_safe_ = verify_->verify_human_reach(robot_capsules_static_, human_capsules_static_);
-
-         // check if there is collision between now and time t, during that time velocity of robot is higher than v_iso_
-         // velocity_criteria is true, when v_max <= v_iso
-         if(is_under_iso_velocity_) {
-            is_PFL_safe_ = true;
-            // if v_max <= v_iso, no velocity capsules get calculated because velocity criterion is true
-            // so we set the velocity capsules to the static capsules
-            robot_capsules_PFL_ = robot_capsules_static_;
-            human_capsules_PFL_ = human_capsules_static_;
-         } else {
-            robot_capsules_PFL_ = robot_reach_->reach(current_motion, goal_motion_pfl, (goal_motion_pfl.getS()-current_motion.getS()), alpha_i_);
-            human_reach_->humanReachabilityAnalysis(cycle_begin_time_, goal_motion_pfl.getTime());
-            human_capsules_PFL_ = human_reach_->getAllCapsules();
-            is_PFL_safe_ = verify_->verify_human_reach(robot_capsules_PFL_, human_capsules_PFL_);
-         }
-
-      }
-   } else {
-      is_static_safe_ = true;
-      is_PFL_safe_ = true;
-   }
-   // Select the next motion based on the verified safety
-   next_motion_ = determineNextMotionForPFL(is_static_safe_, is_PFL_safe_);
-   next_motion_.setTime(cycle_begin_time);
-   new_ltt_processed_ = true;
-   return next_motion_;
-
 }
 
 Motion SafetyShield::step(double cycle_begin_time) {
@@ -1052,6 +1011,55 @@ Motion SafetyShield::PFLstep(double cycle_begin_time) {
             is_PFL_safe_ = false;
             is_static_safe_ = false;
         }
+
+       // s_int indicates the index of the entire traveled way
+       while (path_s_ >= (path_s_discrete_+1)*sample_time_) {
+          long_term_trajectory_.increasePosition();
+          if (new_ltt_) {
+             new_long_term_trajectory_.increasePosition();
+          }
+          path_s_discrete_++;
+       }
+       //If verified safe, take the recovery path, otherwise, take the failsafe path
+       if (verification_level_ == Verification_level::INTENDED) { // TODO: recovery_path_correct_?
+          recovery_path_.setCurrent(true);
+          pfl_path_.setCurrent(false);
+          //discard old FailsafePath and replace with new one
+          failsafe_path_ = failsafe_path_2_;
+          //repair path already incremented
+       }
+       // take pfl path
+       else if(verification_level_ == Verification_level::PFL) {
+          recovery_path_.setCurrent(false);
+          pfl_path_.setCurrent(true);
+          failsafe_path_.setCurrent(false);
+          // TODO: do we have to increment?
+          pfl_path_.increment(sample_time_);
+       }
+       // take failsafe-path
+       else {
+          recovery_path_.setCurrent(false);
+          pfl_path_.setCurrent(false);
+          failsafe_path_.setCurrent(true);
+          // TODO: do we have to increment?
+          failsafe_path_.increment(sample_time_);
+       }
+
+
+       // TODO: neue Methode sequentiell aufrufen bis ein sicherer Pfad gefunden wurde wie in Jakobs Pseudocode?
+       bool is_verified = false;
+       for(int i = 0; i < 2; ++i) {
+          is_verified = computesPotentialTrajectoryAndVerifies();
+          if(is_verified) {
+             break;
+          }
+       }
+
+       // Select the next motion based on the verified safety
+       next_motion_ = determineNextMotionForPFL(is_static_safe_, is_PFL_safe_);
+       next_motion_.setTime(cycle_begin_time);
+       new_ltt_processed_ = true;
+       return next_motion_;
     } catch (const std::exception &exc) {
         spdlog::error("Exception in SafetyShield::getNextCyclePFL: {}", exc.what());
     }
