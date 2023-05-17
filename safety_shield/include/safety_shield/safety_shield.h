@@ -51,6 +51,15 @@ class SafetyShield {
 private:
 
     /**
+     * @brief verification level of path
+     */
+    enum Verification_level {
+        INTENDED,
+        PFL,
+        SSM,
+    };
+
+    /**
      * @brief Robot reachable set calculation object
      *
      */
@@ -86,15 +95,6 @@ private:
      */
     Path failsafe_path_;
 
-    /**
-     * @brief full stop fail-safe path of the current path
-     */
-    Path failsafe_path_static_;
-
-    /**
-     * @brief PFL fail-safe path of the current path
-     */
-    Path failsafe_path_pfl_;
 
     /**
      * @brief saves trajectory velocities of all returned motions of step()
@@ -107,16 +107,6 @@ private:
     Path failsafe_path_2_;
 
     /**
-     * @brief full stop fail-safe path of the repair path
-     */
-    Path failsafe_path_2_static_;
-
-    /**
-     * @brief PFL fail-safe path of the repair path
-     */
-    Path failsafe_path_2_pfl_;
-
-    /**
      * @brief verified safe path
      */
     Path safe_path_;
@@ -125,16 +115,6 @@ private:
      * @brief the constructed failsafe path
      */
     Path potential_path_;
-
-    /**
-     * @brief the constructed full stop failsafe path
-     */
-    Path potential_path_static_;
-
-    /**
-     * @brief the constructed PFL failsafe path
-     */
-    Path potential_path_pfl_;
 
     /**
      * @brief Whether or not to use the formal verification.
@@ -169,14 +149,9 @@ private:
     bool is_safe_;
 
     /**
-     * @brief Was the last timestep safe according to PFL criterion
+     * @brief safety level of last timestep
      */
-    bool is_PFL_safe_;
-
-    /**
-     * @brief Was the last timestep safe according to static human criterion
-     */
-    bool is_static_safe_;
+    Verification_level verification_level_;
 
     /**
      * @brief Indicates if the last replanning was successful or not.
@@ -422,11 +397,10 @@ protected:
 
     /**
      * @brief Calculate the next desired joint position based on verification of recovery path.
-     * @param is_safe_static Last recovery path + potential path are verified static-safe.
-     * @param is_safe_static Last recovery path + potential path are verified pfl-safe.
+     * @param is_safe_static Verification level of potential path
      * @return next motion
      */
-    Motion determineNextMotionForPFL(bool is_safe_static, bool is_safe_pfl);
+    Motion determineNextMotionForPFL(Verification_level is_safe);
 
     /**
      * @brief Check a given motion if it exceeds the joint limits.
@@ -660,14 +634,12 @@ public:
     Motion computesPotentialTrajectory(bool v, const std::vector<double> &prev_speed);
 
     /**
-     * @brief For PFL mode: computes the new trajectory depending on dq and the verification of the safety criteria of the previous path and publishes it
-     * @param[in] v_static is the previous path static-safe
-     * @param[in] v_pfl is the previous path pfl-safe
+     * @brief For PFL mode: computes the new trajectory for a specific intended trajectory version depending on dq and the verification of the safety criterion of the previous path and verifies it
+     * @param[in] v verification level of previous path
      * @param[in] prev_speed the velocity of the previous point
-     * @param[out] goal_motion_static: goal position, velocity, acceleration and time of the computed static trajectory to execute.
-     * @param[out] goal_motion_pfl: goal position, velocity, acceleration and time of the computed pfl trajectory to execute.
+     * @return if calculated trajectory is safe
      */
-    void computesPotentialTrajectoryForPFL(bool v_static, bool v_pfl, const std::vector<double>& prev_speed, Motion *goal_motion_static, Motion *goal_motion_pfl);
+    bool computesPotentialTrajectoryAndVerifies(Verification_level v, const std::vector<double>& prev_speed, int path_pair);
 
     /**
      * @brief Gets the information that the next simulation cycle (sample time) has started
