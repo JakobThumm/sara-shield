@@ -601,23 +601,13 @@ bool SafetyShield::computesPotentialTrajectoryAndVerifies(Verification_level v, 
     //Desired movement, one timestep
     // if not already on the repair path, plan a repair path
     if (!recovery_path_.isCurrent()) {
-        double pos, vel, acc;
-        if(failsafe_path_pfl_.isCurrent()) {
-            pos = failsafe_path_pfl_.getPosition();
-            vel = failsafe_path_pfl_.getVelocity();
-            acc = failsafe_path_pfl_.getAcceleration();
-        } else if(failsafe_path_static_.isCurrent()) {
-            pos = failsafe_path_static_.getPosition();
-            vel = failsafe_path_static_.getVelocity();
-            acc = failsafe_path_static_.getAcceleration();
-        } else {
-            spdlog::error("Error in computesPotentialTrajectoryForPFL: no failsafe-path is set when planning repair path?");
-        }
-
         // plan repair path and replace
-        recovery_path_correct_ = planSafetyShield(pos, vel, acc, 1, a_max_manoeuvre, j_max_manoeuvre, recovery_path_);
+        recovery_path_correct_ = planSafetyShield(failsafe_path_.getPosition(), failsafe_path_.getVelocity(),
+                                                 failsafe_path_.getAcceleration(), 1, a_max_manoeuvre, j_max_manoeuvre, recovery_path_);
+
     }
     // Only plan new failsafe trajectory if the recovery path planning was successful.
+    // TODO: unteren if branch weiter unterteilen je nachdem which path pair berechnet wird
     if (recovery_path_correct_) {
         // TODO: v_max Berechnung nur für die pfl Pfade
         // advance one step on intended path
@@ -654,7 +644,6 @@ bool SafetyShield::computesPotentialTrajectoryAndVerifies(Verification_level v, 
             // Otherwise, we use a dummy failsafe path to the current \dot{s} value.
             failsafe_2_pfl_planning_success = planSafetyShield(recovery_path_.getPosition(), recovery_path_.getVelocity(), recovery_path_.getAcceleration(), recovery_path_vel-0.01, a_max_manoeuvre, j_max_manoeuvre, failsafe_path_2_pfl_);
         }
-        // TODO: nur ein failsafe path
         // plan new failsafe path for the static case
         bool failsafe_2_static_planning_success = planSafetyShield(recovery_path_.getPosition(), recovery_path_.getVelocity(), recovery_path_.getAcceleration(), 0, a_max_manoeuvre, j_max_manoeuvre, failsafe_path_2_static_);
 
@@ -739,7 +728,7 @@ bool SafetyShield::checkMotionForJointLimits(Motion& motion) {
     return true;
 }
 
-
+// TODO: kann ich das hier verwenden oder passt es von den Pfaden nicht?
 Motion SafetyShield::determineNextMotion(bool is_safe) {
     Motion next_motion;
     double s_d, ds_d, dds_d, ddds_d;
