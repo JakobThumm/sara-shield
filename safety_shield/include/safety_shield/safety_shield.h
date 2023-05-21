@@ -644,6 +644,17 @@ public:
      */
     bool computesPotentialTrajectoryAndVerifies(Verification_level v, const std::vector<double>& prev_speed, int path_pair);
 
+    bool computesPotentialIntendedPath(double a_max_manoeuvre, double j_max_manoeuvre);
+
+    bool computesPotentialPflPath(double a_max_manoeuvre, double j_max_manoeuvre);
+
+    /**
+     * @brief verifies if trajectory is safe
+     * @param goal_motion end motion of trajectory
+     * @return true if trajectory is safe
+     */
+    bool verify(Motion& goal_motion);
+
     /**
      * @brief Gets the information that the next simulation cycle (sample time) has started
      * @param cycle_begin_time timestep of begin of current cycle in seconds.
