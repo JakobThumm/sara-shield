@@ -52,14 +52,14 @@ SafetyShield::SafetyShield(bool activate_shield,
     alpha_i_.push_back(1.0);
 
     is_safe_ = !activate_shield_;
-    is_static_safe_ = is_safe_;
-    is_PFL_safe_ = is_safe_;
+    verification_level_ = Verification_level::SSM;
     if(safety_method_ == STANDARD) {
         computesPotentialTrajectory(is_safe_, prev_dq);
         next_motion_ = determineNextMotion(is_safe_);
     } else {
-        computesPotentialTrajectoryForPFL(is_static_safe_, is_PFL_safe_, prev_dq, nullptr, nullptr);
-        next_motion_ = determineNextMotionForPFL(is_static_safe_, is_PFL_safe_);
+        // TODO: start
+        computesPotentialTrajectoryAndVerifies(verification_level_, prev_dq, 0);
+        next_motion_ = determineNextMotion(is_safe_);
     }
 
     std::vector<double> q_min(nb_joints, -3.141);
@@ -168,14 +168,14 @@ void SafetyShield::constructWithConfig(std::string trajectory_config_file,
     }
     alpha_i_.push_back(1.0);
     is_safe_ = !activate_shield_;
-    is_static_safe_ = is_safe_;
-    is_PFL_safe_ = is_safe_;
+    verification_level_ = Verification_level::SSM;
     if(safety_method_ == STANDARD) {
         computesPotentialTrajectory(is_safe_, prev_dq);
         next_motion_ = determineNextMotion(is_safe_);
     } else {
-        computesPotentialTrajectoryForPFL(is_static_safe_, is_PFL_safe_, prev_dq, nullptr, nullptr);
-        next_motion_ = determineNextMotionForPFL(is_static_safe_, is_PFL_safe_);
+        // TODO: start
+        computesPotentialTrajectoryAndVerifies(verification_level_, prev_dq, 0);
+        next_motion_ = determineNextMotion(is_safe_);
     }
     spdlog::info("Safety shield created.");
 }
@@ -303,8 +303,7 @@ void SafetyShield::reset(bool activate_shield,
     }
     alpha_i_.push_back(1.0);
     is_safe_ = !activate_shield_;
-    is_static_safe_ = is_safe_;
-    is_PFL_safe_ = is_safe_;
+    verification_level_ = Verification_level::SSM;
     s_dots_.clear();
     new_ltt_ = false;
     new_goal_ = false;
@@ -317,9 +316,6 @@ void SafetyShield::reset(bool activate_shield,
     failsafe_path_ = Path();
     failsafe_path_2_ = Path();
     safe_path_ = Path();
-    failsafe_path_static_ = Path();
-    failsafe_path_pfl_ = Path();
-    failsafe_path_2_static_ = Path();
     failsafe_path_2_pfl_ = Path();
     // Initialize the long term trajectory
     std::vector<Motion> long_term_traj;
@@ -333,8 +329,9 @@ void SafetyShield::reset(bool activate_shield,
         computesPotentialTrajectory(is_safe_, prev_dq);
         next_motion_ = determineNextMotion(is_safe_);
     } else {
-        computesPotentialTrajectoryForPFL(is_static_safe_, is_PFL_safe_, prev_dq, nullptr, nullptr);
-        next_motion_ = determineNextMotionForPFL(is_static_safe_, is_PFL_safe_);
+        // TODO: start
+        computesPotentialTrajectoryAndVerifies(verification_level_, prev_dq, 0);
+        next_motion_ = determineNextMotion(is_safe_);
     }
     spdlog::info("Safety shield resetted.");
 }
@@ -670,34 +667,28 @@ bool SafetyShield::computesPotentialIntendedPath(double a_max_manoeuvre, double 
    return true;
 }
 
-// TODO: ????????????????????
 bool SafetyShield::computesPotentialPflPath(double a_max_manoeuvre, double j_max_manoeuvre) {
    // if not already on the PFL path, plan a PFL path
+   bool pfl_path_planning_success = true;
+   bool failsafe_2_pfl_planning_success = true;
    if (!pfl_path_.isCurrent()) {
-      // plan repair path and replace
-      recovery_path_correct_ = planSafetyShield(failsafe_path_.getPosition(), failsafe_path_.getVelocity(),
-                                                failsafe_path_.getAcceleration(), 1, a_max_manoeuvre, j_max_manoeuvre, recovery_path_);
-
-   }
-   // Only plan new failsafe trajectory if the recovery path planning was successful.
-   if (recovery_path_correct_) {
-      // advance one step on intended path
-      recovery_path_.increment(sample_time_);
+      // plan PFL path
+      // TODO: failsafe path instead of recovery path correct?
       // Check the maximum cartesian velocity at this point
-      double recovery_path_pos = recovery_path_.getPosition();
+      double path_pos = failsafe_path_.getPosition();
       // \dot{s} value of the recovery path at the current position
-      double recovery_path_vel = recovery_path_.getVelocity();
-      is_under_iso_velocity_ = false;
+      double path_vel = failsafe_path_.getVelocity();
+      double path_acc = failsafe_path_.getAcceleration();
       double v_max;
       if(safety_method_ == LTT_MAXIMUM && !new_ltt_) {
          v_max = long_term_trajectory_.getMaxofMaximumCartesianVelocity();
       } else if(safety_method_ == LTT_MAXIMUM && new_ltt_) {
          v_max = new_long_term_trajectory_.getMaxofMaximumCartesianVelocity();
       } else if(safety_method_ == STP_MAXIMUM && !new_ltt_) {
-         v_max = long_term_trajectory_.getMaxofMaximumCartesianVelocityWithS(recovery_path_pos);
+         v_max = long_term_trajectory_.getMaxofMaximumCartesianVelocityWithS(path_pos);
       } else {
          // safety_method_ == STP_MAXIMUM && new_ltt_
-         v_max = new_long_term_trajectory_.getMaxofMaximumCartesianVelocityWithS(recovery_path_pos);
+         v_max = new_long_term_trajectory_.getMaxofMaximumCartesianVelocityWithS(path_pos);
       }
       // Calculate max \dot{s} that is still under the ISO-velocity and add a small buffer.
       double ds_limit = v_iso_ / v_max;
@@ -706,36 +697,38 @@ bool SafetyShield::computesPotentialPflPath(double a_max_manoeuvre, double j_max
          ds_limit = 0.0;
       }
       ds_limit = std::max(ds_limit - 1e-5, 0.0);
-      is_under_iso_velocity_ = recovery_path_vel <= ds_limit;
-      bool failsafe_2_pfl_planning_success = true;
-      if(!is_under_iso_velocity_) {
-         // If we are not under the ISO-velocity, we plan a failsafe path to the ISO velocity.
-         failsafe_2_pfl_planning_success = planSafetyShield(recovery_path_.getPosition(), recovery_path_.getVelocity(), recovery_path_.getAcceleration(), ds_limit, a_max_manoeuvre, j_max_manoeuvre, failsafe_path_2_pfl_);
+
+      if(path_vel > ds_limit) {
+         // If we are not under the ISO-velocity, we plan an inteded path to the ISO velocity.
+         pfl_path_planning_success = planSafetyShield(path_pos, path_vel, path_acc, ds_limit, a_max_manoeuvre, j_max_manoeuvre, pfl_path_);
       } else {
          // Otherwise, we use a dummy failsafe path to the current \dot{s} value.
-         failsafe_2_pfl_planning_success = planSafetyShield(recovery_path_.getPosition(), recovery_path_.getVelocity(), recovery_path_.getAcceleration(), recovery_path_vel-0.01, a_max_manoeuvre, j_max_manoeuvre, failsafe_path_2_pfl_);
+         pfl_path_planning_success = planSafetyShield(path_pos, path_vel, recovery_path_.getAcceleration(), path_vel-0.01, a_max_manoeuvre, j_max_manoeuvre, pfl_path_);
       }
-      // plan new failsafe path for the static case
-      bool failsafe_2_static_planning_success = planSafetyShield(recovery_path_.getPosition(), recovery_path_.getVelocity(), recovery_path_.getAcceleration(), 0, a_max_manoeuvre, j_max_manoeuvre, failsafe_path_2_static_);
 
-      // Check the validity of the planned path
-      if (!failsafe_2_static_planning_success ||
-          !failsafe_2_pfl_planning_success ||
-          (failsafe_path_static_.isCurrent() && recovery_path_.getPosition() < failsafe_path_static_.getPosition()) ||
-          (failsafe_path_pfl_.isCurrent() && recovery_path_.getPosition() < failsafe_path_pfl_.getPosition())) {
-         recovery_path_correct_ = false;
+      if(!pfl_path_planning_success) {
+         return false;
       }
+
+      // plan failsafe path for the pfl intended path
+      failsafe_2_pfl_planning_success = planSafetyShield(pfl_path_.getPosition(), pfl_path_.getVelocity(), pfl_path_.getAcceleration(), 0, a_max_manoeuvre, j_max_manoeuvre, failsafe_path_2_pfl_);
+
+      if(!failsafe_2_pfl_planning_success) {
+         return false;
+      }
+
    }
+
+   // Check the validity of the planned path
+   // TODO: Bedingung?
+   if (pfl_path_.getPosition() < failsafe_path_.getPosition()) {
+       return false;
+   }
+
    // If all planning was correct, use new failsafe path with single recovery step
-   if (recovery_path_correct_) {
-      potential_path_static_ = failsafe_path_2_static_;
-      potential_path_pfl_ = failsafe_path_2_pfl_;
-   }
-   else {
-      // If planning failed, use previous failsafe path
-      potential_path_static_ = failsafe_path_static_;
-      potential_path_pfl_ = failsafe_path_pfl_;
-   }
+   potential_path_ = failsafe_path_2_pfl_;
+
+   return true;
 }
 
 bool SafetyShield::verify(Motion &goal_motion) {
@@ -1029,6 +1022,7 @@ Motion SafetyShield::getCurrentMotion() {
         } else if(pfl_path_.isCurrent()) {
             path = pfl_path_;
         } else {
+            path = recovery_path_;
             if(!recovery_path_.isCurrent()) {
                 spdlog::error("getCurrentMotion: no path is set?");
             }

@@ -344,11 +344,6 @@ private:
     double v_iso_ = 0.25;
 
     /**
-     * @brief if robot is under iso_velocity
-     */
-    bool is_under_iso_velocity_;
-
-    /**
      * @brief constructs safety_shield object with config file
      * @param trajectory_config_file Path to config file defining the trajectory parameters
      * @param robot_config_file Path to config file defining the robot transformation matrices and capsules
