@@ -57,14 +57,7 @@ SafetyShield::SafetyShield(bool activate_shield,
         computesPotentialTrajectory(is_safe_, prev_dq);
         next_motion_ = determineNextMotion(is_safe_);
     } else {
-        // TODO: start
-        bool is_verified = false;
-        for(int i = 0; i < 2; ++i) {
-           is_verified = computesPotentialTrajectoryAndVerifies(verification_level_, next_motion_.getVelocity(), i);
-           if(is_verified) {
-              break;
-           }
-        }
+        computesPotentialTrajectoryAndVerifies(verification_level_, prev_dq);
         next_motion_ = determineNextMotionPFL(verification_level_);
     }
 
@@ -179,14 +172,7 @@ void SafetyShield::constructWithConfig(std::string trajectory_config_file,
         computesPotentialTrajectory(is_safe_, prev_dq);
         next_motion_ = determineNextMotion(is_safe_);
     } else {
-        // TODO: start
-        bool is_verified = false;
-        for(int i = 0; i < 2; ++i) {
-           is_verified = computesPotentialTrajectoryAndVerifies(verification_level_, next_motion_.getVelocity(), i);
-           if(is_verified) {
-              break;
-           }
-        }
+        computesPotentialTrajectoryAndVerifies(verification_level_, prev_dq);
         next_motion_ = determineNextMotionPFL(verification_level_);
     }
     spdlog::info("Safety shield created.");
@@ -341,14 +327,7 @@ void SafetyShield::reset(bool activate_shield,
         computesPotentialTrajectory(is_safe_, prev_dq);
         next_motion_ = determineNextMotion(is_safe_);
     } else {
-        // TODO: start
-        bool is_verified = false;
-        for(int i = 0; i < 2; ++i) {
-           is_verified = computesPotentialTrajectoryAndVerifies(verification_level_, next_motion_.getVelocity(), i);
-           if(is_verified) {
-              break;
-           }
-        }
+        computesPotentialTrajectoryAndVerifies(verification_level_, prev_dq);
         next_motion_ = determineNextMotionPFL(verification_level_);
     }
     spdlog::info("Safety shield resetted.");
@@ -603,7 +582,40 @@ Motion SafetyShield::computesPotentialTrajectory(bool v, const std::vector<doubl
     }
 }
 
-bool SafetyShield::computesPotentialTrajectoryAndVerifies(Verification_level v, const std::vector<double>& prev_speed, int path_pair) {
+void SafetyShield::computesPotentialTrajectoryAndVerifies(Verification_level v, const std::vector<double>& prev_speed) {
+    // s_int indicates the index of the entire traveled way
+    while (path_s_ >= (path_s_discrete_+1)*sample_time_) {
+        long_term_trajectory_.increasePosition();
+        if (new_ltt_) {
+            new_long_term_trajectory_.increasePosition();
+        }
+        path_s_discrete_++;
+    }
+    //If verified safe, take the recovery path, otherwise, take the failsafe path
+    if (verification_level_ == Verification_level::INTENDED) { // TODO: recovery_path_correct_?
+        recovery_path_.setCurrent(true);
+        pfl_path_.setCurrent(false);
+        //discard old FailsafePath and replace with new one
+        failsafe_path_ = failsafe_path_2_;
+        //repair path already incremented
+    }
+        // take pfl path
+    else if(verification_level_ == Verification_level::PFL) {
+        recovery_path_.setCurrent(false);
+        pfl_path_.setCurrent(true);
+        failsafe_path_.setCurrent(false);
+        // TODO: do we have to increment?
+        pfl_path_.increment(sample_time_);
+    }
+        // take failsafe-path
+    else {
+        recovery_path_.setCurrent(false);
+        pfl_path_.setCurrent(false);
+        failsafe_path_.setCurrent(true);
+        // TODO: do we have to increment?
+        failsafe_path_.increment(sample_time_);
+    }
+
     //find maximum acceleration and jerk authorised
     double a_max_manoeuvre, j_max_manoeuvre;
     // One could use new_long_term_trajectory_.getMaxAccelerationWindow(path_s_discrete_) instead of a_max_ltt but there are many bugs to be solved before.
@@ -613,17 +625,29 @@ bool SafetyShield::computesPotentialTrajectoryAndVerifies(Verification_level v, 
         calculateMaxAccJerk(prev_speed, a_max_ltt_, j_max_ltt_, a_max_manoeuvre, j_max_manoeuvre);
     }
 
-    /// set new potential path and only continue if planning was succesful
     bool success = false;
-    if(path_pair == 0) {
-       // intended
-       success = computesPotentialIntendedPath(a_max_manoeuvre, j_max_manoeuvre);
-    } else {
-       // PFL
-       success = computesPotentialPflPath(a_max_manoeuvre, j_max_manoeuvre);
+    for(int i = 0; i < 2; i++) {
+        success = findCorrectPath(i, a_max_manoeuvre, j_max_manoeuvre);
+        if(success)
+            break;
     }
     if(!success) {
-       return false;
+        verification_level_ = Verification_level::SSM;
+    }
+}
+
+bool SafetyShield::findCorrectPath(int path_pair, double a_max_manoeuvre, double j_max_manoeuvre) {
+    /// set new potential path and only continue if planning was successful
+    bool success = false;
+    if(path_pair == 0) {
+        // intended
+        success = computesPotentialIntendedPath(a_max_manoeuvre, j_max_manoeuvre);
+    } else {
+        // PFL
+        success = computesPotentialPflPath(a_max_manoeuvre, j_max_manoeuvre);
+    }
+    if(!success) {
+        return false;
     }
 
     //// Calculate start and goal pos of intended motion
@@ -641,18 +665,17 @@ bool SafetyShield::computesPotentialTrajectoryAndVerifies(Verification_level v, 
     goal_motion.setTime(potential_path_.getPhase(3));
 
 
-   bool safe = verify(goal_motion);
-   if(safe) {
-      if(path_pair == 0) {
-         // intended
-         verification_level_ = Verification_level::INTENDED;
-      } else {
-         // PFL
-         verification_level_ = Verification_level::PFL;
-      }
-   }
-
-   return safe;
+    bool safe = verify(goal_motion);
+    if(safe) {
+        if(path_pair == 0) {
+            // intended
+            verification_level_ = Verification_level::INTENDED;
+        } else {
+            // PFL
+            verification_level_ = Verification_level::PFL;
+        }
+    }
+    return safe;
 }
 
 bool SafetyShield::computesPotentialIntendedPath(double a_max_manoeuvre, double j_max_manoeuvre) {
@@ -827,7 +850,6 @@ Motion SafetyShield::determineNextMotion(bool is_safe) {
 Motion SafetyShield::determineNextMotionPFL(Verification_level verification_level) {
     Motion next_motion;
     double s_d, ds_d, dds_d, ddds_d;
-    Path& new_path = recovery_path_;
     if(verification_level == Verification_level::SSM) {
         // interpolate from old safe path
         safe_path_.increment(sample_time_);
@@ -838,6 +860,7 @@ Motion SafetyShield::determineNextMotionPFL(Verification_level verification_leve
         next_motion = long_term_trajectory_.interpolate(s_d, ds_d, dds_d, ddds_d, v_max_allowed_, a_max_allowed_, j_max_allowed_);
 
     } else {
+        Path& new_path = recovery_path_;
         if(verification_level == Verification_level::INTENDED) {
             new_path = recovery_path_;
         } else {
@@ -1021,52 +1044,8 @@ Motion SafetyShield::PFLstep(double cycle_begin_time) {
             is_safe_ = false;
         }
 
-       // s_int indicates the index of the entire traveled way
-       while (path_s_ >= (path_s_discrete_+1)*sample_time_) {
-          long_term_trajectory_.increasePosition();
-          if (new_ltt_) {
-             new_long_term_trajectory_.increasePosition();
-          }
-          path_s_discrete_++;
-       }
-       //If verified safe, take the recovery path, otherwise, take the failsafe path
-       if (verification_level_ == Verification_level::INTENDED) { // TODO: recovery_path_correct_?
-          recovery_path_.setCurrent(true);
-          pfl_path_.setCurrent(false);
-          //discard old FailsafePath and replace with new one
-          failsafe_path_ = failsafe_path_2_;
-          //repair path already incremented
-       }
-       // take pfl path
-       else if(verification_level_ == Verification_level::PFL) {
-          recovery_path_.setCurrent(false);
-          pfl_path_.setCurrent(true);
-          failsafe_path_.setCurrent(false);
-          // TODO: do we have to increment?
-          pfl_path_.increment(sample_time_);
-       }
-       // take failsafe-path
-       else {
-          recovery_path_.setCurrent(false);
-          pfl_path_.setCurrent(false);
-          failsafe_path_.setCurrent(true);
-          // TODO: do we have to increment?
-          failsafe_path_.increment(sample_time_);
-       }
-
-       bool is_verified = false;
-       for(int i = 0; i < 2; ++i) {
-          is_verified = computesPotentialTrajectoryAndVerifies(verification_level_, next_motion_.getVelocity(), i);
-          if(is_verified) {
-             break;
-          }
-       }
-       if(!is_verified) {
-          verification_level_ = Verification_level::SSM;
-       }
-
        // Select the next motion based on the verified safety
-       // TODO: kann ich determineNextMotion so verwenden?
+       computesPotentialTrajectoryAndVerifies(verification_level_, next_motion_.getVelocity());
        next_motion_ = determineNextMotionPFL(verification_level_);
        next_motion_.setTime(cycle_begin_time);
        new_ltt_processed_ = true;

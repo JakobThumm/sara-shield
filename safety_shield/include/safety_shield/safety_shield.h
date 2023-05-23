@@ -644,10 +644,31 @@ public:
      * @param[in] prev_speed the velocity of the previous point
      * @return if calculated trajectory is safe
      */
-    bool computesPotentialTrajectoryAndVerifies(Verification_level v, const std::vector<double>& prev_speed, int path_pair);
+    void computesPotentialTrajectoryAndVerifies(Verification_level v, const std::vector<double>& prev_speed);
 
+    /**
+     * @brief method is called iteratively to go through all paths
+     * @param path_pair which iteration
+     * @param a_max_manoeuvre maximum acceleration
+     * @param j_max_manoeuvre maximum jerk
+     * @return true if path_pair is verified as safe
+     */
+    bool findCorrectPath(int path_pair, double a_max_manoeuvre, double j_max_manoeuvre);
+
+    /**
+     * @brief computes potential intended trajectory
+     * @param a_max_manoeuvre maximum acceleration
+     * @param j_max_manoeuvre maximum jerk
+     * @return true if planning was successfull
+     */
     bool computesPotentialIntendedPath(double a_max_manoeuvre, double j_max_manoeuvre);
 
+    /**
+     * @brief computes potential pfl trajectory
+     * @param a_max_manoeuvre maximum acceleration
+     * @param j_max_manoeuvre maximum jerk
+     * @return true if planning was successfull
+     */
     bool computesPotentialPflPath(double a_max_manoeuvre, double j_max_manoeuvre);
 
     /**
