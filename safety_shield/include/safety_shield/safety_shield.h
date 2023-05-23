@@ -401,6 +401,13 @@ protected:
     Motion determineNextMotion(bool is_safe);
 
     /**
+     * @brief Calculate the next desired joint position based on verification of recovery path for PFL mode
+     * @param verification_level which path to take
+     * @return next motion
+     */
+    Motion determineNextMotionPFL(Verification_level verification_level);
+
+    /**
      * @brief Check a given motion if it exceeds the joint limits.
      *
      * @param motion Motion to check

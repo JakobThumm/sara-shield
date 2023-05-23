@@ -58,8 +58,14 @@ SafetyShield::SafetyShield(bool activate_shield,
         next_motion_ = determineNextMotion(is_safe_);
     } else {
         // TODO: start
-        computesPotentialTrajectoryAndVerifies(verification_level_, prev_dq, 0);
-        next_motion_ = determineNextMotion(is_safe_);
+        bool is_verified = false;
+        for(int i = 0; i < 2; ++i) {
+           is_verified = computesPotentialTrajectoryAndVerifies(verification_level_, next_motion_.getVelocity(), i);
+           if(is_verified) {
+              break;
+           }
+        }
+        next_motion_ = determineNextMotionPFL(verification_level_);
     }
 
     std::vector<double> q_min(nb_joints, -3.141);
@@ -174,8 +180,14 @@ void SafetyShield::constructWithConfig(std::string trajectory_config_file,
         next_motion_ = determineNextMotion(is_safe_);
     } else {
         // TODO: start
-        computesPotentialTrajectoryAndVerifies(verification_level_, prev_dq, 0);
-        next_motion_ = determineNextMotion(is_safe_);
+        bool is_verified = false;
+        for(int i = 0; i < 2; ++i) {
+           is_verified = computesPotentialTrajectoryAndVerifies(verification_level_, next_motion_.getVelocity(), i);
+           if(is_verified) {
+              break;
+           }
+        }
+        next_motion_ = determineNextMotionPFL(verification_level_);
     }
     spdlog::info("Safety shield created.");
 }
@@ -330,8 +342,14 @@ void SafetyShield::reset(bool activate_shield,
         next_motion_ = determineNextMotion(is_safe_);
     } else {
         // TODO: start
-        computesPotentialTrajectoryAndVerifies(verification_level_, prev_dq, 0);
-        next_motion_ = determineNextMotion(is_safe_);
+        bool is_verified = false;
+        for(int i = 0; i < 2; ++i) {
+           is_verified = computesPotentialTrajectoryAndVerifies(verification_level_, next_motion_.getVelocity(), i);
+           if(is_verified) {
+              break;
+           }
+        }
+        next_motion_ = determineNextMotionPFL(verification_level_);
     }
     spdlog::info("Safety shield resetted.");
 }
@@ -762,7 +780,6 @@ bool SafetyShield::checkMotionForJointLimits(Motion& motion) {
     return true;
 }
 
-// TODO: kann ich das hier verwenden oder passt es von den Pfaden nicht?
 Motion SafetyShield::determineNextMotion(bool is_safe) {
     Motion next_motion;
     double s_d, ds_d, dds_d, ddds_d;
@@ -798,6 +815,60 @@ Motion SafetyShield::determineNextMotion(bool is_safe) {
         dds_d = safe_path_.getAcceleration();
         ddds_d = safe_path_.getJerk();
         next_motion = long_term_trajectory_.interpolate(s_d, ds_d, dds_d, ddds_d, v_max_allowed_, a_max_allowed_, j_max_allowed_);
+    }
+    /// !!! Set s to the new path position !!!
+    path_s_ = s_d;
+    s_dots_.push_back(ds_d);
+    // Return the calculated next motion
+    return next_motion;
+}
+
+// TODO: passt das so?
+Motion SafetyShield::determineNextMotionPFL(Verification_level verification_level) {
+    Motion next_motion;
+    double s_d, ds_d, dds_d, ddds_d;
+    Path& new_path = recovery_path_;
+    if(verification_level == Verification_level::SSM) {
+        // interpolate from old safe path
+        safe_path_.increment(sample_time_);
+        s_d = safe_path_.getPosition();
+        ds_d = safe_path_.getVelocity();
+        dds_d = safe_path_.getAcceleration();
+        ddds_d = safe_path_.getJerk();
+        next_motion = long_term_trajectory_.interpolate(s_d, ds_d, dds_d, ddds_d, v_max_allowed_, a_max_allowed_, j_max_allowed_);
+
+    } else {
+        if(verification_level == Verification_level::INTENDED) {
+            new_path = recovery_path_;
+        } else {
+            // verification_level == Verification_level::PFL
+            new_path = pfl_path_;
+        }
+
+        // Fill potential buffer with position and velocity from recovery path
+        if (new_path.getPosition() >= failsafe_path_.getPosition()) {
+            s_d = new_path.getPosition();
+            ds_d = new_path.getVelocity();
+            dds_d = new_path.getAcceleration();
+            ddds_d = new_path.getJerk();
+        }
+        else {
+            potential_path_.increment(sample_time_);
+            s_d = potential_path_.getPosition();
+            ds_d = potential_path_.getVelocity();
+            dds_d = potential_path_.getAcceleration();
+            ddds_d = potential_path_.getJerk();
+        }
+
+        // Interpolate from new long term buffer
+        if (new_ltt_) {
+            next_motion = new_long_term_trajectory_.interpolate(s_d, ds_d, dds_d, ddds_d, v_max_allowed_, a_max_allowed_, j_max_allowed_);
+        } else {
+            next_motion = long_term_trajectory_.interpolate(s_d, ds_d, dds_d, ddds_d, v_max_allowed_, a_max_allowed_, j_max_allowed_);
+        }
+        // Set potential path as new verified safe path
+        safe_path_ = potential_path_;
+
     }
     /// !!! Set s to the new path position !!!
     path_s_ = s_d;
@@ -996,7 +1067,7 @@ Motion SafetyShield::PFLstep(double cycle_begin_time) {
 
        // Select the next motion based on the verified safety
        // TODO: kann ich determineNextMotion so verwenden?
-       next_motion_ = determineNextMotion(is_safe_);
+       next_motion_ = determineNextMotionPFL(verification_level_);
        next_motion_.setTime(cycle_begin_time);
        new_ltt_processed_ = true;
        return next_motion_;
