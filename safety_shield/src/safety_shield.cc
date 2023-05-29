@@ -732,6 +732,7 @@ bool SafetyShield::computesPotentialPflPath(double a_max_manoeuvre, double j_max
          v_max = new_long_term_trajectory_.getMaxofMaximumCartesianVelocityWithS(path_pos);
       }
       // Calculate max \dot{s} that is still under the ISO-velocity and add a small buffer.
+      // TODO: bei unterschiedlichen pfl Pfaden würden wir v_max immer mit dem jeweiligen Wert ersetzen
       double ds_limit = v_iso_ / v_max;
       if(ds_limit < 0) {
          spdlog::error("ds_limit = {} smaller than zero.", ds_limit);
@@ -740,25 +741,30 @@ bool SafetyShield::computesPotentialPflPath(double a_max_manoeuvre, double j_max
       ds_limit = std::max(ds_limit - 1e-5, 0.0);
 
       if(path_vel > ds_limit) {
-         // If we are not under the ISO-velocity, we plan an inteded path to the ISO velocity.
+         // If we are not under the ISO-velocity, we plan an intended path to the ISO velocity.
          pfl_path_planning_success = planSafetyShield(path_pos, path_vel, path_acc, ds_limit, a_max_manoeuvre, j_max_manoeuvre, pfl_path_);
       } else {
-         // Otherwise, we use a dummy failsafe path to the current \dot{s} value.
+         // TODO: do we need dummy path?
+         // Otherwise, we use a dummy path to the current \dot{s} value.
          pfl_path_planning_success = planSafetyShield(path_pos, path_vel, recovery_path_.getAcceleration(), path_vel-0.01, a_max_manoeuvre, j_max_manoeuvre, pfl_path_);
       }
 
       if(!pfl_path_planning_success) {
          return false;
       }
-
-      // plan failsafe path for the pfl intended path
-      failsafe_2_pfl_planning_success = planSafetyShield(pfl_path_.getPosition(), pfl_path_.getVelocity(), pfl_path_.getAcceleration(), 0, a_max_manoeuvre, j_max_manoeuvre, failsafe_path_2_pfl_);
-
-      if(!failsafe_2_pfl_planning_success) {
-         return false;
-      }
-
    }
+
+   // advance one step on pfl path
+   pfl_path_.increment(sample_time_);
+
+   // plan failsafe path for the pfl intended path
+   failsafe_2_pfl_planning_success = planSafetyShield(pfl_path_.getPosition(), pfl_path_.getVelocity(), pfl_path_.getAcceleration(), 0, a_max_manoeuvre, j_max_manoeuvre, failsafe_path_2_pfl_);
+
+   if(!failsafe_2_pfl_planning_success) {
+       return false;
+   }
+
+
 
    // Check the validity of the planned path
    // TODO: Bedingung?
