@@ -591,7 +591,7 @@ void SafetyShield::computesPotentialTrajectoryAndVerifies(Verification_level v, 
         }
         path_s_discrete_++;
     }
-    //If verified safe, take the recovery path, otherwise, take the failsafe path
+    //If verified safe, take the recovery path
     if (verification_level_ == Verification_level::INTENDED) { // TODO: recovery_path_correct_?
         recovery_path_.setCurrent(true);
         pfl_path_.setCurrent(false);
@@ -599,7 +599,7 @@ void SafetyShield::computesPotentialTrajectoryAndVerifies(Verification_level v, 
         failsafe_path_ = failsafe_path_2_;
         //repair path already incremented
     }
-        // take pfl path
+    // take pfl path
     else if(verification_level_ == Verification_level::PFL) {
         recovery_path_.setCurrent(false);
         pfl_path_.setCurrent(true);
@@ -607,7 +607,7 @@ void SafetyShield::computesPotentialTrajectoryAndVerifies(Verification_level v, 
         // TODO: do we have to increment?
         pfl_path_.increment(sample_time_);
     }
-        // take failsafe-path
+    // take failsafe-path
     else {
         recovery_path_.setCurrent(false);
         pfl_path_.setCurrent(false);

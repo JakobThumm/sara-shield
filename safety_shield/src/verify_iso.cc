@@ -3,6 +3,8 @@
 namespace safety_shield {
 
 // TODO: several PFL actions
+// TODO: neue Methode: umwandeln von Menschen Kapseln (die in der Kollision involviert sind) zu PFL-Pfad / PFL-Geschwindigkeit
+// TODO: neue Methode: Maximum nehmen aller involvierten PFL-Geschwindigkeiten
 
 bool VerifyISO::robotHumanCollision(const std::vector<reach_lib::Capsule>& robot_capsules,
                                   const std::vector<reach_lib::Capsule>& human_capsules) {
@@ -40,7 +42,7 @@ void VerifyISO::PFL_robotHumanCollision(const std::vector<reach_lib::Capsule>& r
  // Check position capsules
  for (auto &human_capsule: human_capsules) {
     for (auto &robot_capsule: robot_capsules) {
-       // If there is a collision, return true
+       // If there is a collision, add to list
        if (capsuleCollisionCheck(robot_capsule, human_capsule)) {
           collision_capsules.push_back(human_capsule);
        }
