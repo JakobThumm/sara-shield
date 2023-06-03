@@ -311,10 +311,11 @@ void SafetyShield::reset(bool activate_shield,
     path_s_discrete_ = 0;
     cycle_begin_time_ = current_time;
     recovery_path_ = Path();
+    pfl_path_ = Path();
     failsafe_path_ = Path();
     failsafe_path_2_ = Path();
-    safe_path_ = Path();
     failsafe_path_2_pfl_ = Path();
+    safe_path_ = Path();
     // Initialize the long term trajectory
     std::vector<Motion> long_term_traj;
     long_term_traj.push_back(Motion(0.0, init_qpos));
