@@ -321,13 +321,10 @@ void SafetyShield::reset(bool activate_shield,
     long_term_traj.push_back(Motion(0.0, init_qpos));
     if(safety_method_ == STANDARD) {
         long_term_trajectory_ = LongTermTraj(long_term_traj, sample_time_);
-    } else {
-        long_term_trajectory_ = LongTermTraj(long_term_traj, sample_time_, *robot_reach_);
-    }
-    if(safety_method_ == STANDARD) {
         computesPotentialTrajectory(is_safe_, prev_dq);
         next_motion_ = determineNextMotion(is_safe_);
     } else {
+        long_term_trajectory_ = LongTermTraj(long_term_traj, sample_time_, *robot_reach_);
         computesPotentialTrajectoryAndVerifies(verification_level_, prev_dq);
         next_motion_ = determineNextMotionPFL(verification_level_);
     }
