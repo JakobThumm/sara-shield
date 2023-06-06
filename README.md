@@ -16,7 +16,10 @@ Set the path to your eigen3 installation to this env variable, e.g.,
 ```
 export EIGEN3_INCLUDE_DIR="/usr/include/eigen3/eigen-3.4.0"
 ```
-
+Install gtest
+```
+sudo apt-get install libgtest-dev
+```
 ```
 cd safety_shield
 mkdir build && cd build
