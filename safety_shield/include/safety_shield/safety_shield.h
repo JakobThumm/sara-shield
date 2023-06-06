@@ -368,7 +368,9 @@ class SafetyShield {
    * @param t continuous time
    * @return timestep
    */
-  inline double roundToTimestep(double t) { return ceil(t / sample_time_) * sample_time_; }
+  inline double roundToTimestep(double t) {
+    return ceil(t / sample_time_) * sample_time_;
+  }
 
   /**
    * @brief Calculates and returns the current motion
@@ -660,9 +662,13 @@ class SafetyShield {
     return capsules;
   }
 
-  inline bool getSafety() { return is_safe_; }
+  inline bool getSafety() {
+    return is_safe_;
+  }
 
-  inline bool getSafetyMethod() { return safety_method_ == STANDARD; }
+  inline bool getSafetyMethod() {
+    return safety_method_ == STANDARD;
+  }
 };
 }  // namespace safety_shield
 

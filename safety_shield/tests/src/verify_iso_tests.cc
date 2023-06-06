@@ -1,12 +1,12 @@
 #include <gtest/gtest.h>
-#include <math.h> 
+#include <math.h>
 
 #include <Eigen/Dense>
-#include "spdlog/spdlog.h" 
 
-#include "verify_iso_fixture.h"
-#include "safety_shield/verify_iso.h"
 #include "reach_lib.hpp"
+#include "safety_shield/verify_iso.h"
+#include "spdlog/spdlog.h"
+#include "verify_iso_fixture.h"
 
 namespace safety_shield {
 
@@ -46,9 +46,9 @@ TEST_F(VerifyIsoTest, VerifyHumanReachTest) {
   EXPECT_TRUE(verify_iso_.verify_human_reach(r_caps, h_caps_list));
 }
 
-} // namespace safety_shield
+}  // namespace safety_shield
 
 int main(int argc, char **argv) {
-    testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
+  testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
 }

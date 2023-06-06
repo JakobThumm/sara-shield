@@ -1,7 +1,7 @@
-#include <vector>
-
 #include <gtest/gtest.h>
 #include <spdlog/spdlog.h>
+
+#include <vector>
 
 #include "long_term_traj_fixture.h"
 #include "safety_shield/long_term_traj.h"
@@ -9,11 +9,11 @@
 
 namespace safety_shield {
 
-TEST_F(LongTermTrajTestIdx, GetLengthTest){
+TEST_F(LongTermTrajTestIdx, GetLengthTest) {
   EXPECT_EQ(long_term_trajectory_.getLength(), 4);
 }
 
-TEST_F(LongTermTrajTestIdx, GetCurrentPosTest){
+TEST_F(LongTermTrajTestIdx, GetCurrentPosTest) {
   EXPECT_EQ(long_term_trajectory_.getCurrentPos(), 0);
   long_term_trajectory_.increasePosition();
   EXPECT_EQ(long_term_trajectory_.getCurrentPos(), 1);
@@ -27,7 +27,7 @@ TEST_F(LongTermTrajTestIdx, GetCurrentPosTest){
   EXPECT_EQ(long_term_trajectory_.getCurrentPos(), 3);
 }
 
-TEST_F(LongTermTrajTestIdx, GetMotionTest){
+TEST_F(LongTermTrajTestIdx, GetMotionTest) {
   Motion mo = long_term_trajectory_.getCurrentMotion();
   for (int i = 0; i < 2; i++) {
     EXPECT_DOUBLE_EQ(mo.getAngle()[i], 0.0);
@@ -54,7 +54,7 @@ TEST_F(LongTermTrajTestIdx, GetMotionTest){
   EXPECT_DOUBLE_EQ(mo.getAcceleration()[1], 79.0);
 }
 
-TEST_F(LongTermTrajTestIdx, GetTrajectoryIndexTest){
+TEST_F(LongTermTrajTestIdx, GetTrajectoryIndexTest) {
   EXPECT_EQ(long_term_trajectory_.getTrajectoryIndex(-1), 0);
   EXPECT_EQ(long_term_trajectory_.getTrajectoryIndex(3), 0);
   EXPECT_EQ(long_term_trajectory_.getTrajectoryIndex(4), 1);
@@ -63,7 +63,7 @@ TEST_F(LongTermTrajTestIdx, GetTrajectoryIndexTest){
   EXPECT_EQ(long_term_trajectory_.getTrajectoryIndex(10), 3);
 }
 
-TEST_F(LongTermTrajTest, MaxAccWindowTest){
+TEST_F(LongTermTrajTest, MaxAccWindowTest) {
   std::vector<Motion> mo_vec;
   int n_joints = 2;
   std::vector<double> p0;
@@ -128,7 +128,7 @@ TEST_F(LongTermTrajTest, MaxAccWindowTest){
   EXPECT_EQ(long_term_trajectory_.getMaxAccelerationWindow(6)[1], 57);
 }
 
-TEST_F(LongTermTrajTest, MaxJerkWindowTest){
+TEST_F(LongTermTrajTest, MaxJerkWindowTest) {
   std::vector<Motion> mo_vec;
   int n_joints = 2;
   std::vector<double> p0;
@@ -194,57 +194,58 @@ TEST_F(LongTermTrajTest, MaxJerkWindowTest){
 }
 
 TEST_F(LongTermTrajTest, InterpolateTest) {
-    std::vector<Motion> motions;
-    int n_joints = 2;
-    std::vector<double> p0 = {0.0, 0.0};
-    std::vector<double> v0 = {1.0, 0.0};
-    std::vector<double> a0 = {1.0, 0.0};
-    std::vector<double> j0 = {-1.0, 0.0};
-    Motion m0(0, p0, v0, a0, j0);
-    motions.push_back(m0);
-    std::vector<double> p1 = {0.104833333333333, 0.0};
-    std::vector<double> v1 = {1.095, 0.0};
-    std::vector<double> a1 = {0.9, 0.0};
-    std::vector<double> j1 = {0.0, 0.0};
-    Motion m1(0.1, p1, v1, a1, j1);
-    motions.push_back(m1);
-    long_term_trajectory_.setLongTermTrajectory(motions, 0.1);
-    std::vector<double> v_max = {10.0, 10.0};
-    std::vector<double> a_max = {10.0, 10.0};
-    std::vector<double> j_max = {100.0, 100.0};
-    Motion motion_int = long_term_trajectory_.interpolate(0.01, 1.0, 0.0, 0.0, v_max, a_max, j_max);
-    EXPECT_NEAR(motion_int.getAngle()[0], 0.010049833333333, 1e-5);
-    EXPECT_NEAR(motion_int.getVelocity()[0], 1.00995, 1e-5);
-    EXPECT_NEAR(motion_int.getAcceleration()[0], 0.99, 1e-5);
-    EXPECT_NEAR(motion_int.getJerk()[0], -1.0, 1e-5);
-    Motion motion_int2 = long_term_trajectory_.interpolate(0.01, 0.5, 0.0, 0.0, v_max, a_max, j_max);
-    EXPECT_NEAR(motion_int2.getAngle()[0], 0.010049833333333, 1e-5);
-    EXPECT_NEAR(motion_int2.getVelocity()[0], 0.504975, 1e-5);
-    EXPECT_NEAR(motion_int2.getAcceleration()[0], 0.2475, 1e-5);
-    EXPECT_NEAR(motion_int2.getJerk()[0], -0.1250, 1e-5);
-    Motion motion_int3 = long_term_trajectory_.interpolate(0.01, 0.5, 1.0, 0.2, v_max, a_max, j_max);
-    EXPECT_NEAR(motion_int3.getAngle()[0], 0.010049833333333, 1e-5);
-    EXPECT_NEAR(motion_int3.getVelocity()[0], 0.504975, 1e-5);
-    EXPECT_NEAR(motion_int3.getAcceleration()[0], 1.25745, 1e-5);
-    EXPECT_NEAR(motion_int3.getJerk()[0], 1.561990000000000, 1e-5);
+  std::vector<Motion> motions;
+  int n_joints = 2;
+  std::vector<double> p0 = {0.0, 0.0};
+  std::vector<double> v0 = {1.0, 0.0};
+  std::vector<double> a0 = {1.0, 0.0};
+  std::vector<double> j0 = {-1.0, 0.0};
+  Motion m0(0, p0, v0, a0, j0);
+  motions.push_back(m0);
+  std::vector<double> p1 = {0.104833333333333, 0.0};
+  std::vector<double> v1 = {1.095, 0.0};
+  std::vector<double> a1 = {0.9, 0.0};
+  std::vector<double> j1 = {0.0, 0.0};
+  Motion m1(0.1, p1, v1, a1, j1);
+  motions.push_back(m1);
+  long_term_trajectory_.setLongTermTrajectory(motions, 0.1);
+  std::vector<double> v_max = {10.0, 10.0};
+  std::vector<double> a_max = {10.0, 10.0};
+  std::vector<double> j_max = {100.0, 100.0};
+  Motion motion_int = long_term_trajectory_.interpolate(0.01, 1.0, 0.0, 0.0, v_max, a_max, j_max);
+  EXPECT_NEAR(motion_int.getAngle()[0], 0.010049833333333, 1e-5);
+  EXPECT_NEAR(motion_int.getVelocity()[0], 1.00995, 1e-5);
+  EXPECT_NEAR(motion_int.getAcceleration()[0], 0.99, 1e-5);
+  EXPECT_NEAR(motion_int.getJerk()[0], -1.0, 1e-5);
+  Motion motion_int2 = long_term_trajectory_.interpolate(0.01, 0.5, 0.0, 0.0, v_max, a_max, j_max);
+  EXPECT_NEAR(motion_int2.getAngle()[0], 0.010049833333333, 1e-5);
+  EXPECT_NEAR(motion_int2.getVelocity()[0], 0.504975, 1e-5);
+  EXPECT_NEAR(motion_int2.getAcceleration()[0], 0.2475, 1e-5);
+  EXPECT_NEAR(motion_int2.getJerk()[0], -0.1250, 1e-5);
+  Motion motion_int3 = long_term_trajectory_.interpolate(0.01, 0.5, 1.0, 0.2, v_max, a_max, j_max);
+  EXPECT_NEAR(motion_int3.getAngle()[0], 0.010049833333333, 1e-5);
+  EXPECT_NEAR(motion_int3.getVelocity()[0], 0.504975, 1e-5);
+  EXPECT_NEAR(motion_int3.getAcceleration()[0], 1.25745, 1e-5);
+  EXPECT_NEAR(motion_int3.getJerk()[0], 1.561990000000000, 1e-5);
 }
 
 TEST_F(LongTermTrajTestVelocity, overapproximation) {
-    double sum_deviation = 0;
-    double epsilon = 1e-5;
-    for(int i = 0; i < long_term_trajectory_approximate.getLength(); i++) {
-        double approximate = long_term_trajectory_approximate.getMotion(i).getMaximumCartesianVelocity();
-        double exact = long_term_trajectory_exact.getMotion(i).getMaximumCartesianVelocity();
-        sum_deviation += approximate / exact;
-        EXPECT_TRUE(approximate >= exact - epsilon);
-        std::cout << "exact: " << exact << ", approximate: " << approximate << std::endl;
-    }
-    std::cout << "average deviation from exact is " << sum_deviation/long_term_trajectory_approximate.getLength() - 1 << std::endl;
+  double sum_deviation = 0;
+  double epsilon = 1e-5;
+  for (int i = 0; i < long_term_trajectory_approximate.getLength(); i++) {
+    double approximate = long_term_trajectory_approximate.getMotion(i).getMaximumCartesianVelocity();
+    double exact = long_term_trajectory_exact.getMotion(i).getMaximumCartesianVelocity();
+    sum_deviation += approximate / exact;
+    EXPECT_TRUE(approximate >= exact - epsilon);
+    std::cout << "exact: " << exact << ", approximate: " << approximate << std::endl;
+  }
+  std::cout << "average deviation from exact is " << sum_deviation / long_term_trajectory_approximate.getLength() - 1
+            << std::endl;
 }
 
-} // namespace safety_shield
+}  // namespace safety_shield
 
-int main(int argc, char **argv){
-    testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
+int main(int argc, char **argv) {
+  testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
 }

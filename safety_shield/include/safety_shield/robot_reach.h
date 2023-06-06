@@ -4,26 +4,24 @@
  * @brief Define the class for robot reachability analysis
  * @version 0.1
  * @copyright This file is part of SaRA-Shield.
- * SaRA-Shield is free software: you can redistribute it and/or modify it under 
- * the terms of the GNU General Public License as published by the Free Software Foundation, 
+ * SaRA-Shield is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License as published by the Free Software Foundation,
  * either version 3 of the License, or (at your option) any later version.
- * SaRA-Shield is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
- * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+ * SaRA-Shield is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+ * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  * See the GNU General Public License for more details.
- * You should have received a copy of the GNU General Public License along with SaRA-Shield. 
- * If not, see <https://www.gnu.org/licenses/>. 
+ * You should have received a copy of the GNU General Public License along with SaRA-Shield.
+ * If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <vector>
+#include <Eigen/Dense>
 #include <algorithm>
 #include <exception>
-
-#include <Eigen/Dense>
-#include "spdlog/spdlog.h" 
+#include <vector>
 
 #include "reach_lib.hpp"
-
 #include "safety_shield/motion.h"
+#include "spdlog/spdlog.h"
 
 #ifndef ROBOT_REACH_H
 #define ROBOT_REACH_H
@@ -34,12 +32,11 @@ namespace safety_shield {
  * @brief Class that calculates the robot reachable sets.
  */
 class RobotReach {
-
  public:
-    enum Velocity_method {
-        APPROXIMATE,
-        EXACT,
-    };
+  enum Velocity_method {
+    APPROXIMATE,
+    EXACT,
+  };
 
  private:
   /**
@@ -53,7 +50,7 @@ class RobotReach {
   std::vector<Eigen::Matrix4d> transformation_matrices_;
 
   /**
-   * @brief The enclosing capsules 
+   * @brief The enclosing capsules
    */
   std::vector<reach_lib::Capsule> robot_capsules_;
 
@@ -81,27 +78,27 @@ class RobotReach {
   /**
    * @brief list of transformation matrices (only for debugging)
    */
-   std::vector<Eigen::Matrix4d> transformation_matrices_q_;
+  std::vector<Eigen::Matrix4d> transformation_matrices_q_;
 
-   /**
-    * @brief list of transformation matrices of joints
-    */
-    std::vector<Eigen::Matrix4d> transformation_matrices_q_joints_;
+  /**
+   * @brief list of transformation matrices of joints
+   */
+  std::vector<Eigen::Matrix4d> transformation_matrices_q_joints_;
 
-    /**
-    * @brief List of transforamtion matrices from joint to joint for velocity functionality (fixed description, not including joint movements)
-    */
-    std::vector<Eigen::Matrix4d> transformation_matrices_joints_;
+  /**
+   * @brief List of transforamtion matrices from joint to joint for velocity functionality (fixed description, not
+   * including joint movements)
+   */
+  std::vector<Eigen::Matrix4d> transformation_matrices_joints_;
 
-public:
-
+ public:
   /**
    * @brief A robot empty constructor
    */
   RobotReach() {}
-  
+
   /**
-   * @brief A robot basic constructor 
+   * @brief A robot basic constructor
    *
    * @param transformation_matrices the transformation matrices
    * @param nb_joints the number of joints of the robot
@@ -115,36 +112,28 @@ public:
    * @param secure_radius Expand the radius of the robot capsules by this amount to
    *  account for measurement and modelling errors.
    */
-  RobotReach(std::vector<double> transformation_matrices, 
-      int nb_joints, 
-      std::vector<double> geom_par, 
-      double x, double y, double z, 
-      double roll, double pitch, double yaw,
-      double secure_radius);
+  RobotReach(std::vector<double> transformation_matrices, int nb_joints, std::vector<double> geom_par, double x,
+             double y, double z, double roll, double pitch, double yaw, double secure_radius);
 
-    /**
-    * @brief A robot basic constructor for velocity functionality
-    *
-    * @param transformation_matrices the transformation matrices
-    * @param transformation_matrices_joints the transformation matrices for the joints
-    * @param nb_joints the number of joints of the robot
-    * @param geom_param the robot occupancy matrix
-    * @param x initial x position of base
-    * @param y initial y position of base
-    * @param z initial z position of base
-    * @param roll initial roll of base
-    * @param pitch initial pitch of base
-    * @param yaw initial yaw of base
-    * @param secure_radius Expand the radius of the robot capsules by this amount to
-    *  account for measurement and modelling errors.
-    */
-    RobotReach(std::vector<double> transformation_matrices,
-               std::vector<double> transformation_matrices_joints,
-               int nb_joints,
-               std::vector<double> geom_par,
-               double x, double y, double z,
-               double roll, double pitch, double yaw,
-               double secure_radius);
+  /**
+   * @brief A robot basic constructor for velocity functionality
+   *
+   * @param transformation_matrices the transformation matrices
+   * @param transformation_matrices_joints the transformation matrices for the joints
+   * @param nb_joints the number of joints of the robot
+   * @param geom_param the robot occupancy matrix
+   * @param x initial x position of base
+   * @param y initial y position of base
+   * @param z initial z position of base
+   * @param roll initial roll of base
+   * @param pitch initial pitch of base
+   * @param yaw initial yaw of base
+   * @param secure_radius Expand the radius of the robot capsules by this amount to
+   *  account for measurement and modelling errors.
+   */
+  RobotReach(std::vector<double> transformation_matrices, std::vector<double> transformation_matrices_joints,
+             int nb_joints, std::vector<double> geom_par, double x, double y, double z, double roll, double pitch,
+             double yaw, double secure_radius);
 
   /**
    *  @brief A robot destructor
@@ -153,7 +142,7 @@ public:
 
   /**
    * @brief Reset the robot reach object.
-   * 
+   *
    * @param x initial x position of base
    * @param y initial y position of base
    * @param z initial z position of base
@@ -161,25 +150,22 @@ public:
    * @param pitch initial pitch of base
    * @param yaw initial yaw of base
    */
-  void reset(double x, double y, double z, 
-      double roll, double pitch, double yaw);
-    
+  void reset(double x, double y, double z, double roll, double pitch, double yaw);
+
   /**
    * @brief Computes the global transformation matrix of a given joint.
    *
    * @param q The joint angle
-   * @param n_joint The number of joint 
+   * @param n_joint The number of joint
    * @param T The current transformation matrix (Start with Identity). T will be modified in this function.
    */
-  inline void forwardKinematic(const double &q, const int& n_joint, Eigen::Matrix4d &T) {
+  inline void forwardKinematic(const double& q, const int& n_joint, Eigen::Matrix4d& T) {
     // Transform T to new joint coordinate system
-    T = T * transformation_matrices_[n_joint+1];;
+    T = T * transformation_matrices_[n_joint + 1];
+    ;
     Eigen::Matrix4d Rz;
-    Rz << cos(q), -sin(q), 0, 0,
-          sin(q), cos(q) , 0, 0,
-          0     , 0      , 1, 0,
-          0     , 0      , 0, 1;
-    T = T * Rz;  
+    Rz << cos(q), -sin(q), 0, 0, sin(q), cos(q), 0, 0, 0, 0, 1, 0, 0, 0, 0, 1;
+    T = T * Rz;
   }
 
   /**
@@ -189,61 +175,59 @@ public:
    * @param n_joint The number of joint
    * @param T The current transformation matrix (Start with Identity). T will be modified in this function.
    */
-  inline void forwardKinematicJoints(const double &q, const int& n_joint, Eigen::Matrix4d &T) {
-      // Transform T to new joint coordinate system
-      T = T * transformation_matrices_joints_[n_joint+1];;
-      Eigen::Matrix4d Rz;
-      Rz << cos(q), -sin(q), 0, 0,
-              sin(q), cos(q) , 0, 0,
-              0     , 0      , 1, 0,
-              0     , 0      , 0, 1;
-      T = T * Rz;
+  inline void forwardKinematicJoints(const double& q, const int& n_joint, Eigen::Matrix4d& T) {
+    // Transform T to new joint coordinate system
+    T = T * transformation_matrices_joints_[n_joint + 1];
+    ;
+    Eigen::Matrix4d Rz;
+    Rz << cos(q), -sin(q), 0, 0, sin(q), cos(q), 0, 0, 0, 0, 1, 0, 0, 0, 0, 1;
+    T = T * Rz;
   }
 
   Eigen::Vector4d pointToVector(const reach_lib::Point& p) {
-      Eigen::Vector4d vec;
-      vec << p.x, p.y, p.z, 1.0;
-      return vec;
+    Eigen::Vector4d vec;
+    vec << p.x, p.y, p.z, 1.0;
+    return vec;
   }
 
   Eigen::Vector3d pointTo3dVector(const reach_lib::Point& p) {
-      Eigen::Vector3d vec;
-      vec << p.x, p.y, p.z;
-      return vec;
-}
+    Eigen::Vector3d vec;
+    vec << p.x, p.y, p.z;
+    return vec;
+  }
 
   reach_lib::Point vectorToPoint(const Eigen::Vector4d& vec) {
-      return reach_lib::Point(vec(0), vec(1), vec(2));
+    return reach_lib::Point(vec(0), vec(1), vec(2));
   }
 
   /**
    * @brief Transform the capsule of joint n by the transformation matrix T.
    * @return the transformed capsule
    */
-  reach_lib::Capsule transformCapsule(const int& n_joint, const Eigen::Matrix4d &T);
+  reach_lib::Capsule transformCapsule(const int& n_joint, const Eigen::Matrix4d& T);
 
   /**
    * @brief Calculates the reachable set from the new desired start and goal joint position.
-   * 
+   *
    * Computes the reachable occupancy capsules of the robot.
    * For a detailed proof of formality, please see: http://mediatum.ub.tum.de/doc/1443612/652879.pdf Chapter 3.4
-   * 
+   *
    * @param[in] start_config The configuration of the robot in the beginning of the trajectory
    * @param[in] goal_config The configuration of the robot in the end of the trajectory
    * @param[in] s_diff The difference in the trajectory time parameter s for the given path
-   * @param[in] alpha_i The maximum acceleration of each capsule point with resprect to the time parameter s for the given path
-   * 
+   * @param[in] alpha_i The maximum acceleration of each capsule point with resprect to the time parameter s for the
+   * given path
+   *
    * @returns Array of capsules
    */
-  std::vector<reach_lib::Capsule> reach(Motion& start_config, Motion& goal_config,
-    double s_diff, std::vector<double> alpha_i);
-
+  std::vector<reach_lib::Capsule> reach(Motion& start_config, Motion& goal_config, double s_diff,
+                                        std::vector<double> alpha_i);
 
   /**
    * @brief sets velocity_method
    */
   inline void setVelocityMethod(Velocity_method velocity_method) {
-      velocity_method_ = velocity_method;
+    velocity_method_ = velocity_method;
   }
 
   /**
@@ -302,34 +286,31 @@ public:
    * @return matrix
    */
   inline Eigen::Matrix3d getCrossProductAsMatrix(const Eigen::Vector3d& vec) {
-      Eigen::Matrix3d cross;
-      cross <<    0, -vec(2), vec(1),
-                  vec(2), 0, -vec(0),
-                -vec(1), vec(0), 0;
-      return cross;
+    Eigen::Matrix3d cross;
+    cross << 0, -vec(2), vec(1), vec(2), 0, -vec(0), -vec(1), vec(0), 0;
+    return cross;
   }
 
   inline std::vector<reach_lib::Capsule> getVelocityCapsules() {
-      return robot_capsules_for_velocity_;
+    return robot_capsules_for_velocity_;
   }
 
   inline std::vector<Eigen::Vector3d> getZvectors() {
-      return z_vectors_;
+    return z_vectors_;
   }
 
   inline std::vector<Eigen::Matrix4d> getTransformationMatricesQ() {
-      return transformation_matrices_q_;
+    return transformation_matrices_q_;
   }
 
   inline std::vector<Eigen::Matrix4d> getTransformationMatricesQJoints() {
-      return transformation_matrices_q_joints_;
+    return transformation_matrices_q_joints_;
   }
 
   inline Velocity_method getVelocityMethod() {
-      return velocity_method_;
+    return velocity_method_;
   }
-
 };
-} // namespace safety_shield 
+}  // namespace safety_shield
 
-#endif // ROBOT_REACH_H
+#endif  // ROBOT_REACH_H
