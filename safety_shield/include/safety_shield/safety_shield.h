@@ -48,16 +48,27 @@ namespace safety_shield {
  * @brief The type of shield to use.
  *
  * @details
+ *  OFF: No shield is used.
  *  SSM: Speed and Separation Monitoring: The robot stops for the human.
  *  PFL: Power and Force Limiting: The robot slows down to a safe contact speed for the human.
  */
-enum class ShieldType { SSM, PFL };
+enum class ShieldType { OFF, SSM, PFL };
 
 /**
  * @brief Computes the failsafe trajectory
  */
 class SafetyShield {
  private:
+  /**
+   * @brief The type of shield to use.
+   *
+   * @details
+   *  OFF: No shield is used.
+   *  SSM: Speed and Separation Monitoring: The robot stops for the human.
+   *  PFL: Power and Force Limiting: The robot slows down to a safe contact speed for the human.
+   */
+  ShieldType shield_type_;
+
   /**
    * @brief Robot reachable set calculation object
    *
@@ -108,13 +119,6 @@ class SafetyShield {
    * @brief the constructed failsafe path
    */
   Path potential_path_;
-
-  /**
-   * @brief Whether or not to use the formal verification.
-   *
-   * If this is set to false, every action is executed regardless of safety.
-   */
-  bool activate_shield_;
 
   /**
    * @brief Number of joints of the robot
@@ -298,28 +302,15 @@ class SafetyShield {
    */
   long_term_planner::LongTermPlanner ltp_;
 
-  enum Safety_method {
-    // standard full stop criteria
-    STANDARD,
-    // maximum cartesian velocity criterias
-    LTT_MAXIMUM,
-    STP_MAXIMUM,
-  };
-
   /**
-   * @brief which safety method should be used
+   * @brief maximum cartesian velocity allowed at collision in m/s
    */
-  Safety_method safety_method_ = STANDARD;
-
-  /**
-   * @brief maximum cartesian velocity determined by iso
-   */
-  double v_iso_ = 0.25;
+  double v_safe_ = 0.10;
 
   /**
    * @brief if robot is under iso_velocity
    */
-  bool is_under_iso_velocity_;
+  bool is_under_safe_velocity_;
 
  protected:
   /**
@@ -429,7 +420,6 @@ class SafetyShield {
   /**
    * @brief Construct a new Safety Shield object
    *
-   * @param activate_shield Wether to activate the safety functionality or not.
    * @param nb_joints Number of joints of the robot
    * @param sample_time Sample time of safety shield
    * @param max_s_stop Maximal path length to stop the robot
@@ -443,17 +433,17 @@ class SafetyShield {
    * @param robot_reach Robot reachable set calculation object
    * @param human_reach Human reachable set calculation object
    * @param verify Verification of reachable sets object
+   * @param shield_type What type of safety shield to use, select from `OFF`, `SSM`, or `PFL`
    */
-  SafetyShield(bool activate_shield, int nb_joints, double sample_time, double max_s_stop,
-               const std::vector<double>& v_max_allowed, const std::vector<double>& a_max_allowed,
-               const std::vector<double>& j_max_allowed, const std::vector<double>& a_max_path,
-               const std::vector<double>& j_max_path, const LongTermTraj& long_term_trajectory, RobotReach* robot_reach,
-               HumanReach* human_reach, Verify* verify);
+  SafetyShield(int nb_joints, double sample_time, double max_s_stop, const std::vector<double>& v_max_allowed,
+               const std::vector<double>& a_max_allowed, const std::vector<double>& j_max_allowed,
+               const std::vector<double>& a_max_path, const std::vector<double>& j_max_path,
+               const LongTermTraj& long_term_trajectory, RobotReach* robot_reach, HumanReach* human_reach,
+               Verify* verify, ShieldType shield_type = ShieldType::SSM);
 
   /**
    * @brief Construct a new Safety Shield object from config files.
    *
-   * @param activate_shield If the safety function should be active or not.
    * @param sample_time Sample time of shield
    * @param trajectory_config_file Path to config file defining the trajectory parameters
    * @param robot_config_file Path to config file defining the robot transformation matrices and capsules
@@ -465,11 +455,12 @@ class SafetyShield {
    * @param init_pitch Base pitch
    * @param init_yaw Base yaw
    * @param init_qpos Initial joint position of the robot
+   * @param shield_type What type of safety shield to use, select from `OFF`, `SSM`, or `PFL`
    */
-  explicit SafetyShield(bool activate_shield, double sample_time, std::string trajectory_config_file,
-                        std::string robot_config_file, std::string mocap_config_file, double init_x, double init_y,
-                        double init_z, double init_roll, double init_pitch, double init_yaw,
-                        const std::vector<double>& init_qpos);
+  explicit SafetyShield(double sample_time, std::string trajectory_config_file, std::string robot_config_file,
+                        std::string mocap_config_file, double init_x, double init_y, double init_z, double init_roll,
+                        double init_pitch, double init_yaw, const std::vector<double>& init_qpos,
+                        ShieldType shield_type = ShieldType::SSM);
 
   /**
    * @brief A SafetyShield destructor
@@ -479,7 +470,6 @@ class SafetyShield {
   /**
    * @brief Resets the safety shield completely.
    *
-   * @param activate_shield If the safety function should be active or not.
    * @param init_x Base x pos
    * @param init_y Base y pos
    * @param init_z Base z pos
@@ -488,9 +478,10 @@ class SafetyShield {
    * @param init_yaw Base yaw
    * @param init_qpos Initial joint position of the robot
    * @param current_time Initial time
+   * @param shield_type What type of safety shield to use, select from `OFF`, `SSM`, or `PFL`
    */
-  void reset(bool activate_shield, double init_x, double init_y, double init_z, double init_roll, double init_pitch,
-             double init_yaw, const std::vector<double>& init_qpos, double current_time);
+  void reset(double init_x, double init_y, double init_z, double init_roll, double init_pitch, double init_yaw,
+             const std::vector<double>& init_qpos, double current_time, ShieldType shield_type = ShieldType::SSM);
 
   /**
    * @brief Computes the new trajectory depending on dq and if the previous path is safe and publishes it
@@ -666,8 +657,8 @@ class SafetyShield {
     return is_safe_;
   }
 
-  inline bool getSafetyMethod() {
-    return safety_method_ == STANDARD;
+  inline ShieldType getShieldType() {
+    return shield_type_;
   }
 };
 }  // namespace safety_shield

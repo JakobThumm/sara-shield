@@ -12,13 +12,12 @@ SafetyShield::SafetyShield()
   spdlog::info("Safety shield created.");
 }
 
-SafetyShield::SafetyShield(bool activate_shield, int nb_joints, double sample_time, double max_s_stop,
+SafetyShield::SafetyShield(int nb_joints, double sample_time, double max_s_stop,
                            const std::vector<double>& v_max_allowed, const std::vector<double>& a_max_allowed,
                            const std::vector<double>& j_max_allowed, const std::vector<double>& a_max_path,
                            const std::vector<double>& j_max_path, const LongTermTraj& long_term_trajectory,
-                           RobotReach* robot_reach, HumanReach* human_reach, Verify* verify)
-    : activate_shield_(activate_shield),
-      nb_joints_(nb_joints),
+                           RobotReach* robot_reach, HumanReach* human_reach, Verify* verify, ShieldType shield_type)
+    : nb_joints_(nb_joints),
       max_s_stop_(max_s_stop),
       v_max_allowed_(v_max_allowed),
       a_max_allowed_(a_max_allowed),
@@ -31,7 +30,8 @@ SafetyShield::SafetyShield(bool activate_shield, int nb_joints, double sample_ti
       long_term_trajectory_(long_term_trajectory),
       robot_reach_(robot_reach),
       human_reach_(human_reach),
-      verify_(verify) {
+      verify_(verify),
+      shield_type_(shield_type) {
   sliding_window_k_ = (int)std::floor(max_s_stop_ / sample_time_);
   std::vector<double> prev_dq;
   for (int i = 0; i < 6; i++) {
@@ -40,7 +40,11 @@ SafetyShield::SafetyShield(bool activate_shield, int nb_joints, double sample_ti
   }
   alpha_i_.push_back(1.0);
 
-  is_safe_ = !activate_shield_;
+  if (shield_type_ == ShieldType::OFF) {
+    is_safe_ = true;
+  } else {
+    is_safe_ = false;
+  }
   computesPotentialTrajectory(is_safe_, prev_dq, nullptr, nullptr);
   next_motion_ = determineNextMotion(is_safe_);
   std::vector<double> q_min(nb_joints, -3.141);
@@ -50,11 +54,11 @@ SafetyShield::SafetyShield(bool activate_shield, int nb_joints, double sample_ti
   spdlog::info("Safety shield created.");
 }
 
-SafetyShield::SafetyShield(bool activate_shield, double sample_time, std::string trajectory_config_file,
-                           std::string robot_config_file, std::string mocap_config_file, double init_x, double init_y,
-                           double init_z, double init_roll, double init_pitch, double init_yaw,
-                           const std::vector<double>& init_qpos)
-    : activate_shield_(activate_shield), sample_time_(sample_time), path_s_(0), path_s_discrete_(0) {
+SafetyShield::SafetyShield(double sample_time, std::string trajectory_config_file, std::string robot_config_file,
+                           std::string mocap_config_file, double init_x, double init_y, double init_z, double init_roll,
+                           double init_pitch, double init_yaw, const std::vector<double>& init_qpos,
+                           ShieldType shield_type)
+    : sample_time_(sample_time), path_s_(0), path_s_discrete_(0), shield_type_(shield_type) {
   ///////////// Build robot reach
   YAML::Node robot_config = YAML::LoadFile(robot_config_file);
   std::string robot_name = robot_config["robot_name"].as<std::string>();
@@ -78,17 +82,15 @@ SafetyShield::SafetyShield(bool activate_shield, double sample_time, std::string
   j_max_ltt_ = trajectory_config["j_max_ltt"].as<std::vector<double>>();
   ltp_ = long_term_planner::LongTermPlanner(nb_joints_, sample_time, q_min_allowed_, q_max_allowed_, v_max_allowed_,
                                             a_max_ltt_, j_max_ltt_);
-  v_iso_ = trajectory_config["v_iso"].as<double>();
-  safety_method_ = static_cast<Safety_method>(trajectory_config["safety_method"].as<int>());
+  v_safe_ = trajectory_config["v_iso"].as<double>();
   RobotReach::Velocity_method velocity_method =
       static_cast<RobotReach::Velocity_method>(trajectory_config["velocity_method"].as<int>());
   robot_reach_->setVelocityMethod(velocity_method);
-  spdlog::info("safety_method = {}", safety_method_);
   spdlog::info("velocity_method = {}", velocity_method);
   // Initialize the long term trajectory
   std::vector<Motion> long_term_traj;
   long_term_traj.push_back(Motion(0.0, init_qpos));
-  if (safety_method_ == STANDARD) {
+  if (shield_type_ == ShieldType::SSM || shield_type_ == ShieldType::OFF) {
     long_term_trajectory_ = LongTermTraj(long_term_traj, sample_time_);
   } else {
     long_term_trajectory_ = LongTermTraj(long_term_traj, sample_time_, *robot_reach_);
@@ -142,15 +144,20 @@ SafetyShield::SafetyShield(bool activate_shield, double sample_time, std::string
     alpha_i_.push_back(1.0);
   }
   alpha_i_.push_back(1.0);
-  is_safe_ = !activate_shield_;
+  if (shield_type_ == ShieldType::OFF) {
+    is_safe_ = true;
+  } else {
+    is_safe_ = false;
+  }
   computesPotentialTrajectory(is_safe_, prev_dq, nullptr, nullptr);
   next_motion_ = determineNextMotion(is_safe_);
   spdlog::info("Safety shield created.");
 }
 
-void SafetyShield::reset(bool activate_shield, double init_x, double init_y, double init_z, double init_roll,
-                         double init_pitch, double init_yaw, const std::vector<double>& init_qpos,
-                         double current_time) {
+void SafetyShield::reset(double init_x, double init_y, double init_z, double init_roll, double init_pitch,
+                         double init_yaw, const std::vector<double>& init_qpos, double current_time,
+                         ShieldType shield_type) {
+  shield_type_ = shield_type;
   robot_reach_->reset(init_x, init_y, init_z, init_roll, init_pitch, init_yaw);
   human_reach_->reset();
   std::vector<double> prev_dq;
@@ -159,7 +166,11 @@ void SafetyShield::reset(bool activate_shield, double init_x, double init_y, dou
     alpha_i_.push_back(1.0);
   }
   alpha_i_.push_back(1.0);
-  is_safe_ = !activate_shield_;
+  if (shield_type_ == ShieldType::OFF) {
+    is_safe_ = true;
+  } else {
+    is_safe_ = false;
+  }
   new_ltt_ = false;
   new_goal_ = false;
   new_ltt_processed_ = false;
@@ -174,7 +185,7 @@ void SafetyShield::reset(bool activate_shield, double init_x, double init_y, dou
   // Initialize the long term trajectory
   std::vector<Motion> long_term_traj;
   long_term_traj.push_back(Motion(0.0, init_qpos));
-  if (safety_method_ == STANDARD) {
+  if (shield_type_ == ShieldType::SSM || shield_type_ == ShieldType::OFF) {
     long_term_trajectory_ = LongTermTraj(long_term_traj, sample_time_);
   } else {
     long_term_trajectory_ = LongTermTraj(long_term_traj, sample_time_, *robot_reach_);
@@ -419,29 +430,24 @@ void SafetyShield::computesPotentialTrajectory(bool v, const std::vector<double>
     double ddds_d = failsafe_path_.getJerk();
     // Calculate goal
     // if v_max is under v_iso, velocity_criteria is true and we can skip calculating getMotionUnderVel()
-    is_under_iso_velocity_ = false;
-    if (safety_method_ == STANDARD) {
+    is_under_safe_velocity_ = false;
+    if (shield_type_ == ShieldType::SSM || shield_type_ == ShieldType::OFF) {
       potential_path_.getFinalMotion(final_s_d, final_ds_d, final_dds_d);
     } else {
-      // safety_method == LTT_MAXIMUM or STP_MAXIMUM
-      // v_max is maximum of LTT or STP and vel_s_dot is how much path velocity needs to be scaled to be under v_iso
+      // shield_type_ == ShieldType::PFL
+      // v_max is maximum of STP and vel_s_dot is how much path velocity needs to be scaled to be under v_iso
       potential_path_.getFinalMotion(final_s_d, final_ds_d, final_dds_d);
       double v_max;
-      if (safety_method_ == LTT_MAXIMUM && !new_ltt_) {
-        v_max = long_term_trajectory_.getMaxofMaximumCartesianVelocity();
-      } else if (safety_method_ == LTT_MAXIMUM && new_ltt_) {
-        v_max = new_long_term_trajectory_.getMaxofMaximumCartesianVelocity();
-      } else if (safety_method_ == STP_MAXIMUM && !new_ltt_) {
+      if (!new_ltt_) {
         v_max = long_term_trajectory_.getMaxofMaximumCartesianVelocityWithS(final_s_d);
       } else {
-        // safety_method_ == STP_MAXIMUM && new_ltt_
         v_max = new_long_term_trajectory_.getMaxofMaximumCartesianVelocityWithS(final_s_d);
       }
-      is_under_iso_velocity_ = v_max <= v_iso_;
-      if (!is_under_iso_velocity_) {
-        double v_limit = v_iso_ / v_max;
+      is_under_safe_velocity_ = v_max <= v_safe_;
+      if (!is_under_safe_velocity_) {
+        double v_limit = v_safe_ / v_max;
         potential_path_.getMotionUnderVel(v_limit, vel_time, vel_s_d, vel_ds_d, vel_dds_d, ddds_d);
-        is_under_iso_velocity_ = vel_time < 0;
+        is_under_safe_velocity_ = vel_time < 0;
       }
     }
     if (goal_motion == nullptr) {
@@ -453,20 +459,20 @@ void SafetyShield::computesPotentialTrajectory(bool v, const std::vector<double>
     if (new_ltt_) {
       *goal_motion = new_long_term_trajectory_.interpolate(final_s_d, final_ds_d, final_dds_d, ddds_d, v_max_allowed_,
                                                            a_max_allowed_, j_max_allowed_);
-      if (!is_under_iso_velocity_) {
+      if (!is_under_safe_velocity_) {
         *under_vel_motion = new_long_term_trajectory_.interpolate(vel_s_d, vel_ds_d, vel_dds_d, ddds_d, v_max_allowed_,
                                                                   a_max_allowed_, j_max_allowed_);
       }
     } else {
       *goal_motion = long_term_trajectory_.interpolate(final_s_d, final_ds_d, final_dds_d, ddds_d, v_max_allowed_,
                                                        a_max_allowed_, j_max_allowed_);
-      if (!is_under_iso_velocity_) {
+      if (!is_under_safe_velocity_) {
         *under_vel_motion = long_term_trajectory_.interpolate(vel_s_d, vel_ds_d, vel_dds_d, ddds_d, v_max_allowed_,
                                                               a_max_allowed_, j_max_allowed_);
       }
     }
     goal_motion->setTime(potential_path_.getPhase(3));
-    if (!is_under_iso_velocity_) {
+    if (!is_under_safe_velocity_) {
       under_vel_motion->setTime(vel_time);
     }
   } catch (const std::exception& exc) {
@@ -586,54 +592,20 @@ Motion SafetyShield::step(double cycle_begin_time) {
     Motion goal_motion;
     Motion under_vel_motion;
     computesPotentialTrajectory(is_safe_, next_motion_.getVelocity(), &goal_motion, &under_vel_motion);
-    if (activate_shield_) {
+    if (shield_type_ != ShieldType::OFF) {
       // Check motion for joint limits
       if (!checkMotionForJointLimits(goal_motion)) {
         is_safe_ = false;
       } else {
-        if (safety_method_ == STANDARD) {
-          // Compute the robot reachable set for the potential trajectory
-          robot_capsules_ =
-              robot_reach_->reach(current_motion, goal_motion, (goal_motion.getS() - current_motion.getS()), alpha_i_);
-          // Compute the human reachable sets for the potential trajectory
-          // humanReachabilityAnalysis(t_command, t_brake)
-          human_reach_->humanReachabilityAnalysis(cycle_begin_time_, goal_motion.getTime());
-          human_capsules_ = human_reach_->getAllCapsules();
-          // Verify if the robot and human reachable sets are collision free
-          is_safe_ = verify_->verify_human_reach(robot_capsules_, human_capsules_);
-
-        } else if (safety_method_ == LTT_MAXIMUM || safety_method_ == STP_MAXIMUM) {
-          // check if robot doesnt run into static human
-          robot_capsules_static_ =
-              robot_reach_->reach(current_motion, goal_motion, (goal_motion.getS() - current_motion.getS()), alpha_i_);
-          // TODO: 2. Parameter wrong? t_diff should be 0
-          // TODO: humanReach, immer die kleinste Kapsel ist wichtig
-          // TODO: nur ein human-reach objekt benötigt
-          human_reach_->humanReachabilityAnalysis(cycle_begin_time_, 0);  // t_brake is differentiell
-          human_capsules_static_ = human_reach_->getAllCapsules();
-          bool static_criteria = verify_->verify_human_reach(robot_capsules_static_, human_capsules_static_);
-
-          // check if there is collision between now and time t, during that time velocity of robot is higher than
-          // v_iso_
-          bool velocity_criteria;
-          // velocity_criteria is true, when v_max <= v_iso
-          if (is_under_iso_velocity_) {
-            velocity_criteria = true;
-            // if v_max <= v_iso, no velocity capsules get calculated because velocity criterion is true
-            // so we set the velocity capsules to the static capsules
-            robot_capsules_velocity_ = robot_capsules_static_;
-            human_capsules_velocity_ = human_capsules_static_;
-          } else {
-            robot_capsules_velocity_ = robot_reach_->reach(current_motion, under_vel_motion,
-                                                           (under_vel_motion.getS() - current_motion.getS()), alpha_i_);
-            human_reach_->humanReachabilityAnalysis(cycle_begin_time_, under_vel_motion.getTime());
-            human_capsules_velocity_ = human_reach_->getAllCapsules();
-            velocity_criteria = verify_->verify_human_reach(robot_capsules_velocity_, human_capsules_velocity_);
-          }
-
-          // combine both criteria
-          is_safe_ = static_criteria && velocity_criteria;
-        }
+        // Compute the robot reachable set for the potential trajectory
+        robot_capsules_ =
+            robot_reach_->reach(current_motion, goal_motion, (goal_motion.getS() - current_motion.getS()), alpha_i_);
+        // Compute the human reachable sets for the potential trajectory
+        // humanReachabilityAnalysis(t_command, t_brake)
+        human_reach_->humanReachabilityAnalysis(cycle_begin_time_, goal_motion.getTime());
+        human_capsules_ = human_reach_->getAllCapsules();
+        // Verify if the robot and human reachable sets are collision free
+        is_safe_ = verify_->verify_human_reach(robot_capsules_, human_capsules_);
       }
     } else {
       is_safe_ = true;
@@ -753,7 +725,7 @@ bool SafetyShield::calculateLongTermTrajectory(const std::vector<double>& start_
     new_traj[i] = Motion(new_time, q, dq, ddq, dddq);
     new_time += sample_time_;
   }
-  if (safety_method_ == STANDARD) {
+  if (shield_type_ == ShieldType::OFF || shield_type_ == ShieldType::SSM) {
     ltt = LongTermTraj(new_traj, sample_time_, path_s_discrete_, sliding_window_k_);
   } else {
     ltt = LongTermTraj(new_traj, sample_time_, *robot_reach_, path_s_discrete_, sliding_window_k_);
