@@ -593,16 +593,22 @@ Motion SafetyShield::step(double cycle_begin_time) {
     Motion under_vel_motion;
     computesPotentialTrajectory(is_safe_, next_motion_.getVelocity(), &goal_motion, &under_vel_motion);
     if (shield_type_ != ShieldType::OFF) {
-      // Check motion for joint limits
+      Motion target_motion;
+      if (shield_type_ == ShieldType::SSM) {
+        target_motion = goal_motion;
+      } else if (shield_type_ == ShieldType::PFL) {
+        target_motion = under_vel_motion;
+      }
+      // Check motion for joint limits (goal motion needed here as it is end of failsafe)
       if (!checkMotionForJointLimits(goal_motion)) {
         is_safe_ = false;
       } else {
         // Compute the robot reachable set for the potential trajectory
         robot_capsules_ =
-            robot_reach_->reach(current_motion, goal_motion, (goal_motion.getS() - current_motion.getS()), alpha_i_);
+            robot_reach_->reach(current_motion, target_motion, (target_motion.getS() - current_motion.getS()), alpha_i_);
         // Compute the human reachable sets for the potential trajectory
         // humanReachabilityAnalysis(t_command, t_brake)
-        human_reach_->humanReachabilityAnalysis(cycle_begin_time_, goal_motion.getTime());
+        human_reach_->humanReachabilityAnalysis(cycle_begin_time_, target_motion.getTime());
         human_capsules_ = human_reach_->getAllCapsules();
         // Verify if the robot and human reachable sets are collision free
         is_safe_ = verify_->verify_human_reach(robot_capsules_, human_capsules_);
