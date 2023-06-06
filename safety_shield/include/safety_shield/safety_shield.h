@@ -292,26 +292,6 @@ private:
      */
     std::vector<std::vector<reach_lib::Capsule>> human_capsules_;
 
-    /**
-     * @brief Vector of robot reachable set capsules for PFL criterion (get updated in every step()).
-     */
-    std::vector<reach_lib::Capsule> robot_capsules_PFL_;
-
-    /**
-     * @brief Vector of human reachable set capsules for PFL criterion (get updated in every step()).
-     */
-    std::vector<std::vector<reach_lib::Capsule>> human_capsules_PFL_;
-
-    /**
-     * @brief Vector of robot reachable set capsules for static human criterion (get updated in every step()).
-     */
-    std::vector<reach_lib::Capsule> robot_capsules_static_;
-
-    /**
-     * @brief Vector of human reachable set capsules for static human criterion (get updated in every step()).
-     */
-    std::vector<std::vector<reach_lib::Capsule>> human_capsules_static_;
-
     //////// For replanning new trajectory //////
     /**
      * @brief Trajecory planner
@@ -762,38 +742,6 @@ public:
     }
 
     /**
-     * @brief Get the Robot Reach Capsules for the static human criterion as a vector of [p1[0:3], p2[0:3], r]
-     * p1: Center point of half sphere 1
-     * p2: Center point of half sphere 2
-     * r: Radius of half spheres and cylinder
-     *
-     * @return std::vector<std::vector<double>> Capsules
-     */
-    inline std::vector<std::vector<double>> getRobotReachStaticCapsules() {
-        std::vector<std::vector<double>> capsules( robot_capsules_static_.size() , std::vector<double> (7));
-        for (int i = 0; i < robot_capsules_static_.size(); i++) {
-            capsules[i] = convertCapsule(robot_capsules_static_[i]);
-        }
-        return capsules;
-    }
-
-    /**
-     * @brief Get the Robot Reach Capsules for the PFL criterion as a vector of [p1[0:3], p2[0:3], r]
-     * p1: Center point of half sphere 1
-     * p2: Center point of half sphere 2
-     * r: Radius of half spheres and cylinder
-     *
-     * @return std::vector<std::vector<double>> Capsules
-     */
-    inline std::vector<std::vector<double>> getRobotReachPFLCapsules() {
-        std::vector<std::vector<double>> capsules( robot_capsules_PFL_.size() , std::vector<double> (7));
-        for (int i = 0; i < robot_capsules_PFL_.size(); i++) {
-            capsules[i] = convertCapsule(robot_capsules_PFL_[i]);
-        }
-        return capsules;
-    }
-
-    /**
      * @brief Get the Human Reach Capsules as a vector of [p1[0:3], p2[0:3], r]
      * p1: Center point of half sphere 1
      * p2: Center point of half sphere 2
@@ -808,44 +756,6 @@ public:
         std::vector<std::vector<double>> capsules( human_capsules_[type].size() , std::vector<double> (7));
         for (int i = 0; i < human_capsules_[type].size(); i++) {
             capsules[i] = convertCapsule(human_capsules_[type][i]);
-        }
-        return capsules;
-    }
-
-    /**
-     * @brief Get the Human Reach Capsules for static human criterion as a vector of [p1[0:3], p2[0:3], r]
-     * p1: Center point of half sphere 1
-     * p2: Center point of half sphere 2
-     * r: Radius of half spheres and cylinder
-     *
-     * @param type Type of capsule. Select 0 for POS, 1 for VEL, and 2 for ACCEL
-     *
-     * @return std::vector<std::vector<double>> Capsules
-     */
-    inline std::vector<std::vector<double>> getHumanReachStaticCapsules(int type=1) {
-        assert(type >= 0 && type <= human_capsules_static_.size());
-        std::vector<std::vector<double>> capsules( human_capsules_static_[type].size() , std::vector<double> (7));
-        for (int i = 0; i < human_capsules_static_[type].size(); i++) {
-            capsules[i] = convertCapsule(human_capsules_static_[type][i]);
-        }
-        return capsules;
-    }
-
-    /**
-     * @brief Get the Human Reach Capsules for PFL criterion as a vector of [p1[0:3], p2[0:3], r]
-     * p1: Center point of half sphere 1
-     * p2: Center point of half sphere 2
-     * r: Radius of half spheres and cylinder
-     *
-     * @param type Type of capsule. Select 0 for POS, 1 for VEL, and 2 for ACCEL
-     *
-     * @return std::vector<std::vector<double>> Capsules
-     */
-    inline std::vector<std::vector<double>> getHumanReachPFLCapsules(int type=1) {
-        assert(type >= 0 && type <= human_capsules_PFL_.size());
-        std::vector<std::vector<double>> capsules( human_capsules_PFL_[type].size() , std::vector<double> (7));
-        for (int i = 0; i < human_capsules_PFL_[type].size(); i++) {
-            capsules[i] = convertCapsule(human_capsules_PFL_[type][i]);
         }
         return capsules;
     }
