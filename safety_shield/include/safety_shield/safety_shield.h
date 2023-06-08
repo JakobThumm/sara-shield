@@ -500,9 +500,9 @@ class SafetyShield {
    * @brief Computes the new trajectory depending on dq and if the previous path is safe and publishes it
    * @param[in] v is the previous path safe
    * @param[in] prev_speed the velocity of the previous point
-   * @param[out] goal_motion: goal position, velocity, acceleration and time of the computed trajectory to execute.
+   * @returns goal_motion: goal position, velocity, acceleration and time of the computed trajectory to execute.
    */
-  void computesPotentialTrajectory(bool v, const std::vector<double>& prev_speed, Motion* goal_motion);
+  Motion computesPotentialTrajectory(bool v, const std::vector<double>& prev_speed);
 
   /**
    * @brief Gets the information that the next simulation cycle (sample time) has started

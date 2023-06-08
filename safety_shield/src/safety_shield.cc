@@ -45,7 +45,7 @@ SafetyShield::SafetyShield(int nb_joints, double sample_time, double max_s_stop,
   } else {
     is_safe_ = false;
   }
-  computesPotentialTrajectory(is_safe_, prev_dq, nullptr);
+  Motion goal_motion = computesPotentialTrajectory(is_safe_, prev_dq);
   next_motion_ = determineNextMotion(is_safe_);
   std::vector<double> q_min(nb_joints, -3.141);
   std::vector<double> q_max(nb_joints, -3.141);
@@ -149,7 +149,7 @@ SafetyShield::SafetyShield(double sample_time, std::string trajectory_config_fil
   } else {
     is_safe_ = false;
   }
-  computesPotentialTrajectory(is_safe_, prev_dq, nullptr);
+  Motion goal_motion = computesPotentialTrajectory(is_safe_, prev_dq);
   next_motion_ = determineNextMotion(is_safe_);
   spdlog::info("Safety shield created.");
 }
@@ -190,7 +190,7 @@ void SafetyShield::reset(double init_x, double init_y, double init_z, double ini
   } else {
     long_term_trajectory_ = LongTermTraj(long_term_traj, sample_time_, *robot_reach_);
   }
-  computesPotentialTrajectory(is_safe_, prev_dq, nullptr);
+  Motion goal_motion = computesPotentialTrajectory(is_safe_, prev_dq);
   next_motion_ = determineNextMotion(is_safe_);
   spdlog::info("Safety shield resetted.");
 }
@@ -359,7 +359,7 @@ void SafetyShield::calculateMaxAccJerk(const std::vector<double>& prev_speed, co
   j_max_manoeuvre = (min_d < 0) ? 0 : min_d;
 }
 
-void SafetyShield::computesPotentialTrajectory(bool v, const std::vector<double>& prev_speed, Motion* goal_motion) {
+Motion SafetyShield::computesPotentialTrajectory(bool v, const std::vector<double>& prev_speed) {
   try {
     // s_int indicates the index of the entire traveled way
     while (path_s_ >= (path_s_discrete_ + 1) * sample_time_) {
@@ -442,9 +442,11 @@ void SafetyShield::computesPotentialTrajectory(bool v, const std::vector<double>
       goal_motion = long_term_trajectory_.interpolate(s_d, ds_d, dds_d, ddds_d, v_max_allowed_, a_max_allowed_, j_max_allowed_);
     } 
     goal_motion.setTime(potential_path_.getPhase(3));
+    return goal_motion;
   } catch (const std::exception& exc) {
     spdlog::error("Exception in SafetyShield::computesPotentialTrajectory: {}", exc.what());
     throw exc;
+    return Motion();
   }
 }
 
@@ -583,8 +585,7 @@ Motion SafetyShield::step(double cycle_begin_time) {
       is_safe_ = false;
     }
     // Compute a new potential trajectory
-    Motion goal_motion;
-    computesPotentialTrajectory(is_safe_, next_motion_.getVelocity(), &goal_motion);
+    Motion goal_motion = computesPotentialTrajectory(is_safe_, next_motion_.getVelocity());
     if (shield_type_ != ShieldType::OFF) {
       // Check motion for joint limits (goal motion needed here as it is end of failsafe)
       if (!checkMotionForJointLimits(goal_motion)) {
