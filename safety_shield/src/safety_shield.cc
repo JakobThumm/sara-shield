@@ -45,7 +45,7 @@ SafetyShield::SafetyShield(int nb_joints, double sample_time, double max_s_stop,
   } else {
     is_safe_ = false;
   }
-  computesPotentialTrajectory(is_safe_, prev_dq, nullptr, nullptr);
+  computesPotentialTrajectory(is_safe_, prev_dq, nullptr);
   next_motion_ = determineNextMotion(is_safe_);
   std::vector<double> q_min(nb_joints, -3.141);
   std::vector<double> q_max(nb_joints, -3.141);
@@ -149,7 +149,7 @@ SafetyShield::SafetyShield(double sample_time, std::string trajectory_config_fil
   } else {
     is_safe_ = false;
   }
-  computesPotentialTrajectory(is_safe_, prev_dq, nullptr, nullptr);
+  computesPotentialTrajectory(is_safe_, prev_dq, nullptr);
   next_motion_ = determineNextMotion(is_safe_);
   spdlog::info("Safety shield created.");
 }
@@ -190,7 +190,7 @@ void SafetyShield::reset(double init_x, double init_y, double init_z, double ini
   } else {
     long_term_trajectory_ = LongTermTraj(long_term_traj, sample_time_, *robot_reach_);
   }
-  computesPotentialTrajectory(is_safe_, prev_dq, nullptr, nullptr);
+  computesPotentialTrajectory(is_safe_, prev_dq, nullptr);
   next_motion_ = determineNextMotion(is_safe_);
   spdlog::info("Safety shield resetted.");
 }
@@ -359,8 +359,7 @@ void SafetyShield::calculateMaxAccJerk(const std::vector<double>& prev_speed, co
   j_max_manoeuvre = (min_d < 0) ? 0 : min_d;
 }
 
-void SafetyShield::computesPotentialTrajectory(bool v, const std::vector<double>& prev_speed, Motion* goal_motion,
-                                               Motion* under_vel_motion) {
+void SafetyShield::computesPotentialTrajectory(bool v, const std::vector<double>& prev_speed, Motion* goal_motion) {
   try {
     // s_int indicates the index of the entire traveled way
     while (path_s_ >= (path_s_discrete_ + 1) * sample_time_) {
@@ -405,11 +404,16 @@ void SafetyShield::computesPotentialTrajectory(bool v, const std::vector<double>
     if (recovery_path_correct_) {
       // advance one step on repair path
       recovery_path_.increment(sample_time_);
-
-      // plan new failsafe path for STP
-      bool failsafe_2_planning_success =
-          planSafetyShield(recovery_path_.getPosition(), recovery_path_.getVelocity(), recovery_path_.getAcceleration(),
-                           0, a_max_manoeuvre, j_max_manoeuvre, failsafe_path_2_);
+      bool failsafe_2_planning_success;
+      if (shield_type_ == ShieldType::PFL) {
+        // Plan new failsafe path for PFL
+        failsafe_2_planning_success = planPFLFailsafe(a_max_manoeuvre, j_max_manoeuvre);
+      } else {
+        // plan new failsafe path for STP
+        failsafe_2_planning_success =
+            planSafetyShield(recovery_path_.getPosition(), recovery_path_.getVelocity(), recovery_path_.getAcceleration(),
+                            0, a_max_manoeuvre, j_max_manoeuvre, failsafe_path_2_);
+      }
       // Check the validity of the planned path
       if (!failsafe_2_planning_success || recovery_path_.getPosition() < failsafe_path_.getPosition()) {
         recovery_path_correct_ = false;
@@ -425,60 +429,50 @@ void SafetyShield::computesPotentialTrajectory(bool v, const std::vector<double>
 
     //// Calculate start and goal pos of intended motion
     // Fill potential buffer with position and velocity from last failsafe path. This value is not really used.
-    double final_time, final_s_d, final_ds_d, final_dds_d;
-    double vel_time, vel_s_d, vel_ds_d, vel_dds_d;
+    double s_d = failsafe_path_.getPosition();
+    double ds_d = failsafe_path_.getVelocity();
+    double dds_d = failsafe_path_.getAcceleration();
     double ddds_d = failsafe_path_.getJerk();
     // Calculate goal
-    // if v_max is under v_iso, velocity_criteria is true and we can skip calculating getMotionUnderVel()
-    is_under_safe_velocity_ = false;
-    if (shield_type_ == ShieldType::SSM || shield_type_ == ShieldType::OFF) {
-      potential_path_.getFinalMotion(final_s_d, final_ds_d, final_dds_d);
-    } else {
-      // shield_type_ == ShieldType::PFL
-      // v_max is maximum of STP and vel_s_dot is how much path velocity needs to be scaled to be under v_iso
-      potential_path_.getFinalMotion(final_s_d, final_ds_d, final_dds_d);
-      double v_max;
-      if (!new_ltt_) {
-        v_max = long_term_trajectory_.getMaxofMaximumCartesianVelocityWithS(final_s_d);
-      } else {
-        v_max = new_long_term_trajectory_.getMaxofMaximumCartesianVelocityWithS(final_s_d);
-      }
-      is_under_safe_velocity_ = v_max <= v_safe_;
-      if (!is_under_safe_velocity_) {
-        double v_limit = v_safe_ / v_max;
-        potential_path_.getMotionUnderVel(v_limit, vel_time, vel_s_d, vel_ds_d, vel_dds_d, ddds_d);
-        is_under_safe_velocity_ = vel_time < 0;
-      }
-    }
-    if (goal_motion == nullptr) {
-      Motion temp1;
-      Motion temp2;
-      goal_motion = &temp1;
-      under_vel_motion = &temp2;
-    }
+    potential_path_.getFinalMotion(s_d, ds_d, dds_d);
+    Motion goal_motion;
     if (new_ltt_) {
-      *goal_motion = new_long_term_trajectory_.interpolate(final_s_d, final_ds_d, final_dds_d, ddds_d, v_max_allowed_,
-                                                           a_max_allowed_, j_max_allowed_);
-      if (!is_under_safe_velocity_) {
-        *under_vel_motion = new_long_term_trajectory_.interpolate(vel_s_d, vel_ds_d, vel_dds_d, ddds_d, v_max_allowed_,
-                                                                  a_max_allowed_, j_max_allowed_);
-      }
+      goal_motion = new_long_term_trajectory_.interpolate(s_d, ds_d, dds_d, ddds_d, v_max_allowed_, a_max_allowed_, j_max_allowed_);
     } else {
-      *goal_motion = long_term_trajectory_.interpolate(final_s_d, final_ds_d, final_dds_d, ddds_d, v_max_allowed_,
-                                                       a_max_allowed_, j_max_allowed_);
-      if (!is_under_safe_velocity_) {
-        *under_vel_motion = long_term_trajectory_.interpolate(vel_s_d, vel_ds_d, vel_dds_d, ddds_d, v_max_allowed_,
-                                                              a_max_allowed_, j_max_allowed_);
-      }
-    }
-    goal_motion->setTime(potential_path_.getPhase(3));
-    if (!is_under_safe_velocity_) {
-      under_vel_motion->setTime(vel_time);
-    }
+      goal_motion = long_term_trajectory_.interpolate(s_d, ds_d, dds_d, ddds_d, v_max_allowed_, a_max_allowed_, j_max_allowed_);
+    } 
+    goal_motion.setTime(potential_path_.getPhase(3));
   } catch (const std::exception& exc) {
     spdlog::error("Exception in SafetyShield::computesPotentialTrajectory: {}", exc.what());
     throw exc;
   }
+}
+
+bool SafetyShield::planPFLFailsafe(double a_max_manoeuvre, double j_max_manoeuvre) {
+  // Calculate maximal Carthesian velocity in the short-term plan
+  double s_d, ds_d, dds_d;
+  // Calculate goal
+  bool is_under_iso_velocity = false;
+  // v_max is maximum of LTT or STP and vel_s_dot is how much path velocity needs to be scaled to be under v_iso
+  failsafe_path_2_.getFinalMotion(s_d, ds_d, dds_d);
+  double v_max;
+  if(!new_ltt_) {
+    v_max = long_term_trajectory_.getMaxofMaximumCartesianVelocityWithS(s_d);
+  } else {
+    v_max = new_long_term_trajectory_.getMaxofMaximumCartesianVelocityWithS(s_d);
+  }
+  is_under_iso_velocity = v_max <= v_safe_;
+  double v_limit;
+  // TODO: if the current velocity is under iso-velocity, we dont need to compute the failsafe-path of the PFL-criterion
+  if(!is_under_iso_velocity) {
+    v_limit = v_safe_ / v_max;
+    if(v_limit >= 1 || v_limit <= 0) {
+      spdlog::error("v_limit not between 0 and 1");
+    }
+  } else {
+    v_limit = recovery_path_.getVelocity();
+  }
+  return planSafetyShield(recovery_path_.getPosition(), recovery_path_.getVelocity(), recovery_path_.getAcceleration(), v_limit, a_max_manoeuvre, j_max_manoeuvre, failsafe_path_2_);
 }
 
 bool SafetyShield::checkMotionForJointLimits(Motion& motion) {
@@ -590,25 +584,18 @@ Motion SafetyShield::step(double cycle_begin_time) {
     }
     // Compute a new potential trajectory
     Motion goal_motion;
-    Motion under_vel_motion;
-    computesPotentialTrajectory(is_safe_, next_motion_.getVelocity(), &goal_motion, &under_vel_motion);
+    computesPotentialTrajectory(is_safe_, next_motion_.getVelocity(), &goal_motion);
     if (shield_type_ != ShieldType::OFF) {
-      Motion target_motion;
-      if (shield_type_ == ShieldType::SSM) {
-        target_motion = goal_motion;
-      } else if (shield_type_ == ShieldType::PFL) {
-        target_motion = under_vel_motion;
-      }
       // Check motion for joint limits (goal motion needed here as it is end of failsafe)
       if (!checkMotionForJointLimits(goal_motion)) {
         is_safe_ = false;
       } else {
         // Compute the robot reachable set for the potential trajectory
         robot_capsules_ =
-            robot_reach_->reach(current_motion, target_motion, (target_motion.getS() - current_motion.getS()), alpha_i_);
+            robot_reach_->reach(current_motion, goal_motion, (goal_motion.getS() - current_motion.getS()), alpha_i_);
         // Compute the human reachable sets for the potential trajectory
         // humanReachabilityAnalysis(t_command, t_brake)
-        human_reach_->humanReachabilityAnalysis(cycle_begin_time_, target_motion.getTime());
+        human_reach_->humanReachabilityAnalysis(cycle_begin_time_, goal_motion.getTime());
         human_capsules_ = human_reach_->getAllCapsules();
         // Verify if the robot and human reachable sets are collision free
         is_safe_ = verify_->verify_human_reach(robot_capsules_, human_capsules_);

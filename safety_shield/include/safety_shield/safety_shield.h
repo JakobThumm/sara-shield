@@ -116,7 +116,7 @@ class SafetyShield {
   Path safe_path_;
 
   /**
-   * @brief the constructed failsafe path
+   * @brief the constructed intended step + failsafe path
    */
   Path potential_path_;
 
@@ -339,6 +339,19 @@ class SafetyShield {
   bool planSafetyShield(double pos, double vel, double acc, double ve, double a_max, double j_max, Path& path);
 
   /**
+   * @brief Computes the fail-safe path for PFL mode.
+   * 
+   * @details Sets the failsafe_path_2_ variable.
+   * 
+   * @param[in] a_max_manoeuvre Maximum path acceleration
+   * @param[in] j_max_manoeuvre Maximum path jerk
+   * 
+   * @return true planning was successful
+   * @return false planning failed
+   */
+  bool planPFLFailsafe(double a_max_manoeuvre, double j_max_manoeuvre);
+
+  /**
    * @brief Calculate the next desired joint position based on verification of recovery path.
    * @param is_safe Last recovery path + potential path are verified safe.
    * @return next motion
@@ -488,10 +501,8 @@ class SafetyShield {
    * @param[in] v is the previous path safe
    * @param[in] prev_speed the velocity of the previous point
    * @param[out] goal_motion: goal position, velocity, acceleration and time of the computed trajectory to execute.
-   * @param[out] under_vel_motion: motion when robot is under ISO-norm velocity
    */
-  void computesPotentialTrajectory(bool v, const std::vector<double>& prev_speed, Motion* goal_motion,
-                                   Motion* under_vel_motion);
+  void computesPotentialTrajectory(bool v, const std::vector<double>& prev_speed, Motion* goal_motion);
 
   /**
    * @brief Gets the information that the next simulation cycle (sample time) has started
