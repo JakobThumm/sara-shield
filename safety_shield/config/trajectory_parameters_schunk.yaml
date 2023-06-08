@@ -21,7 +21,7 @@ q5: [0.0]
 q6: [0.0]
 
 # safety-rated speed specified by iso-norm
-v_iso: 0.25
+v_safe: 0.10
 
 # standard full stop criteria (STANDARD) == 0
 # maximum of LTT (LTT_MAXIMUM) == 1

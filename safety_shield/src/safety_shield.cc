@@ -82,7 +82,7 @@ SafetyShield::SafetyShield(double sample_time, std::string trajectory_config_fil
   j_max_ltt_ = trajectory_config["j_max_ltt"].as<std::vector<double>>();
   ltp_ = long_term_planner::LongTermPlanner(nb_joints_, sample_time, q_min_allowed_, q_max_allowed_, v_max_allowed_,
                                             a_max_ltt_, j_max_ltt_);
-  v_safe_ = trajectory_config["v_iso"].as<double>();
+  v_safe_ = trajectory_config["v_safe"].as<double>();
   RobotReach::Velocity_method velocity_method =
       static_cast<RobotReach::Velocity_method>(trajectory_config["velocity_method"].as<int>());
   robot_reach_->setVelocityMethod(velocity_method);
