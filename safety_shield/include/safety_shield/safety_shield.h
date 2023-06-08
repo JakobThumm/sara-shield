@@ -146,6 +146,12 @@ class SafetyShield {
   bool is_safe_;
 
   /**
+   * @brief Whether or not the potential path is under the safe velocity the entire time.
+   * 
+   */
+  bool is_under_v_limit_ = false;
+
+  /**
    * @brief Indicates if the last replanning was successful or not.
    *
    * Indicates problems in the following statements:

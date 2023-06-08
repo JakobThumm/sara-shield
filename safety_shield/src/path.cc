@@ -115,4 +115,26 @@ void Path::getMotionUnderVel(double v_limit, double& time, double& pos, double& 
   spdlog::error("Error in Path::getMotionUnderVel: it is not in any phase");
 }
 
+double Path::getMaxVelocity() {
+  double max_vel = vel_;
+  double l_time = 0;
+  double vel = vel_;
+  double acc = acc_;
+  for (int i = 0; i < 3; i++) {
+    double dt = (phases_[i] - l_time);
+    if (acc > 0 && phases_[i + 3] < 0 && -acc / phases_[i + 3] < dt) {
+      // if acc is positive and jerk is negative, we could have a maximum in the middle of this phase
+      // 0 = acc + jerk * t
+      // t = -acc / jerk < dt
+      double mid_t = -acc / phases_[i + 3];
+      double mid_vel = vel + acc * mid_t + phases_[i + 3] * mid_t * mid_t / 2;
+      max_vel = std::max(max_vel, mid_vel);
+    }
+    vel += acc * dt + phases_[i + 3] * dt * dt / 2;
+    acc += phases_[i + 3] * dt;
+    max_vel = std::max(max_vel, vel);
+    l_time = phases_[i];
+  }
+  return max_vel;
+}
 }  // namespace safety_shield

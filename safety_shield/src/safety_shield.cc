@@ -472,10 +472,12 @@ bool SafetyShield::planPFLFailsafe(double a_max_manoeuvre, double j_max_manoeuvr
       spdlog::error("v_limit not between 0 and 1");
     }
   } else {
-    //v_limit = recovery_path_.getVelocity();
-    v_limit = 1;
+    v_limit = recovery_path_.getVelocity();
   }
-  return planSafetyShield(recovery_path_.getPosition(), recovery_path_.getVelocity(), recovery_path_.getAcceleration(), v_limit, a_max_manoeuvre, j_max_manoeuvre, failsafe_path_2_);
+  bool planning_success = planSafetyShield(recovery_path_.getPosition(), recovery_path_.getVelocity(), recovery_path_.getAcceleration(), v_limit, a_max_manoeuvre, j_max_manoeuvre, failsafe_path_2_);
+  double max_d_s = failsafe_path_2_.getMaxVelocity();
+  is_under_v_limit_ = max_d_s < v_limit;
+  return planning_success;
 }
 
 bool SafetyShield::checkMotionForJointLimits(Motion& motion) {
@@ -600,7 +602,10 @@ Motion SafetyShield::step(double cycle_begin_time) {
         human_reach_->humanReachabilityAnalysis(cycle_begin_time_, goal_motion.getTime());
         human_capsules_ = human_reach_->getAllCapsules();
         // Verify if the robot and human reachable sets are collision free
-        is_safe_ = verify_->verify_human_reach(robot_capsules_, human_capsules_);
+        is_safe_ = verify_->verify_human_reach(robot_capsules_, human_capsules_); 
+        if (shield_type_ == ShieldType::PFL) {
+          is_safe_ = is_safe_ || is_under_v_limit_;
+        }
       }
     } else {
       is_safe_ = true;

@@ -228,6 +228,13 @@ class Path {
    * @param[out] jerk
    */
   void getMotionUnderVel(double v_limit, double& time, double& position, double& vel, double& acc, double& jerk);
+
+  /**
+   * @brief Get the maximum velocity of the path.
+   * 
+   * @return double: maximium velocity
+   */
+  double getMaxVelocity();
 };
 }  // namespace safety_shield
 
