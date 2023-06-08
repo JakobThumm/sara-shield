@@ -472,7 +472,8 @@ bool SafetyShield::planPFLFailsafe(double a_max_manoeuvre, double j_max_manoeuvr
       spdlog::error("v_limit not between 0 and 1");
     }
   } else {
-    v_limit = recovery_path_.getVelocity();
+    //v_limit = recovery_path_.getVelocity();
+    v_limit = 1;
   }
   return planSafetyShield(recovery_path_.getPosition(), recovery_path_.getVelocity(), recovery_path_.getAcceleration(), v_limit, a_max_manoeuvre, j_max_manoeuvre, failsafe_path_2_);
 }
