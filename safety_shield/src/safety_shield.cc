@@ -477,6 +477,7 @@ bool SafetyShield::planPFLFailsafe(double a_max_manoeuvre, double j_max_manoeuvr
   bool planning_success = planSafetyShield(recovery_path_.getPosition(), recovery_path_.getVelocity(), recovery_path_.getAcceleration(), v_limit, a_max_manoeuvre, j_max_manoeuvre, failsafe_path_2_);
   double max_d_s = failsafe_path_2_.getMaxVelocity();
   is_under_v_limit_ = max_d_s < v_limit;
+  spdlog::info("is_under_v_limit_: {}, max_d_s: {}, v_limit: {}, v_max: {}", is_under_v_limit_);
   return planning_success;
 }
 
