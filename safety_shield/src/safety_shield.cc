@@ -64,11 +64,9 @@ SafetyShield::SafetyShield(double sample_time, std::string trajectory_config_fil
   std::string robot_name = robot_config["robot_name"].as<std::string>();
   nb_joints_ = robot_config["nb_joints"].as<int>();
   std::vector<double> transformation_matrices = robot_config["transformation_matrices"].as<std::vector<double>>();
-  std::vector<double> transformation_matrices_joints =
-      robot_config["transformation_matrices_joints"].as<std::vector<double>>();
   std::vector<double> enclosures = robot_config["enclosures"].as<std::vector<double>>();
   double secure_radius = robot_config["secure_radius"].as<double>();
-  robot_reach_ = new RobotReach(transformation_matrices, transformation_matrices_joints, nb_joints_, enclosures, init_x,
+  robot_reach_ = new RobotReach(transformation_matrices, nb_joints_, enclosures, init_x,
                                 init_y, init_z, init_roll, init_pitch, init_yaw, secure_radius);
   ////////////// Setting trajectory variables
   YAML::Node trajectory_config = YAML::LoadFile(trajectory_config_file);
@@ -621,6 +619,7 @@ Motion SafetyShield::step(double cycle_begin_time) {
     return next_motion_;
   } catch (const std::exception& exc) {
     spdlog::error("Exception in SafetyShield::getNextCycle: {}", exc.what());
+    return Motion();
   }
 }
 
