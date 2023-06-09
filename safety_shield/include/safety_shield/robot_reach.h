@@ -75,22 +75,6 @@ class RobotReach {
    */
   std::vector<Eigen::Vector3d> z_vectors_;
 
-  /**
-   * @brief list of transformation matrices (only for debugging)
-   */
-  std::vector<Eigen::Matrix4d> transformation_matrices_q_;
-
-  /**
-   * @brief list of transformation matrices of joints
-   */
-  std::vector<Eigen::Matrix4d> transformation_matrices_q_joints_;
-
-  /**
-   * @brief List of transforamtion matrices from joint to joint for velocity functionality (fixed description, not
-   * including joint movements)
-   */
-  std::vector<Eigen::Matrix4d> transformation_matrices_joints_;
-
  public:
   /**
    * @brief A robot empty constructor
@@ -112,28 +96,9 @@ class RobotReach {
    * @param secure_radius Expand the radius of the robot capsules by this amount to
    *  account for measurement and modelling errors.
    */
-  RobotReach(std::vector<double> transformation_matrices, int nb_joints, std::vector<double> geom_par, double x,
-             double y, double z, double roll, double pitch, double yaw, double secure_radius);
-
-  /**
-   * @brief A robot basic constructor for velocity functionality
-   *
-   * @param transformation_matrices the transformation matrices
-   * @param transformation_matrices_joints the transformation matrices for the joints
-   * @param nb_joints the number of joints of the robot
-   * @param geom_param the robot occupancy matrix
-   * @param x initial x position of base
-   * @param y initial y position of base
-   * @param z initial z position of base
-   * @param roll initial roll of base
-   * @param pitch initial pitch of base
-   * @param yaw initial yaw of base
-   * @param secure_radius Expand the radius of the robot capsules by this amount to
-   *  account for measurement and modelling errors.
-   */
-  RobotReach(std::vector<double> transformation_matrices, std::vector<double> transformation_matrices_joints,
-             int nb_joints, std::vector<double> geom_par, double x, double y, double z, double roll, double pitch,
-             double yaw, double secure_radius);
+  RobotReach(std::vector<double> transformation_matrices, int nb_joints, std::vector<double> geom_par,
+             double x = 0, double y = 0, double z = 0,
+             double roll = 0, double pitch = 0, double yaw = 0, double secure_radius = 0);
 
   /**
    *  @brief A robot destructor

@@ -3,8 +3,8 @@
 namespace safety_shield {
 
 RobotReach::RobotReach(std::vector<double> transformation_matrices, int nb_joints, std::vector<double> geom_par,
-                       double x = 0, double y = 0, double z = 0, double roll = 0, double pitch = 0, double yaw = 0,
-                       double secure_radius = 0.0)
+                       double x, double y, double z, double roll, double pitch, double yaw,
+                       double secure_radius)
     : nb_joints_(nb_joints), secure_radius_(secure_radius) {
   Eigen::Matrix4d transformation_matrix_first;
   double cr = cos(roll);
@@ -25,48 +25,6 @@ RobotReach::RobotReach(std::vector<double> transformation_matrices, int nb_joint
       }
     }
     transformation_matrices_.push_back(transformation_matrix);
-
-    // Fill capsules
-    Eigen::Vector4d p1;
-    Eigen::Vector4d p2;
-    for (int i = 0; i < 3; i++) {
-      p1(i) = geom_par[7 * joint + i];
-      p2(i) = geom_par[7 * joint + 3 + i];
-    }
-    double radius = geom_par[7 * joint + 6];
-    reach_lib::Capsule capsule(vectorToPoint(p1), vectorToPoint(p2), radius);
-    robot_capsules_.push_back(capsule);
-  }
-}
-
-// constructor for velocity functionality
-RobotReach::RobotReach(std::vector<double> transformation_matrices, std::vector<double> transformation_matrices_joints,
-                       int nb_joints, std::vector<double> geom_par, double x = 0, double y = 0, double z = 0,
-                       double roll = 0, double pitch = 0, double yaw = 0, double secure_radius = 0.0)
-    : nb_joints_(nb_joints), secure_radius_(secure_radius) {
-  Eigen::Matrix4d transformation_matrix_first;
-  double cr = cos(roll);
-  double sr = sin(roll);
-  double cp = cos(pitch);
-  double sp = sin(pitch);
-  double cy = cos(yaw);
-  double sy = sin(yaw);
-  transformation_matrix_first << cr * cp, cr * sp * sy - sr * cy, cr * sp * cy + sr * sy, x, sr * cp,
-      sr * sp * sy + cr * cy, sr * sp * cy - cr * sy, y, -sp, cp * sy, cp * cy, z, 0, 0, 0, 1;
-  transformation_matrices_.push_back(transformation_matrix_first);
-  transformation_matrices_joints_.push_back(transformation_matrix_first);
-  for (int joint = 0; joint < nb_joints; joint++) {
-    // Fill transformation matrix
-    Eigen::Matrix4d transformation_matrix;
-    Eigen::Matrix4d transformation_matrix_joint;
-    for (int i = 0; i < 4; i++) {
-      for (int j = 0; j < 4; j++) {
-        transformation_matrix(i, j) = transformation_matrices[16 * joint + 4 * i + j];
-        transformation_matrix_joint(i, j) = transformation_matrices_joints[16 * joint + 4 * i + j];
-      }
-    }
-    transformation_matrices_.push_back(transformation_matrix);
-    transformation_matrices_joints_.push_back(transformation_matrix_joint);
 
     // Fill capsules
     Eigen::Vector4d p1;
@@ -92,7 +50,6 @@ void RobotReach::reset(double x, double y, double z, double roll, double pitch, 
   transformation_matrix << cr * cp, cr * sp * sy - sr * cy, cr * sp * cy + sr * sy, x, sr * cp, sr * sp * sy + cr * cy,
       sr * sp * cy - cr * sy, y, -sp, cp * sy, cp * cy, z, 0, 0, 0, 1;
   transformation_matrices_[0] = transformation_matrix;
-  transformation_matrices_joints_[0] = transformation_matrix;
 }
 
 reach_lib::Capsule RobotReach::transformCapsule(const int& n_joint, const Eigen::Matrix4d& T) {
