@@ -104,24 +104,6 @@ class RobotReach {
   RobotReach() {}
 
   /**
-   * @brief A robot basic constructor
-   *
-   * @param transformation_matrices the transformation matrices
-   * @param nb_joints the number of joints of the robot
-   * @param geom_param the robot occupancy matrix
-   * @param x initial x position of base
-   * @param y initial y position of base
-   * @param z initial z position of base
-   * @param roll initial roll of base
-   * @param pitch initial pitch of base
-   * @param yaw initial yaw of base
-   * @param secure_radius Expand the radius of the robot capsules by this amount to
-   *  account for measurement and modelling errors.
-   */
-  RobotReach(std::vector<double> transformation_matrices, int nb_joints, std::vector<double> geom_par, double x,
-             double y, double z, double roll, double pitch, double yaw, double secure_radius);
-
-  /**
    * @brief A robot basic constructor for velocity functionality
    *
    * @param transformation_matrices the transformation matrices
@@ -138,13 +120,14 @@ class RobotReach {
    *  account for measurement and modelling errors.
    * @param unclampable_enclosures_map Clamping between these capsule pairs is not possible
    */
-  RobotReach(std::vector<double> transformation_matrices, 
+  RobotReach(std::vector<double> transformation_matrices,
+      std::vector<double> transformation_matrices_joints,
       int nb_joints, 
       std::vector<double> geom_par, 
       double x, double y, double z, 
       double roll, double pitch, double yaw,
       double secure_radius,
-      std::unordered_map<int, std::set<int>> unclampable_enclosures_map = std::unordered_map<int, std::set<int>>());
+      std::unordered_map<int, std::set<int>> unclampable_enclosures_map);
 
   /**
    *  @brief A robot destructor
