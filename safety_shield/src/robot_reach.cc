@@ -2,7 +2,7 @@
 
 namespace safety_shield {
 
-RobotReach::RobotReach(std::vector<double> transformation_matrices, std::vector<double> transformation_matrices_joints, int nb_joints, std::vector<double> geom_par, 
+RobotReach::RobotReach(std::vector<double> transformation_matrices, int nb_joints, std::vector<double> geom_par, 
     double x, double y, double z, double roll, double pitch, double yaw, double secure_radius,
     std::unordered_map<int, std::set<int>> unclampable_enclosures_map):
   nb_joints_(nb_joints),
@@ -19,19 +19,15 @@ RobotReach::RobotReach(std::vector<double> transformation_matrices, std::vector<
   transformation_matrix_first << cr * cp, cr * sp * sy - sr * cy, cr * sp * cy + sr * sy, x, sr * cp,
       sr * sp * sy + cr * cy, sr * sp * cy - cr * sy, y, -sp, cp * sy, cp * cy, z, 0, 0, 0, 1;
   transformation_matrices_.push_back(transformation_matrix_first);
-  transformation_matrices_joints_.push_back(transformation_matrix_first);
   for (int joint = 0; joint < nb_joints; joint++) {
     // Fill transformation matrix
     Eigen::Matrix4d transformation_matrix;
-    Eigen::Matrix4d transformation_matrix_joint;
     for (int i = 0; i < 4; i++) {
       for (int j = 0; j < 4; j++) {
         transformation_matrix(i, j) = transformation_matrices[16 * joint + 4 * i + j];
-        transformation_matrix_joint(i, j) = transformation_matrices_joints[16 * joint + 4 * i + j];
       }
     }
     transformation_matrices_.push_back(transformation_matrix);
-    transformation_matrices_joints_.push_back(transformation_matrix_joint);
 
     // Fill capsules
     Eigen::Vector4d p1;
@@ -57,7 +53,6 @@ void RobotReach::reset(double x, double y, double z, double roll, double pitch, 
   transformation_matrix << cr * cp, cr * sp * sy - sr * cy, cr * sp * cy + sr * sy, x, sr * cp, sr * sp * sy + cr * cy,
       sr * sp * cy - cr * sy, y, -sp, cp * sy, cp * cy, z, 0, 0, 0, 1;
   transformation_matrices_[0] = transformation_matrix;
-  transformation_matrices_joints_[0] = transformation_matrix;
 }
 
 reach_lib::Capsule RobotReach::transformCapsule(const int& n_joint, const Eigen::Matrix4d& T) {

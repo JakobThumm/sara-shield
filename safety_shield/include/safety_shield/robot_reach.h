@@ -76,27 +76,6 @@ class RobotReach {
    */
   std::vector<Eigen::Vector3d> z_vectors_;
 
-  /**
-   * @brief list of transformation matrices (only for debugging)
-   */
-  std::vector<Eigen::Matrix4d> transformation_matrices_q_;
-
-  /**
-   * @brief Clamping between these capsule pairs is not possible
-   */
-  std::unordered_map<int, std::set<int>> unclampable_enclosures_map_;
-
-   /**
-   * @brief list of transformation matrices of joints
-   */
-  std::vector<Eigen::Matrix4d> transformation_matrices_q_joints_;
-
-  /**
-   * @brief List of transforamtion matrices from joint to joint for velocity functionality (fixed description, not
-   * including joint movements)
-   */
-  std::vector<Eigen::Matrix4d> transformation_matrices_joints_;
-
  public:
   /**
    * @brief A robot empty constructor
@@ -104,10 +83,9 @@ class RobotReach {
   RobotReach() {}
 
   /**
-   * @brief A robot basic constructor for velocity functionality
+   * @brief A robot basic constructor
    *
    * @param transformation_matrices the transformation matrices
-   * @param transformation_matrices_joints the transformation matrices for the joints
    * @param nb_joints the number of joints of the robot
    * @param geom_param the robot occupancy matrix
    * @param x initial x position of base
@@ -121,7 +99,6 @@ class RobotReach {
    * @param unclampable_enclosures_map Clamping between these capsule pairs is not possible
    */
   RobotReach(std::vector<double> transformation_matrices,
-      std::vector<double> transformation_matrices_joints,
       int nb_joints, 
       std::vector<double> geom_par, 
       double x = 0.0, double y = 0.0, double z = 0.0, 
