@@ -1059,6 +1059,7 @@ Motion SafetyShield::PFLstep(double cycle_begin_time) {
     }
 }
 
+// TODO: standard also doesnt work, maybe something wrong here?
 Motion SafetyShield::getCurrentMotion() {
     Motion current_pos;
     Path& path = failsafe_path_;
