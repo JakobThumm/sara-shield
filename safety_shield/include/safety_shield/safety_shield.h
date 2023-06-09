@@ -313,11 +313,6 @@ class SafetyShield {
    */
   double v_safe_ = 0.10;
 
-  /**
-   * @brief if robot is under iso_velocity
-   */
-  bool is_under_safe_velocity_;
-
  protected:
   /**
    * @brief Calculate max acceleration and jerk based on previous velocity
