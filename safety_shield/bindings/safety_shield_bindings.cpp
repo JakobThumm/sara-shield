@@ -58,7 +58,7 @@ PYBIND11_MODULE(safety_shield_py, handle) {
   // Long-term trajectory class
   py::class_<safety_shield::LongTermTraj>(handle, "LongTermTraj")
     .def(py::init<>())
-    .def(py::init<std::vector<safety_shield::Motion>, double, int, int>(), py::arg("long_term_traj"), py::arg("sample_time"), py::arg("starting_index") = 0, py::arg("sliding_window_k") = 10)
+    .def(py::init<std::vector<safety_shield::Motion>, double, int, int>(), py::arg("long_term_traj"), py::arg("sample_time"), py::arg("starting_index") = 0, py::arg("sliding_window_k") = 10) // TODO: changed
     .def("interpolate", &safety_shield::LongTermTraj::interpolate, py::arg("s"), py::arg("ds"), py::arg("dds"), py::arg("ddds"), py::arg("v_max_allowed"), py::arg("a_max_allowed"), py::arg("j_max_allowed"))
     .def("setLongTermTrajectory", py::overload_cast<const std::vector<safety_shield::Motion>&>(&safety_shield::LongTermTraj::setLongTermTrajectory), py::arg("long_term_traj"))
     .def("setLongTermTrajectory", py::overload_cast<const std::vector<safety_shield::Motion>&, double>(&safety_shield::LongTermTraj::setLongTermTrajectory), py::arg("long_term_traj"), py::arg("sample_time"))
@@ -78,13 +78,17 @@ PYBIND11_MODULE(safety_shield_py, handle) {
     .def(py::init<>())
     .def(py::init<std::vector<double>, std::vector<double>>(), py::arg("min"), py::arg("max"))
     ;
+  // Safety shield type
+  py::enum_<safety_shield::ShieldType>(handle, "ShieldType", py::arithmetic())
+        .value("OFF", safety_shield::ShieldType::OFF)
+        .value("SSM", safety_shield::ShieldType::SSM)
+        .value("PFL", safety_shield::ShieldType::PFL);
   // Safety shield class
   py::class_<safety_shield::SafetyShield>(handle, "SafetyShield")
     .def(py::init<>())
-    .def(py::init<bool, double, std::string, std::string, std::string,
-         double, double, double, double, double, double,
-         const std::vector<double>&, const std::vector<reach_lib::AABB>&>(),
-      py::arg("activate_shield"),
+    .def(py::init<double, std::string, std::string, std::string,
+        double, double, double, double, double, double, const std::vector<double>&,
+        const std::vector<reach_lib::AABB>&, safety_shield::ShieldType>(),
       py::arg("sample_time"),
       py::arg("trajectory_config_file"),
       py::arg("robot_config_file"),
@@ -96,9 +100,9 @@ PYBIND11_MODULE(safety_shield_py, handle) {
       py::arg("init_pitch"),
       py::arg("init_yaw"),
       py::arg("init_qpos"),
-      py::arg("environment_elements"))
+      py::arg("environment_elements"),
+      py::arg("shield_type") = safety_shield::ShieldType::SSM)
     .def("reset", &safety_shield::SafetyShield::reset, 
-      py::arg("activate_shield"),
       py::arg("init_x"),
       py::arg("init_y"),
       py::arg("init_z"),
@@ -107,14 +111,20 @@ PYBIND11_MODULE(safety_shield_py, handle) {
       py::arg("init_yaw"),
       py::arg("init_qpos"),
       py::arg("current_time"),
-      py::arg("environment_elements"))
+      py::arg("environment_elements"),
+      py::arg("shield_type") = safety_shield::ShieldType::SSM)
     .def("step", &safety_shield::SafetyShield::step, py::arg("cycle_begin_time"))
     .def("newLongTermTrajectory", &safety_shield::SafetyShield::newLongTermTrajectory, py::arg("goal_position"), py::arg("goal_velocity"))
     .def("setLongTermTrajectory", &safety_shield::SafetyShield::setLongTermTrajectory, py::arg("traj"))
     .def("humanMeasurement", static_cast<void (safety_shield::SafetyShield::*)(const std::vector<std::vector<double>> human_measurement, double time)>(&safety_shield::SafetyShield::humanMeasurement), py::arg("human_measurement"), py::arg("time"))
     .def("getRobotReachCapsules", &safety_shield::SafetyShield::getRobotReachCapsules)
     .def("getHumanReachCapsules", &safety_shield::SafetyShield::getHumanReachCapsules, py::arg("type") = 1)
+    .def("getRobotReachVelocityCapsules", &safety_shield::SafetyShield::getRobotReachVelocityCapsules)
+    .def("getHumanReachVelocityCapsules", &safety_shield::SafetyShield::getHumanReachVelocityCapsules, py::arg("type") = 1)
+    .def("getRobotReachStaticCapsules", &safety_shield::SafetyShield::getRobotReachStaticCapsules)
+    .def("getHumanReachStaticCapsules", &safety_shield::SafetyShield::getHumanReachStaticCapsules, py::arg("type") = 1)
     .def("getSafety", &safety_shield::SafetyShield::getSafety)
+    .def("getShieldType", &safety_shield::SafetyShield::getShieldType)
   ;
   
 }

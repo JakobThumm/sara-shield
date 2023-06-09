@@ -4,14 +4,14 @@
  * @brief Defines the abstract verify class
  * @version 0.1
  * @copyright This file is part of SaRA-Shield.
- * SaRA-Shield is free software: you can redistribute it and/or modify it under 
- * the terms of the GNU General Public License as published by the Free Software Foundation, 
+ * SaRA-Shield is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License as published by the Free Software Foundation,
  * either version 3 of the License, or (at your option) any later version.
- * SaRA-Shield is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
- * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+ * SaRA-Shield is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+ * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  * See the GNU General Public License for more details.
- * You should have received a copy of the GNU General Public License along with SaRA-Shield. 
- * If not, see <https://www.gnu.org/licenses/>. 
+ * You should have received a copy of the GNU General Public License along with SaRA-Shield.
+ * If not, see <https://www.gnu.org/licenses/>.
  */
 
 #include <algorithm>
@@ -37,24 +37,25 @@ class Verify {
 
   /**
    * @brief Check two capsules for collision
-   * 
+   *
    * @param[in] cap1 Capsule 1
    * @param[in] cap2 Capsule 2
-   * 
+   *
    * @returns true if capsules collide, false else
    */
   inline bool capsuleCollisionCheck(const reach_lib::Capsule& cap1, const reach_lib::Capsule& cap2) {
     return reach_lib::intersections::capsule_capsule_intersection(cap1, cap2);
   }
-  
+
   /**
    * @brief Verify the robot motion against the reachable occupancy of the human in position, velocity, and acceleration
-   * 
+   *
    * Pure virtual function.
-   * 
+   *
    * @param[in] robot_capsules Reachable capsules of the robot
-   * @param[in] human_capsules List of list of capsules. Each list of capsules corresponds to a human reachable set model.
-   * 
+   * @param[in] human_capsules List of list of capsules. Each list of capsules corresponds to a human reachable set
+   * model.
+   *
    * @returns Whether the robot movement is unsafe for the human
    */
   virtual bool verify_human_reach(const std::vector<reach_lib::Capsule>& robot_capsules, 
@@ -76,6 +77,6 @@ class Verify {
       const std::vector<std::vector<double>>& human_radii,
       const std::unordered_map<int, std::set<int>>& unclampable_enclosures_map) = 0;
 };
-} // namespace safety_shield
+}  // namespace safety_shield
 
-#endif // VERIFY_H
+#endif  // VERIFY_H

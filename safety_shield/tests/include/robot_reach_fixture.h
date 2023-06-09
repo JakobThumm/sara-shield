@@ -59,6 +59,53 @@ class RobotReachTest : public ::testing::Test {
       secure_radius);
   }
 };
+
+/**
+ * @brief Test fixture for robot reach class with velocity calculation
+ */
+class RobotReachTestVelocity : public ::testing::Test {
+protected:
+    /**
+     * @brief The robot reach object
+     */
+    RobotReach* robot_reach_;
+
+    /**
+     * @brief Motion object
+     */
+    Motion motion_;
+
+    /**
+     * @brief robot-configuration
+     */
+    std::vector<double> q_;
+
+    /**
+     * @brief Create the robot reach object
+     */
+    void SetUp() override {
+        // setup for tests with jacobian matrix, testing with schunk robot
+        std::filesystem::path config_file = std::filesystem::current_path().parent_path() / "config/robot_parameters_schunk.yaml";
+        YAML::Node robot_config = YAML::LoadFile(config_file.string());
+        double nb_joints = robot_config["nb_joints"].as<int>();
+        std::vector<double> transformation_matrices = robot_config["transformation_matrices"].as<std::vector<double>>();
+        std::vector<double> transformation_matrices_joints = robot_config["transformation_matrices_joints"].as<std::vector<double>>();
+        std::vector<double>  enclosures = robot_config["enclosures"].as<std::vector<double>>();
+        double secure_radius = robot_config["secure_radius"].as<double>();
+        robot_reach_ = new RobotReach(transformation_matrices,
+                                               transformation_matrices_joints,
+                                               nb_joints,
+                                               enclosures,
+                                               0.0, 0.0, 0.0,
+                                               0.0, 0.0, 0.0,
+                                               secure_radius);
+
+        //q_ = {1.0, 2.0, 3.0, 4.0, 5.0, 6.0};
+        q_ = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+        motion_ = Motion(0.0, q_, q_);
+    }
+};
+
 } // namespace safety_shield
 
 #endif // ROBOT_REACH_FIXTURE_H    

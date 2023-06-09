@@ -1,19 +1,15 @@
 #include <string>
 #include <vector>
-#include <chrono>
-#include <type_traits>
 
 #include "reach_lib.hpp"
-
-#include "safety_shield/safety_shield.h"
 #include "safety_shield/human_reach.h"
-#include "safety_shield/robot_reach.h"
-#include "safety_shield/verify.h"
 #include "safety_shield/long_term_traj.h"
 #include "safety_shield/motion.h"
+#include "safety_shield/robot_reach.h"
+#include "safety_shield/safety_shield.h"
+#include "safety_shield/verify.h"
 
 int main () {
-    bool activate_shield = true;
     double sample_time = 0.001; 
     // path depends on where your build folder is. Maybe you need to replace `../` with `../safety_shield/`
     std::string trajectory_config_file = std::string("../config/trajectory_parameters_schunk.yaml");
@@ -28,8 +24,8 @@ int main () {
     double init_pitch = 0.0;
     double init_yaw = 0.0;
     std::vector<double> init_qpos = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
-
-    safety_shield::SafetyShield shield = safety_shield::SafetyShield(activate_shield,
+    safety_shield::ShieldType shield_type = safety_shield::ShieldType::SSM;
+    safety_shield::SafetyShield shield = safety_shield::SafetyShield(
       sample_time, 
       trajectory_config_file,
       robot_config_file,
@@ -41,32 +37,35 @@ int main () {
       init_pitch, 
       init_yaw,
       init_qpos,
-      environment_elements);
+      environment_elements,
+      shield_type);
 
-    // Dummy human measurement
-    std::vector<reach_lib::Point> dummy_human_meas(21);
-    for (int i=0; i<21; i++) {
-      dummy_human_meas[i] = reach_lib::Point(10.0, 10.0, 0.0);
-    }
+  // Dummy human measurement
+  std::vector<reach_lib::Point> dummy_human_meas(21);
+  for (int i = 0; i < 21; i++) {
+    dummy_human_meas[i] = reach_lib::Point(10.0, 10.0, 0.0);
+  }
 
-    //auto start_time = std::chrono::system_clock::now();
-    //double t = std::chrono::duration<double>(std::chrono::system_clock::now()-start_time).count();
-    spdlog::info("Debug started.");
-    double t = 0.0;
-    for (int ep=0; ep<1; ep++) {
-      for (int i=0; i<10000; i++) {
-        t += 0.001;
-        shield.humanMeasurement(dummy_human_meas, t);
-        t += 0.003;
-        if (i % 2 == 0) {
-            std::vector<double> qpos{0.2*t, 0.0, 0.0, 0.0, 0.0, std::min(t, 3.1)};
-            std::vector<double> qvel{0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
-            shield.newLongTermTrajectory(qpos, qvel);
-        }
-        safety_shield::Motion next_motion = shield.step(t);
+  spdlog::info("Debug started.");
+  double t = 0.0;
+  for (int ep = 0; ep < 5; ep++) {
+    for (int i = 0; i < 100; i++) {  // i < 100; i<10000
+      t += 0.001;
+      shield.humanMeasurement(dummy_human_meas, t);
+      t += 0.003;
+      if (i % 1 == 0) {  // % 2
+        std::vector<double> qpos{0.2 * t, t, t,
+                                 t,       t, std::min(t, 3.1)};  // qpos{0.2*t, 0.0, 0.0, 0.0, 0.0, std::min(t, 3.1)};
+        std::vector<double> qvel{t + 100, t + 100, t + 100,
+                                 t + 100, t + 100, t + 100};  //{0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+        shield.newLongTermTrajectory(qpos, qvel);
+        // spdlog::info("new LTT");
       }
-      shield.reset(true, init_x, init_y, init_z, init_roll, init_pitch, init_yaw, init_qpos, t, environment_elements);
+      safety_shield::Motion next_motion = shield.step(t);
+      // spdlog::info("finished step");
     }
-    spdlog::info("Debug finished.");
-    return 0;
+    shield.reset(init_x, init_y, init_z, init_roll, init_pitch, init_yaw, init_qpos, t, environment_elements, shield_type);
+  }
+  spdlog::info("Debug finished.");
+  return 0;
 }
