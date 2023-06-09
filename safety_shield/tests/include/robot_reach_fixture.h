@@ -49,9 +49,11 @@ class RobotReachTest : public ::testing::Test {
     std::string robot_name = robot_config["robot_name"].as<std::string>();
     double nb_joints = robot_config["nb_joints"].as<int>();
     std::vector<double> transformation_matrices = robot_config["transformation_matrices"].as<std::vector<double>>();
+    std::vector<double> transformation_matrices_joints = robot_config["transformation_matrices_joints"].as<std::vector<double>>();
     std::vector<double> enclosures = robot_config["enclosures"].as<std::vector<double>>();
     double secure_radius = robot_config["secure_radius"].as<double>();
-    robot_reach_ = new RobotReach(transformation_matrices, 
+    robot_reach_ = new RobotReach(transformation_matrices,
+      transformation_matrices_joints,
       nb_joints, 
       enclosures, 
       0.0, 0.0, 1.0, 

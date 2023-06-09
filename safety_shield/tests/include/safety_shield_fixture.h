@@ -61,7 +61,6 @@ class SafetyShieldTest : public ::testing::Test {
    * @brief Create the safety shield object
    */
   void SetUp() override {
-    bool activate_shield = true;
     double sample_time = 0.001;
     std::string trajectory_config_file = std::string("../../safety_shield/config/trajectory_parameters_schunk.yaml");
     std::string robot_config_file = std::string("../../safety_shield/config/robot_parameters_schunk.yaml");
@@ -76,7 +75,7 @@ class SafetyShieldTest : public ::testing::Test {
     reach_lib::AABB table = reach_lib::AABB({-1.0, -1.0, -0.1}, {1.0, 1.0, 0.0});
     std::vector<reach_lib::AABB> environment_elements = {table};
     ShieldType shield_type = ShieldType::SSM;
-    shield_ = SafetyShieldExposed(activate_shield,
+    shield_ = SafetyShieldExposed(
       sample_time, 
       trajectory_config_file,
       robot_config_file,

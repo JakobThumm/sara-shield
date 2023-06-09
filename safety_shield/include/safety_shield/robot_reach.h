@@ -124,10 +124,10 @@ class RobotReach {
       std::vector<double> transformation_matrices_joints,
       int nb_joints, 
       std::vector<double> geom_par, 
-      double x, double y, double z, 
-      double roll, double pitch, double yaw,
-      double secure_radius,
-      std::unordered_map<int, std::set<int>> unclampable_enclosures_map);
+      double x = 0.0, double y = 0.0, double z = 0.0, 
+      double roll = 0.0, double pitch = 0.0, double yaw = 0.0,
+      double secure_radius = 0.0,
+      std::unordered_map<int, std::set<int>> unclampable_enclosures_map = std::unordered_map<int, std::set<int>>());
 
   /**
    *  @brief A robot destructor
