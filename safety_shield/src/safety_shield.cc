@@ -83,8 +83,16 @@ SafetyShield::SafetyShield(double sample_time, std::string trajectory_config_fil
       robot_config["transformation_matrices_joints"].as<std::vector<double>>();
   std::vector<double> enclosures = robot_config["enclosures"].as<std::vector<double>>();
   double secure_radius = robot_config["secure_radius"].as<double>();
+  std::vector<std::pair<int, int>> unclampable_enclosures;
+  if (robot_config["unclampable_enclosures"]) {
+    unclampable_enclosures = robot_config["unclampable_enclosures"].as<std::vector<std::pair<int, int>>>();
+  }
+  std::unordered_map<int, std::set<int>> unclampable_enclosures_map;
+  for (auto const& enclosure : unclampable_enclosures) {
+    unclampable_enclosures_map[enclosure.first].insert(enclosure.second);
+  }
   robot_reach_ = new RobotReach(transformation_matrices, transformation_matrices_joints, nb_joints_, enclosures, init_x,
-                                init_y, init_z, init_roll, init_pitch, init_yaw, secure_radius);
+                                init_y, init_z, init_roll, init_pitch, init_yaw, secure_radius, unclampable_enclosures_map);
   ////////////// Setting trajectory variables
   YAML::Node trajectory_config = YAML::LoadFile(trajectory_config_file);
   max_s_stop_ = trajectory_config["max_s_stop"].as<double>();
