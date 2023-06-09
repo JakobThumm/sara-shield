@@ -168,22 +168,6 @@ class RobotReach {
     T = T * Rz;
   }
 
-  /**
-   * @brief Computes the global transformation matrix of a given joint.
-   *
-   * @param q The joint angle
-   * @param n_joint The number of joint
-   * @param T The current transformation matrix (Start with Identity). T will be modified in this function.
-   */
-  inline void forwardKinematicJoints(const double& q, const int& n_joint, Eigen::Matrix4d& T) {
-    // Transform T to new joint coordinate system
-    T = T * transformation_matrices_joints_[n_joint + 1];
-    ;
-    Eigen::Matrix4d Rz;
-    Rz << cos(q), -sin(q), 0, 0, sin(q), cos(q), 0, 0, 0, 0, 1, 0, 0, 0, 0, 1;
-    T = T * Rz;
-  }
-
   Eigen::Vector4d pointToVector(const reach_lib::Point& p) {
     Eigen::Vector4d vec;
     vec << p.x, p.y, p.z, 1.0;
@@ -291,25 +275,6 @@ class RobotReach {
     return cross;
   }
 
-  inline std::vector<reach_lib::Capsule> getVelocityCapsules() {
-    return robot_capsules_for_velocity_;
-  }
-
-  inline std::vector<Eigen::Vector3d> getZvectors() {
-    return z_vectors_;
-  }
-
-  inline std::vector<Eigen::Matrix4d> getTransformationMatricesQ() {
-    return transformation_matrices_q_;
-  }
-
-  inline std::vector<Eigen::Matrix4d> getTransformationMatricesQJoints() {
-    return transformation_matrices_q_joints_;
-  }
-
-  inline Velocity_method getVelocityMethod() {
-    return velocity_method_;
-  }
 };
 }  // namespace safety_shield
 
