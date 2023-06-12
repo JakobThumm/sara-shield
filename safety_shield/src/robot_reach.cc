@@ -124,7 +124,7 @@ void RobotReach::calculateAllTransformationMatricesAndCapsules(const std::vector
 
 double RobotReach::velocityOfCapsule(const int capsule, std::vector<double> q_dot) {
   double epsilon = 1e-6;
-  Eigen::Matrix<double, 6, Eigen::Dynamic> jacobian = getJacobian(capsule);
+  Eigen::Matrix<double, 6, Eigen::Dynamic> jacobian = getJacobian(capsule, robot_capsules_for_velocity_[capsule].p2_);
   Eigen::VectorXd velocity = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(q_dot.data(), q_dot.size());
   Eigen::Vector<double, 6> result = jacobian * velocity.segment(0, capsule + 1);
   Eigen::Vector3d v = result.segment(0, 3);
@@ -143,10 +143,10 @@ double RobotReach::velocityOfCapsule(const int capsule, std::vector<double> q_do
   }
 }
 
-Eigen::Matrix<double, 6, Eigen::Dynamic> RobotReach::getJacobian(const int joint) {
+Eigen::Matrix<double, 6, Eigen::Dynamic> RobotReach::getJacobian(const int joint, const reach_lib::Point& point) {
   Eigen::Matrix<double, 6, Eigen::Dynamic> jacobian;
   jacobian.setZero(6, joint + 1);
-  Eigen::Vector3d p_e = pointTo3dVector(robot_capsules_for_velocity_[joint].p2_);
+  Eigen::Vector3d p_e = pointTo3dVector(point);
   for (int i = 0; i < joint + 1; ++i) {
     Eigen::Vector3d z_i = z_vectors_[i + 1];
     Eigen::Vector3d p_i = pointTo3dVector(robot_capsules_for_velocity_[i].p1_);

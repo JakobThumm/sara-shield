@@ -202,12 +202,14 @@ class RobotReach {
   void calculateAllTransformationMatricesAndCapsules(const std::vector<double>& q);
 
   /**
-   * @brief returns joint jacobian
+   * @brief Returns Jacobian of a point attached to the i-th joint.
+   * @details You often take robot_capsules_for_velocity_[joint].p1_ or robot_capsules_for_velocity_[joint].p2_ as point.
    * @assumption calculateAlltransformationMatricesAndCapsules() was called before
-   * @param joint jacobian for which joint
-   * @return jacobian
+   * @param joint Jacobian for which joint
+   * @param point Jacobian for which point
+   * @return Jacobian 6 x nb_joints
    */
-  Eigen::Matrix<double, 6, Eigen::Dynamic> getJacobian(const int joint);
+  Eigen::Matrix<double, 6, Eigen::Dynamic> getJacobian(const int joint, const reach_lib::Point& point);
 
   /**
    * @brief computes approximate maximum cartesian velocity of a specific capsule
