@@ -85,6 +85,7 @@ SafetyShield::SafetyShield(double sample_time, std::string trajectory_config_fil
   robot_reach_->setVelocityMethod(velocity_method);
   spdlog::info("velocity_method = {}", velocity_method);
   // Initialize the long term trajectory
+  sliding_window_k_ = (int)std::floor(max_s_stop_ / sample_time_);
   std::vector<Motion> long_term_traj;
   long_term_traj.push_back(Motion(0.0, init_qpos));
   if (shield_type_ == ShieldType::SSM || shield_type_ == ShieldType::OFF) {

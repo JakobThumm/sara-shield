@@ -2,6 +2,46 @@
 
 namespace safety_shield {
 
+LongTermTraj::LongTermTraj(const std::vector<Motion>& long_term_traj, double sample_time, RobotReach& robot_reach,
+                           int starting_index, int sliding_window_k)
+    : long_term_traj_(long_term_traj), sample_time_(sample_time), current_pos_(0), starting_index_(starting_index) {
+  length_ = long_term_traj.size();
+  calculate_max_acc_jerk_window(long_term_traj_, sliding_window_k);
+  // Initialize alpha_i_ with 0
+  for (int i = 0; i < long_term_traj_[0].getNbModules(); i++) {
+    alpha_i_.push_back(0.0);
+  }
+  max_cart_vel_ = 0;
+  std::vector<RobotReach::CapsuleVelocity> previous_capsule_velocities;
+  // iterate through each motion
+  for (int i = 0; i < getLength(); i++) {
+    Motion& motion = long_term_traj_[i];
+    double motion_vel = 0;
+    robot_reach.calculateAllTransformationMatricesAndCapsules(motion.getAngleRef());
+    for (int j = 0; j < long_term_traj_[i].getNbModules(); j++) {
+      RobotReach::CapsuleVelocity capsule_velocity = robot_reach.getVelocityOfCapsule(j, motion.getVelocityRef());
+      // Max velocity of this capsule
+      motion_vel = std::max(
+        robot_reach.getMaxCartVelocityOfCapsulePoint(j, capsule_velocity.first),
+        robot_reach.getMaxCartVelocityOfCapsulePoint(j, capsule_velocity.second)
+      );
+      if (i > 0) {
+        double dt = motion.getS() - long_term_traj_[i-1].getS();
+        double alpha_1 = (std::abs(capsule_velocity.first.first.norm() - previous_capsule_velocities[j].first.first.norm())) / dt;
+        double alpha_2 = (std::abs(capsule_velocity.second.first.norm() - previous_capsule_velocities[j].second.first.norm())) / dt;
+        alpha_i_[j] = std::max(alpha_i_[j], std::max(alpha_1, alpha_2));
+        previous_capsule_velocities[j] = capsule_velocity;
+      } else {
+        previous_capsule_velocities.push_back(capsule_velocity);
+      }
+    }
+    // Max velocity of this motion
+    motion.setMaximumCartesianVelocity(motion_vel);
+    // Max velocity of the entire LTT.
+    max_cart_vel_ = std::max(max_cart_vel_, motion_vel);
+  }
+}
+
 Motion LongTermTraj::interpolate(double s, double ds, double dds, double ddds, std::vector<double>& v_max_allowed,
                                  std::vector<double>& a_max_allowed, std::vector<double>& j_max_allowed) {
   // Example: s=2.465, sample_time = 0.004 --> ind = 616.25
