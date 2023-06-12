@@ -76,6 +76,11 @@ class RobotReach {
    */
   std::vector<Eigen::Vector3d> z_vectors_;
 
+  /**
+   * @brief Clamping between these capsule pairs is not possible
+   */
+  std::unordered_map<int, std::set<int>> unclampable_enclosures_map_;
+
  public:
   /**
    * @brief A robot empty constructor
