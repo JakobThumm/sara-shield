@@ -97,7 +97,7 @@ std::vector<reach_lib::Capsule> RobotReach::reach(Motion& start_config, Motion& 
   }
 }
 
-double RobotReach::velocityOfMotion(const Motion& motion) {
+double RobotReach::maxVelocityOfMotion(const Motion& motion) {
   calculateAllTransformationMatricesAndCapsules(motion.getAngleRef());
   double max_capsule_vel = 0;
   for (int i = 0; i < nb_joints_; ++i) {

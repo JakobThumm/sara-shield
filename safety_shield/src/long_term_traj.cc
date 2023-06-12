@@ -123,7 +123,7 @@ void LongTermTraj::calculate_max_acc_jerk_window(std::vector<Motion>& long_term_
 }
 
 double LongTermTraj::getMaxofMaximumCartesianVelocity() const {
-  return ltt_maximum_;
+  return max_cart_vel_;
 }
 
 double LongTermTraj::getMaxofMaximumCartesianVelocityWithS(double s) {
@@ -140,14 +140,14 @@ double LongTermTraj::getMaxofMaximumCartesianVelocityWithS(double s) {
 }
 
 void LongTermTraj::velocitiesOfAllMotions(RobotReach& robot_reach) {
-  ltt_maximum_ = 0;
+  max_cart_vel_ = 0;
   // iterate through each motion
   for (int i = 0; i < getLength(); i++) {
     Motion& motion = long_term_traj_[i];
-    double motion_vel = robot_reach.velocityOfMotion(motion);
+    double motion_vel = robot_reach.maxVelocityOfMotion(motion);
     motion.setMaximumCartesianVelocity(motion_vel);
     // save maximum of whole LTT for TRIVIAL_CARTESIAN
-    ltt_maximum_ = std::max(motion_vel, ltt_maximum_);
+    max_cart_vel_ = std::max(motion_vel, max_cart_vel_);
   }
 }
 

@@ -184,7 +184,7 @@ class RobotReach {
    * @param motion configuration of robot
    * @return maximum cartesian velocity of motion
    */
-  double velocityOfMotion(const Motion& motion);
+  double maxVelocityOfMotion(const Motion& motion);
 
   /**
    * @brief calculates maximum cartesian velocity for a specific capsule

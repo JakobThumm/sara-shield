@@ -20,13 +20,10 @@ q4: [0.0]
 q5: [0.0]
 q6: [0.0]
 
+alpha_i_max: 5.0
+
 # safety-rated speed specified by iso-norm
 v_safe: 0.1
-
-# standard full stop criteria (STANDARD) == 0
-# maximum of LTT (LTT_MAXIMUM) == 1
-# maximum of STP (STP_MAXIMUM) == 2
-safety_method: 2
 
 # APPROXIMATE == 0
 # EXACT == 1
