@@ -74,16 +74,13 @@ class LongTermTraj {
 
   /**
    * @brief maximum cartesian acceleration of robot joints (+ end effector!)
-   *
-   * alpha_i_.size() = nb_joints_ + 1
-   * TODO: Calculate this as overapproximation.
    */
   std::vector<double> alpha_i_;
 
   /**
    * @brief LTT-maximum of maximum cartesian velocity
    */
-  double ltt_maximum_;
+  double max_cart_vel_;
 
   /**
    * @brief sets maximum cartesian velocity for all Motions in LTT
@@ -97,7 +94,7 @@ class LongTermTraj {
    */
   LongTermTraj() : current_pos_(0), starting_index_(0), length_(1), sample_time_(0.01) {
     long_term_traj_.push_back(Motion(1));
-    for (int i = 0; i < 7; i++) {
+    for (int i = 0; i < 2; i++) {
       alpha_i_.push_back(1.0);
     }
   }
@@ -109,12 +106,12 @@ class LongTermTraj {
    * @param sliding_window_k Size of sliding window for max acc and jerk calculation
    */
   LongTermTraj(const std::vector<Motion>& long_term_traj, double sample_time, int starting_index = 0,
-               int sliding_window_k = 10)
+               int sliding_window_k = 10, double alpha_i_max = 1.0)
       : long_term_traj_(long_term_traj), sample_time_(sample_time), current_pos_(0), starting_index_(starting_index) {
     length_ = long_term_traj.size();
     calculate_max_acc_jerk_window(long_term_traj_, sliding_window_k);
-    for (int i = 0; i < 7; i++) {
-      alpha_i_.push_back(1.0);
+    for (int i = 0; i < long_term_traj_[0].getNbModules(); i++) {
+      alpha_i_.push_back(alpha_i_max);
     }
   }
 
@@ -253,6 +250,10 @@ class LongTermTraj {
    */
   inline std::vector<double> getMaxAccelerationWindow(int index) const {
     return max_acceleration_window_[getTrajectoryIndex(index)];
+  }
+
+  inline std::vector<double> getAlphaI() const {
+    return alpha_i_;
   }
 
   /**

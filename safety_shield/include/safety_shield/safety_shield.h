@@ -223,12 +223,11 @@ class SafetyShield {
   std::vector<double> j_max_ltt_;
 
   /**
-   * @brief maximum cartesian acceleration of robot joints (+ end effector!)
+   * @brief maximum cartesian acceleration of robot joints
    *
-   * alpha_i_.size() = nb_joints_ + 1
-   * TODO: Calculate this as overapproximation.
+   * @details Might not be used, depending on the LTT constructor used.
    */
-  std::vector<double> alpha_i_;
+  double alpha_i_max_;
 
   /**
    * @brief the stored long_term_trajectory
