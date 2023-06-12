@@ -101,7 +101,7 @@ double RobotReach::maxVelocityOfMotion(const Motion& motion) {
   calculateAllTransformationMatricesAndCapsules(motion.getAngleRef());
   double max_capsule_vel = 0;
   for (int i = 0; i < nb_joints_; ++i) {
-    double capsule_vel = velocityOfCapsule(i, motion.getVelocityRef());
+    double capsule_vel = getMaxVelocityOfCapsule(i, motion.getVelocityRef());
     max_capsule_vel = std::max(max_capsule_vel, capsule_vel);
   }
   return max_capsule_vel;
@@ -122,23 +122,39 @@ void RobotReach::calculateAllTransformationMatricesAndCapsules(const std::vector
   }
 }
 
-double RobotReach::velocityOfCapsule(const int capsule, std::vector<double> q_dot) {
-  double epsilon = 1e-6;
-  Eigen::Matrix<double, 6, Eigen::Dynamic> jacobian = getJacobian(capsule, robot_capsules_for_velocity_[capsule].p2_);
+RobotReach::CapsuleVelocity RobotReach::getVelocityOfCapsule(const int capsule, std::vector<double> q_dot){
   Eigen::VectorXd velocity = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(q_dot.data(), q_dot.size());
-  Eigen::Vector<double, 6> result = jacobian * velocity.segment(0, capsule + 1);
-  Eigen::Vector3d v = result.segment(0, 3);
-  Eigen::Vector3d omega = result.segment(3, 3);
-  if (omega.norm() < epsilon) {
+  // Point 1
+  Eigen::Matrix<double, 6, Eigen::Dynamic> jacobian1 = getJacobian(capsule, robot_capsules_for_velocity_[capsule].p1_);
+  Eigen::Vector<double, 6> result1 = jacobian1 * velocity.segment(0, capsule + 1);
+  RobotReach::SE3Vel vel1(result1.segment(0, 3), result1.segment(3, 3));
+  // Point 2
+  Eigen::Matrix<double, 6, Eigen::Dynamic> jacobian2 = getJacobian(capsule, robot_capsules_for_velocity_[capsule].p2_);
+  Eigen::Vector<double, 6> result2 = jacobian2 * velocity.segment(0, capsule + 1);
+  RobotReach::SE3Vel vel2(result2.segment(0, 3), result2.segment(3, 3));
+  return RobotReach::CapsuleVelocity(vel1, vel2);
+}
+
+double RobotReach::getMaxVelocityOfCapsule(const int capsule, std::vector<double> q_dot) {
+  RobotReach::CapsuleVelocity capsule_velocity = getVelocityOfCapsule(capsule, q_dot);
+  return std::max(
+    getMaxCartVelocityOfCapsulePoint(capsule, capsule_velocity.first),
+    getMaxCartVelocityOfCapsulePoint(capsule, capsule_velocity.second)
+  );
+}
+
+double RobotReach::getMaxCartVelocityOfCapsulePoint(const int capsule, const RobotReach::SE3Vel& velocity) {
+  double epsilon = 1e-6;
+  if (velocity.second.norm() < epsilon) {
     // no angular velocity
-    return v.norm();
+    return velocity.first.norm();
   } else {
     // with angular velocity
     if (velocity_method_ == APPROXIMATE) {
-      return approximateVelOfCapsule(capsule, v, omega);
+      return approximateVelOfCapsule(capsule, velocity.first, velocity.second);
     } else {
       // velocity_method_ == EXACT
-      return exactVelOfCapsule(capsule, v, omega);
+      return exactVelOfCapsule(capsule, velocity.first, velocity.second);
     }
   }
 }

@@ -38,6 +38,16 @@ class RobotReach {
     EXACT,
   };
 
+  /**
+   * @brief Velocity in SE3, where the first element is the linear velocity and the second the angular velocity
+   */
+  typedef std::pair<Eigen::Vector3d, Eigen::Vector3d> SE3Vel;
+
+  /**
+   * @brief Veloctiy in SE3 of the two points that define a capsule
+   */
+  typedef std::pair<SE3Vel, SE3Vel> CapsuleVelocity;
+
  private:
   /**
    * @brief the number of joints of the robot
@@ -187,16 +197,34 @@ class RobotReach {
   double maxVelocityOfMotion(const Motion& motion);
 
   /**
-   * @brief calculates maximum cartesian velocity for a specific capsule
+   * @brief Calculate the cartesian velocity of both defining point of a specific capsule
+   * @assumption calculateAlltransformationMatricesAndCapsules() was called before
+   * @param capsule which capsule
+   * @param q_dot velocity configuration of robot
+   * @return Velocity in SE3 of both Capusle points
+   */
+  CapsuleVelocity getVelocityOfCapsule(const int capsule, std::vector<double> q_dot);
+
+  /**
+   * @brief Get the maximum Cartesian velocity of a specific capsule point
+   * 
+   * @param capsule 
+   * @param velocity velocity in SE3 of capsule point
+   * @return double maximum cartesian velocity of capsule point
+   */
+  double getMaxCartVelocityOfCapsulePoint(const int capsule, const SE3Vel& velocity);
+
+  /**
+   * @brief Calculate the maximum norm of the cartesian velocity for a specific capsule
+   * @assumption calculateAlltransformationMatricesAndCapsules() was called before
    * @param capsule which capsule
    * @param q_dot velocity configuration of robot
    * @return maximum cartesian velocity of capsule
    */
-  double velocityOfCapsule(const int capsule, std::vector<double> q_dot);
+  double getMaxVelocityOfCapsule(const int capsule, std::vector<double> q_dot);
 
   /**
    * @brief calculates all transformation matrices and capsules for a specific robot configuration and sets them
-   * @assumption velocityOfMotion was called before
    * @param q vector of robot angles
    */
   void calculateAllTransformationMatricesAndCapsules(const std::vector<double>& q);
