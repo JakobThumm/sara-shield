@@ -511,7 +511,7 @@ class SafetyShield {
     const std::vector<double> &init_qpos,
     double current_time,
     const std::vector<reach_lib::AABB> &environment_elements,
-    ShieldType shield_type = ShieldType::SSM);
+    ShieldType shield_type);
 
   /**
    * @brief Computes the new trajectory depending on dq and if the previous path is safe and publishes it

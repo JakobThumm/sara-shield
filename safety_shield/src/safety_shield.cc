@@ -175,7 +175,7 @@ SafetyShield::SafetyShield(double sample_time, std::string trajectory_config_fil
 
 void SafetyShield::reset(double init_x, double init_y, double init_z, double init_roll, double init_pitch,
                          double init_yaw, const std::vector<double>& init_qpos, double current_time,
-                         const std::vector<reach_lib::AABB> &environment_elements, ShieldType shield_type) {
+                         const std::vector<reach_lib::AABB> &environment_elements, ShieldType shield_type = ShieldType::SSM) {
   shield_type_ = shield_type;
   robot_reach_->reset(init_x, init_y, init_z, init_roll, init_pitch, init_yaw);
   human_reach_->reset();
