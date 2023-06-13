@@ -26,7 +26,7 @@ SafetyShield::SafetyShield(
       HumanReach* human_reach,
       Verify* verify,
       const std::vector<reach_lib::AABB> &environment_elements,
-      ShieldType shield_type):
+      ShieldType shield_type = ShieldType::SSM):
   nb_joints_(nb_joints),
   max_s_stop_(max_s_stop),
   v_max_allowed_(v_max_allowed),
@@ -67,7 +67,7 @@ SafetyShield::SafetyShield(
 SafetyShield::SafetyShield(double sample_time, std::string trajectory_config_file, std::string robot_config_file,
                            std::string mocap_config_file, double init_x, double init_y, double init_z, double init_roll,
                            double init_pitch, double init_yaw, const std::vector<double>& init_qpos,
-                           const std::vector<reach_lib::AABB>& environment_elements, ShieldType shield_type)
+                           const std::vector<reach_lib::AABB>& environment_elements, ShieldType shield_type = ShieldType::SSM)
     : sample_time_(sample_time), path_s_(0), path_s_discrete_(0),
     environment_elements_(environment_elements),
     shield_type_(shield_type) 

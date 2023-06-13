@@ -435,20 +435,20 @@ class SafetyShield {
    * @param shield_type What type of safety shield to use, select from `OFF`, `SSM`, or `PFL`
    */
   SafetyShield(
-      int nb_joints, 
-      double sample_time, 
-      double max_s_stop, 
-      const std::vector<double> &v_max_allowed, 
-      const std::vector<double> &a_max_allowed, 
-      const std::vector<double> &j_max_allowed, 
-      const std::vector<double> &a_max_path, 
-      const std::vector<double> &j_max_path, 
-      const LongTermTraj &long_term_trajectory, 
-      RobotReach* robot_reach,
-      HumanReach* human_reach,
-      Verify* verify,
-      const std::vector<reach_lib::AABB> &environment_elements,
-      ShieldType shield_type = ShieldType::SSM);
+    int nb_joints, 
+    double sample_time, 
+    double max_s_stop, 
+    const std::vector<double> &v_max_allowed, 
+    const std::vector<double> &a_max_allowed, 
+    const std::vector<double> &j_max_allowed, 
+    const std::vector<double> &a_max_path, 
+    const std::vector<double> &j_max_path, 
+    const LongTermTraj &long_term_trajectory, 
+    RobotReach* robot_reach,
+    HumanReach* human_reach,
+    Verify* verify,
+    const std::vector<reach_lib::AABB> &environment_elements,
+    ShieldType shield_type);
 
   /**
    * @brief Construct a new Safety Shield object from config files.
@@ -467,20 +467,20 @@ class SafetyShield {
    * @param environment_elements Elements of the environment (as AABB)
    * @param shield_type What type of safety shield to use, select from `OFF`, `SSM`, or `PFL`
    */
-  explicit SafetyShield(
-      double sample_time,
-      std::string trajectory_config_file,
-      std::string robot_config_file,
-      std::string mocap_config_file,
-      double init_x, 
-      double init_y, 
-      double init_z, 
-      double init_roll, 
-      double init_pitch, 
-      double init_yaw,
-      const std::vector<double> &init_qpos,
-      const std::vector<reach_lib::AABB> &environment_elements,
-      ShieldType shield_type = ShieldType::SSM);
+  SafetyShield(
+    double sample_time,
+    std::string trajectory_config_file,
+    std::string robot_config_file,
+    std::string mocap_config_file,
+    double init_x, 
+    double init_y, 
+    double init_z, 
+    double init_roll, 
+    double init_pitch, 
+    double init_yaw,
+    const std::vector<double> &init_qpos,
+    const std::vector<reach_lib::AABB> &environment_elements,
+    ShieldType shield_type);
 
   /**
    * @brief A SafetyShield destructor
@@ -502,16 +502,16 @@ class SafetyShield {
    * @param shield_type What type of safety shield to use, select from `OFF`, `SSM`, or `PFL`
    */
   void reset(
-      double init_x, 
-      double init_y, 
-      double init_z, 
-      double init_roll, 
-      double init_pitch, 
-      double init_yaw,
-      const std::vector<double> &init_qpos,
-      double current_time,
-      const std::vector<reach_lib::AABB> &environment_elements,
-      ShieldType shield_type = ShieldType::SSM);
+    double init_x, 
+    double init_y, 
+    double init_z, 
+    double init_roll, 
+    double init_pitch, 
+    double init_yaw,
+    const std::vector<double> &init_qpos,
+    double current_time,
+    const std::vector<reach_lib::AABB> &environment_elements,
+    ShieldType shield_type = ShieldType::SSM);
 
   /**
    * @brief Computes the new trajectory depending on dq and if the previous path is safe and publishes it
