@@ -123,15 +123,7 @@ class LongTermTraj {
    * @param robot_reach needed for forward kinematics
    */
   LongTermTraj(const std::vector<Motion>& long_term_traj, double sample_time, RobotReach& robot_reach,
-               int starting_index = 0, int sliding_window_k = 10)
-      : long_term_traj_(long_term_traj), sample_time_(sample_time), current_pos_(0), starting_index_(starting_index) {
-    length_ = long_term_traj.size();
-    calculate_max_acc_jerk_window(long_term_traj_, sliding_window_k);
-    for (int i = 0; i < 7; i++) {
-      alpha_i_.push_back(1.0);
-    }
-    velocitiesOfAllMotions(robot_reach);
-  }
+               int starting_index = 0, int sliding_window_k = 10);
   /**
    * @brief Destroy the Long Term Traj object
    */

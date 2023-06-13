@@ -108,6 +108,7 @@ SafetyShield::SafetyShield(double sample_time, std::string trajectory_config_fil
   robot_reach_->setVelocityMethod(velocity_method);
   spdlog::info("velocity_method = {}", velocity_method);
   // Initialize the long term trajectory
+  sliding_window_k_ = (int)std::floor(max_s_stop_ / sample_time_);
   std::vector<Motion> long_term_traj;
   long_term_traj.push_back(Motion(0.0, init_qpos));
   if (shield_type_ == ShieldType::SSM || shield_type_ == ShieldType::OFF) {
@@ -598,15 +599,17 @@ Motion SafetyShield::step(double cycle_begin_time) {
         if (success) {
           new_ltt_ = true;
           new_ltt_processed_ = false;
-          alpha_i = new_long_term_trajectory_.getAlphaI();
         } else {
           new_ltt_ = false;
-          alpha_i = long_term_trajectory_.getAlphaI();
         }
       } else {
         new_ltt_ = false;
-        alpha_i = long_term_trajectory_.getAlphaI();
       }
+    }
+    if (new_ltt_) {
+      alpha_i = new_long_term_trajectory_.getAlphaI();
+    } else {
+      alpha_i = long_term_trajectory_.getAlphaI();
     }
     // If there is a new long term trajectory (LTT), always override is_safe with false.
     if (new_ltt_ && !new_ltt_processed_) {

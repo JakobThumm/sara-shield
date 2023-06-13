@@ -9,36 +9,23 @@
 #include "safety_shield/safety_shield.h"
 #include "safety_shield/verify.h"
 
-int main () {
-    double sample_time = 0.001; 
-    // path depends on where your build folder is. Maybe you need to replace `../` with `../safety_shield/`
-    std::string trajectory_config_file = std::string("../config/trajectory_parameters_schunk.yaml");
-    std::string robot_config_file = std::string("../config/robot_parameters_schunk.yaml");
-    std::string mocap_config_file = std::string("../config/cmu_mocap_no_hand.yaml");
-    reach_lib::AABB table = reach_lib::AABB({-1.0, -1.0, -0.1}, {1.0, 1.0, 0.0});
-    std::vector<reach_lib::AABB> environment_elements = {table};
-    double init_x = 0.0;
-    double init_y = 0.0;
-    double init_z = 0.0;
-    double init_roll = 0.0;
-    double init_pitch = 0.0;
-    double init_yaw = 0.0;
-    std::vector<double> init_qpos = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
-    safety_shield::ShieldType shield_type = safety_shield::ShieldType::SSM;
-    safety_shield::SafetyShield shield = safety_shield::SafetyShield(
-      sample_time, 
-      trajectory_config_file,
-      robot_config_file,
-      mocap_config_file,
-      init_x, 
-      init_y, 
-      init_z, 
-      init_roll, 
-      init_pitch, 
-      init_yaw,
-      init_qpos,
-      environment_elements,
-      shield_type);
+int main() {
+  double sample_time = 0.001;
+  std::string trajectory_config_file = std::string("../config/trajectory_parameters_schunk.yaml");
+  std::string robot_config_file = std::string("../config/robot_parameters_schunk.yaml");
+  std::string mocap_config_file = std::string("../config/cmu_mocap_no_hand.yaml");
+  double init_x = 0.0;
+  double init_y = 0.0;
+  double init_z = 0.0;
+  double init_roll = 0.0;
+  double init_pitch = 0.0;
+  double init_yaw = 0.0;
+  std::vector<double> init_qpos = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+  safety_shield::ShieldType shield_type = safety_shield::ShieldType::PFL;
+
+  safety_shield::SafetyShield shield =
+      safety_shield::SafetyShield(sample_time, trajectory_config_file, robot_config_file, mocap_config_file, init_x,
+                                  init_y, init_z, init_roll, init_pitch, init_yaw, init_qpos, shield_type);
 
   // Dummy human measurement
   std::vector<reach_lib::Point> dummy_human_meas(21);
@@ -53,7 +40,7 @@ int main () {
       t += 0.001;
       shield.humanMeasurement(dummy_human_meas, t);
       t += 0.003;
-      if (i % 1 == 0) {  // % 2
+      if (i % 10 == 0) {  // % 2
         std::vector<double> qpos{0.2 * t, t, t,
                                  t,       t, std::min(t, 3.1)};  // qpos{0.2*t, 0.0, 0.0, 0.0, 0.0, std::min(t, 3.1)};
         std::vector<double> qvel{t + 100, t + 100, t + 100,
