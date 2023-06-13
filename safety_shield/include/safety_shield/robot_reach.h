@@ -137,7 +137,6 @@ class RobotReach {
   inline void forwardKinematic(const double& q, const int& n_joint, Eigen::Matrix4d& T) {
     // Transform T to new joint coordinate system
     T = T * transformation_matrices_[n_joint + 1];
-    ;
     Eigen::Matrix4d Rz;
     Rz << cos(q), -sin(q), 0, 0, sin(q), cos(q), 0, 0, 0, 0, 1, 0, 0, 0, 0, 1;
     T = T * Rz;
