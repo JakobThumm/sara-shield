@@ -26,7 +26,7 @@ LongTermTraj::LongTermTraj(const std::vector<Motion>& long_term_traj, double sam
         robot_reach.getMaxCartVelocityOfCapsulePoint(j, capsule_velocity.second)
       );
       if (i > 0) {
-        double dt = motion.getS() - long_term_traj_[i-1].getS();
+        double dt = motion.getTime() - long_term_traj_[i-1].getTime();
         double alpha_1 = (std::abs(capsule_velocity.first.first.norm() - previous_capsule_velocities[j].first.first.norm())) / dt;
         double alpha_2 = (std::abs(capsule_velocity.second.first.norm() - previous_capsule_velocities[j].second.first.norm())) / dt;
         alpha_i_[j] = std::max(alpha_i_[j], std::max(alpha_1, alpha_2));
