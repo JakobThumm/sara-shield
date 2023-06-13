@@ -40,7 +40,7 @@ int main() {
       t += 0.001;
       shield.humanMeasurement(dummy_human_meas, t);
       t += 0.003;
-      if (i % 1 == 0) {  // % 2
+      if (i % 10 == 0) {  // % 2
         std::vector<double> qpos{0.2 * t, t, t,
                                  t,       t, std::min(t, 3.1)};  // qpos{0.2*t, 0.0, 0.0, 0.0, 0.0, std::min(t, 3.1)};
         std::vector<double> qvel{t + 100, t + 100, t + 100,
