@@ -16,7 +16,7 @@ SafetyShield::SafetyShield(int nb_joints, double sample_time, double max_s_stop,
                            const std::vector<double>& v_max_allowed, const std::vector<double>& a_max_allowed,
                            const std::vector<double>& j_max_allowed, const std::vector<double>& a_max_path,
                            const std::vector<double>& j_max_path, const LongTermTraj& long_term_trajectory,
-                           RobotReach* robot_reach, HumanReach* human_reach, Verify* verify, ShieldType shield_type)
+                           RobotReach* robot_reach, HumanReach* human_reach, Verify* verify, ShieldType shield_type = ShieldType::SSM)
     : nb_joints_(nb_joints),
       max_s_stop_(max_s_stop),
       v_max_allowed_(v_max_allowed),
@@ -55,7 +55,7 @@ SafetyShield::SafetyShield(int nb_joints, double sample_time, double max_s_stop,
 SafetyShield::SafetyShield(double sample_time, std::string trajectory_config_file, std::string robot_config_file,
                            std::string mocap_config_file, double init_x, double init_y, double init_z, double init_roll,
                            double init_pitch, double init_yaw, const std::vector<double>& init_qpos,
-                           ShieldType shield_type)
+                           ShieldType shield_type = ShieldType::SSM)
     : sample_time_(sample_time), path_s_(0), path_s_discrete_(0), shield_type_(shield_type) {
   ///////////// Build robot reach
   YAML::Node robot_config = YAML::LoadFile(robot_config_file);
@@ -152,7 +152,7 @@ SafetyShield::SafetyShield(double sample_time, std::string trajectory_config_fil
 
 void SafetyShield::reset(double init_x, double init_y, double init_z, double init_roll, double init_pitch,
                          double init_yaw, const std::vector<double>& init_qpos, double current_time,
-                         ShieldType shield_type) {
+                         ShieldType shield_type = ShieldType::SSM) {
   shield_type_ = shield_type;
   robot_reach_->reset(init_x, init_y, init_z, init_roll, init_pitch, init_yaw);
   human_reach_->reset();
