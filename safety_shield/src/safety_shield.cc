@@ -91,7 +91,7 @@ SafetyShield::SafetyShield(double sample_time, std::string trajectory_config_fil
   if (shield_type_ == ShieldType::SSM || shield_type_ == ShieldType::OFF) {
     long_term_trajectory_ = LongTermTraj(long_term_traj, sample_time_, path_s_discrete_, sliding_window_k_, alpha_i_max_);
   } else {
-    long_term_trajectory_ = LongTermTraj(long_term_traj, sample_time_, *robot_reach_);
+    long_term_trajectory_ = LongTermTraj(long_term_traj, sample_time_, *robot_reach_, path_s_discrete_, sliding_window_k_);
   }
   //////////// Build human reach
   YAML::Node human_config = YAML::LoadFile(mocap_config_file);
@@ -182,7 +182,7 @@ void SafetyShield::reset(double init_x, double init_y, double init_z, double ini
   if (shield_type_ == ShieldType::SSM || shield_type_ == ShieldType::OFF) {
     long_term_trajectory_ = LongTermTraj(long_term_traj, sample_time_, path_s_discrete_, sliding_window_k_, alpha_i_max_);
   } else {
-    long_term_trajectory_ = LongTermTraj(long_term_traj, sample_time_, *robot_reach_);
+    long_term_trajectory_ = LongTermTraj(long_term_traj, sample_time_, *robot_reach_, path_s_discrete_, sliding_window_k_);
   }
   Motion goal_motion = computesPotentialTrajectory(is_safe_, prev_dq);
   next_motion_ = determineNextMotion(is_safe_);
