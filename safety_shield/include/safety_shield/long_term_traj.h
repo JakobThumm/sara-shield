@@ -83,6 +83,14 @@ class LongTermTraj {
   double max_cart_vel_;
 
   /**
+   * @brief The SE3 velocities of the robot for each capsule for each motion.
+   * 
+   * @details capsule_velocities_[motion][capsule]
+   *    This is used in clamping prevention for the velocity criterion. 
+   */
+  std::vector<std::vector<RobotReach::CapsuleVelocity>> capsule_velocities_;
+
+  /**
    * @brief sets maximum cartesian velocity for all Motions in LTT
    * @param[in] robot_reach is used to calculate jacobians and velocities
    */

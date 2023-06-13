@@ -5,34 +5,33 @@ namespace safety_shield {
 LongTermTraj::LongTermTraj(const std::vector<Motion>& long_term_traj, double sample_time, RobotReach& robot_reach,
                            int starting_index, int sliding_window_k)
     : long_term_traj_(long_term_traj), sample_time_(sample_time), current_pos_(0), starting_index_(starting_index) {
+  int nb_modules = long_term_traj_[0].getNbModules();
   length_ = long_term_traj.size();
   calculate_max_acc_jerk_window(long_term_traj_, sliding_window_k);
   // Initialize alpha_i_ with 0
-  for (int i = 0; i < long_term_traj_[0].getNbModules(); i++) {
+  for (int i = 0; i < nb_modules; i++) {
     alpha_i_.push_back(0.0);
   }
   max_cart_vel_ = 0;
-  std::vector<RobotReach::CapsuleVelocity> previous_capsule_velocities;
+  capsule_velocities_.reserve(getLength());
   // iterate through each motion
   for (int i = 0; i < getLength(); i++) {
+    capsule_velocities_[i].reserve(nb_modules);
     Motion& motion = long_term_traj_[i];
     double motion_vel = 0;
     robot_reach.calculateAllTransformationMatricesAndCapsules(motion.getAngleRef());
-    for (int j = 0; j < long_term_traj_[i].getNbModules(); j++) {
-      RobotReach::CapsuleVelocity capsule_velocity = robot_reach.getVelocityOfCapsule(j, motion.getVelocityRef());
+    for (int j = 0; j < nb_modules; j++) {
+      capsule_velocities_[i][j] = robot_reach.getVelocityOfCapsule(j, motion.getVelocityRef());
       // Max velocity of this capsule
       motion_vel = std::max(
-        robot_reach.getMaxCartVelocityOfCapsulePoint(j, capsule_velocity.first),
-        robot_reach.getMaxCartVelocityOfCapsulePoint(j, capsule_velocity.second)
+        robot_reach.getMaxCartVelocityOfCapsulePoint(j, capsule_velocities_[i][j].first),
+        robot_reach.getMaxCartVelocityOfCapsulePoint(j, capsule_velocities_[i][j].second)
       );
       if (i > 0) {
         double dt = motion.getTime() - long_term_traj_[i-1].getTime();
-        double alpha_1 = (std::abs(capsule_velocity.first.first.norm() - previous_capsule_velocities[j].first.first.norm())) / dt;
-        double alpha_2 = (std::abs(capsule_velocity.second.first.norm() - previous_capsule_velocities[j].second.first.norm())) / dt;
+        double alpha_1 = (std::abs(capsule_velocities_[i][j].first.first.norm() - capsule_velocities_[i-1][j].first.first.norm())) / dt;
+        double alpha_2 = (std::abs(capsule_velocities_[i][j].second.first.norm() - capsule_velocities_[i-1][j].second.first.norm())) / dt;
         alpha_i_[j] = std::max(alpha_i_[j], std::max(alpha_1, alpha_2));
-        previous_capsule_velocities[j] = capsule_velocity;
-      } else {
-        previous_capsule_velocities.push_back(capsule_velocity);
       }
     }
     // Max velocity of this motion
