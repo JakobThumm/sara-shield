@@ -128,10 +128,12 @@ RobotReach::CapsuleVelocity RobotReach::getVelocityOfCapsule(const int capsule, 
   Eigen::Matrix<double, 6, Eigen::Dynamic> jacobian1 = getJacobian(capsule, robot_capsules_for_velocity_[capsule].p1_);
   Eigen::Vector<double, 6> result1 = jacobian1 * velocity.segment(0, capsule + 1);
   RobotReach::SE3Vel vel1(result1.segment(0, 3), result1.segment(3, 3));
-  // Point 2
-  Eigen::Matrix<double, 6, Eigen::Dynamic> jacobian2 = getJacobian(capsule, robot_capsules_for_velocity_[capsule].p2_);
-  Eigen::Vector<double, 6> result2 = jacobian2 * velocity.segment(0, capsule + 1);
-  RobotReach::SE3Vel vel2(result2.segment(0, 3), result2.segment(3, 3));
+  // Point 2: v_2 = v_1 + \omega_1 \times (p_2 - p_1), \omega_2 = \omega_1
+  RobotReach::SE3Vel vel2(
+    vel1.first + vel1.second.cross(pointTo3dVector(
+      robot_capsules_for_velocity_[capsule].p2_ - robot_capsules_for_velocity_[capsule].p1_
+    )),
+    vel1.second);
   return RobotReach::CapsuleVelocity(vel1, vel2);
 }
 
