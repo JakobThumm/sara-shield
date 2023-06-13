@@ -13,10 +13,10 @@ LongTermTraj::LongTermTraj(const std::vector<Motion>& long_term_traj, double sam
     alpha_i_.push_back(0.0);
   }
   max_cart_vel_ = 0;
-  capsule_velocities_.reserve(getLength());
+  capsule_velocities_.resize(length_);
   // iterate through each motion
-  for (int i = 0; i < getLength(); i++) {
-    capsule_velocities_[i].reserve(nb_modules);
+  for (int i = 0; i < length_; i++) {
+    capsule_velocities_[i].resize(nb_modules);
     Motion& motion = long_term_traj_[i];
     double motion_vel = 0;
     robot_reach.calculateAllTransformationMatricesAndCapsules(motion.getAngleRef());
