@@ -575,15 +575,17 @@ Motion SafetyShield::step(double cycle_begin_time) {
         if (success) {
           new_ltt_ = true;
           new_ltt_processed_ = false;
-          alpha_i = new_long_term_trajectory_.getAlphaI();
         } else {
           new_ltt_ = false;
-          alpha_i = long_term_trajectory_.getAlphaI();
         }
       } else {
         new_ltt_ = false;
-        alpha_i = long_term_trajectory_.getAlphaI();
       }
+    }
+    if (new_ltt_) {
+      alpha_i = new_long_term_trajectory_.getAlphaI();
+    } else {
+      alpha_i = long_term_trajectory_.getAlphaI();
     }
     // If there is a new long term trajectory (LTT), always override is_safe with false.
     if (new_ltt_ && !new_ltt_processed_) {
