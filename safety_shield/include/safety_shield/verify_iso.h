@@ -136,6 +136,19 @@ class VerifyISO : public Verify {
       double d_human);
 
   /**
+   * @brief Calculate the normal vector of the AABB surface pointing towards the robot capsule.
+   * 
+   * @param[in] robot_capsule Robot capsule.
+   * @param[in] environment_element Environment element as axis-aligned bounding box.
+   * @param[out] normal Normal vector of the AABB surface pointing towards the robot capsule.
+   * @return true calculation successful
+   * @return false calculation failed
+   */
+  bool calculate_normal_vector(const reach_lib::Capsule& robot_capsule,
+      const reach_lib::AABB& environment_element,
+      Eigen::Vector3d& normal);
+
+  /**
    * @brief Check if an environmentally constrained collision (ECC) could occur with the given human capsule.
    * 
    * @param robot_collisions Robot capsule indices in contact with the given human capsule. 
@@ -143,6 +156,9 @@ class VerifyISO : public Verify {
    * @param environment_collisions Environment element indices in contact with the given human capsule.
    * @param environment_elements List of environment elements.
    * @param d_human Human diameter.
+   * @param robot_capsule_velocities_start Pointer to the start of the list of robot capsule velocities.
+   * @param robot_capsule_velocities_end Pointer to the end of the list of robot capsule velocities.
+   * @param 
    * @return true if ECC could occur
    * @return false if ECC cannot occur
    */
@@ -150,7 +166,9 @@ class VerifyISO : public Verify {
       const std::vector<reach_lib::Capsule>& robot_capsules,
       const std::vector<int>& environment_collisions,
       const std::vector<reach_lib::AABB>& environment_elements,
-      double d_human);
+      double d_human,
+      const std::vector<std::vector<RobotReach::CapsuleVelocity>>::const_iterator& robot_capsule_velocities_start,
+      const std::vector<std::vector<RobotReach::CapsuleVelocity>>::const_iterator& robot_capsule_velocities_end);
 
   /**
    * @brief Verify if clamping between the robot, human, and environment is possible.

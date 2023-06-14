@@ -114,20 +114,107 @@ bool VerifyISO::self_constrained_collision_check(const std::vector<int>& robot_c
   return false;
 }
 
+bool VerifyISO::calculate_normal_vector(const reach_lib::Capsule& robot_capsule,
+      const reach_lib::AABB& environment_element,
+      Eigen::Vector3d& normal) {
+  // Calculate the normal vectors of the environment element
+  std::vector<Eigen::Vector3d> normals;
+  for (int i = 0; i < 3; i++) {
+    // Check if robot capsule is left of left face of AABB
+    bool left_of_face = false;
+    double pos_1, pos_2;
+    switch(i) {
+      case 0:
+        pos_1 = robot_capsule.p1_.x;
+        pos_2 = robot_capsule.p2_.x;
+        break;
+      case 1:
+        pos_1 = robot_capsule.p1_.y;
+        pos_2 = robot_capsule.p2_.y;
+        break;
+      case 2:
+        pos_1 = robot_capsule.p1_.z;
+        pos_2 = robot_capsule.p2_.z;
+        break;
+      default:
+        std::cout << "Error: Invalid index for normal vector calculation." << std::endl;
+        return false;
+    }
+    if (pos_1 < environment_element.min_[i] || pos_2 < environment_element.min_[i]) {
+      Eigen::Vector3d n(0, 0, 0);
+      n[i] = -1;
+      normals.push_back(n);
+      left_of_face = true;
+    }
+    // Check if robot capsule is right of right face of AABB
+    bool right_of_face = false;
+    if (pos_1 > environment_element.max_[i] || pos_2 > environment_element.max_[i]) {
+      Eigen::Vector3d n(0, 0, 0);
+      n[i] = 1;
+      normals.push_back(n);
+      right_of_face = true;
+    }
+    if (left_of_face && right_of_face) {
+      // Robot capsule is outside of environment element
+      return false;
+    }
+  }
+  if (normals.size() == 0) {
+    // Robot capsule is inside of environment element
+    return false;
+  }
+  assert(normals.size() <= 3);
+  // Calculate the final normal vector of the environment element
+  normal << 0.0, 0.0, 0.0;
+  for (const Eigen::Vector3d& n : normals) {
+    normal += n;
+  }
+  normal.normalize();
+  return true;
+}
+
 bool VerifyISO::environmentally_constrained_collision_check(const std::vector<int>& robot_collisions,
       const std::vector<reach_lib::Capsule>& robot_capsules,
       const std::vector<int>& environment_collisions,
       const std::vector<reach_lib::AABB>& environment_elements,
-      double d_human) {
+      double d_human,
+      const std::vector<std::vector<RobotReach::CapsuleVelocity>>::const_iterator& robot_capsule_velocities_start,
+      const std::vector<std::vector<RobotReach::CapsuleVelocity>>::const_iterator& robot_capsule_velocities_end) {
   // Check distance between link and environment
   // by expanding the link capsule by the human body diameter
   // and checking for intersection with the environment element.
   for (const int& environment_collision : environment_collisions) {
     for (const int& robot_collision : robot_collisions) {
       reach_lib::Capsule expanded_robot_capsule = create_expanded_capsule(robot_capsules[robot_collision], d_human);
-      if (reach_lib::intersections::capsule_aabb_intersection(expanded_robot_capsule,
+      if (!reach_lib::intersections::capsule_aabb_intersection(expanded_robot_capsule,
           environment_elements[environment_collision])) {
+        continue;
+      }
+      // Check if the link is moving towards the environment element
+      // Find normal vector on the environment element pointing towards the link
+      Eigen::Vector3d normal;
+      if (!calculate_normal_vector(robot_capsules[robot_collision], environment_elements[environment_collision], normal)) {
+        // If the calculation of the normal vector fails, the velocity criterion fails.
         return true;
+      }
+      // Calculate maximal velocity error
+      // \epsilon = 1/2 \Delta s (\alpha_i + \beta_i * r_i)
+      double vel_error = 0;  // TODO
+      // For every velocity of the link, check if the link is moving towards the environment element normal vector
+      std::vector<std::vector<RobotReach::CapsuleVelocity>>::const_iterator robot_capsule_velocities_it = robot_capsule_velocities_start;
+      while (robot_capsule_velocities_it != robot_capsule_velocities_end) {
+        // d = v \cdot n
+        double d1 = (*robot_capsule_velocities_it)[robot_collision].first.first.dot(normal);
+        double d2 = (*robot_capsule_velocities_it)[robot_collision].second.first.dot(normal);
+        // d_{\omega} >= - |r| * |n x \omega|
+        double dw1 = - abs(robot_capsules[robot_collision].r_) * normal.cross((*robot_capsule_velocities_it)[robot_collision].first.second).norm();
+        double dw2 = - abs(robot_capsules[robot_collision].r_) * normal.cross((*robot_capsule_velocities_it)[robot_collision].second.second).norm();
+        // d + d_{\omega} < 0 -> link is moving towards environment element
+        if (d1 + dw1 < vel_error || d2 + dw2 < vel_error) {
+          // Link is moving towards environment element
+          return true;
+        }
+        robot_capsule_velocities_it++;
       }
     }
   }
@@ -141,9 +228,9 @@ bool VerifyISO::clamping_possible(const std::vector<reach_lib::Capsule>& robot_c
       const std::unordered_map<int, std::set<int>>& unclampable_enclosures_map,
       std::vector<std::vector<RobotReach::CapsuleVelocity>>::const_iterator robot_capsule_velocities_it,
       std::vector<std::vector<RobotReach::CapsuleVelocity>>::const_iterator robot_capsule_velocities_end) {
-  // TODO: Write more modular!
   // Build a map that maps the robot capsule/environment indices in collision with the human capsules
   // We choose this indexing to be in line with the paper.
+  assert(robot_capsules.size() == robot_capsule_velocities_it->size());
   std::unordered_map<int, std::vector<int>> robot_collision_map;
   std::unordered_map<int, std::vector<int>> environment_collision_map;
   build_contact_maps(robot_capsules, human_capsules, environment_elements, robot_collision_map, environment_collision_map);
@@ -160,7 +247,8 @@ bool VerifyISO::clamping_possible(const std::vector<reach_lib::Capsule>& robot_c
       continue;
     }
     if (environmentally_constrained_collision_check(robot_collisions.second, robot_capsules,
-        environment_collision_map.at(human_index), environment_elements, d_human)) {
+        environment_collision_map.at(human_index), environment_elements, d_human,
+        robot_capsule_velocities_it, robot_capsule_velocities_end)) {
       return true;
     }
   }
