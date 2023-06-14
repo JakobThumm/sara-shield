@@ -133,33 +133,33 @@ RobotReach::CapsuleVelocity RobotReach::getVelocityOfCapsule(const int capsule, 
   RobotReach::SE3Vel vel1(result1.segment(0, 3), result1.segment(3, 3));
   // Point 2: v_2 = v_1 + \omega_1 \times (p_2 - p_1), \omega_2 = \omega_1
   RobotReach::SE3Vel vel2(
-    vel1.first + vel1.second.cross(pointTo3dVector(
+    vel1.v + vel1.w.cross(pointTo3dVector(
       robot_capsules_for_velocity_[capsule].p2_ - robot_capsules_for_velocity_[capsule].p1_
     )),
-    vel1.second);
+    vel1.w);
   return RobotReach::CapsuleVelocity(vel1, vel2);
 }
 
 double RobotReach::getMaxVelocityOfCapsule(const int capsule, std::vector<double> q_dot) {
   RobotReach::CapsuleVelocity capsule_velocity = getVelocityOfCapsule(capsule, q_dot);
   return std::max(
-    getMaxCartVelocityOfCapsulePoint(capsule, capsule_velocity.first),
-    getMaxCartVelocityOfCapsulePoint(capsule, capsule_velocity.second)
+    getMaxCartVelocityOfCapsulePoint(capsule, capsule_velocity.v1),
+    getMaxCartVelocityOfCapsulePoint(capsule, capsule_velocity.v2)
   );
 }
 
 double RobotReach::getMaxCartVelocityOfCapsulePoint(const int capsule, const RobotReach::SE3Vel& velocity) {
   double epsilon = 1e-6;
-  if (velocity.second.norm() < epsilon) {
+  if (velocity.w.norm() < epsilon) {
     // no angular velocity
-    return velocity.first.norm();
+    return velocity.v.norm();
   } else {
     // with angular velocity
     if (velocity_method_ == APPROXIMATE) {
-      return approximateVelOfCapsule(capsule, velocity.first, velocity.second);
+      return approximateVelOfCapsule(capsule, velocity.v, velocity.w);
     } else {
       // velocity_method_ == EXACT
-      return exactVelOfCapsule(capsule, velocity.first, velocity.second);
+      return exactVelOfCapsule(capsule, velocity.v, velocity.w);
     }
   }
 }

@@ -78,6 +78,11 @@ class LongTermTraj {
   std::vector<double> alpha_i_;
 
   /**
+   * @brief maximum angular acceleration of robot joints (+ end effector!)
+   */
+  std::vector<double> beta_i_;
+
+  /**
    * @brief LTT-maximum of maximum cartesian velocity
    */
   double max_cart_vel_;
@@ -285,8 +290,22 @@ class LongTermTraj {
     return max_acceleration_window_[getTrajectoryIndex(index)];
   }
 
+  /**
+   * @brief Get the Alpha I object
+   * 
+   * @return std::vector<double> 
+   */
   inline std::vector<double> getAlphaI() const {
     return alpha_i_;
+  }
+
+  /**
+   * @brief Get the Beta I object
+   * 
+   * @return std::vector<double> 
+   */
+  inline std::vector<double> getBetaI() const {
+    return beta_i_;
   }
 
   /**

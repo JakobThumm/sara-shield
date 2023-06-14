@@ -193,7 +193,9 @@ class VerifyISO : public Verify {
    * @param d_human Human diameter.
    * @param robot_capsule_velocities_start Pointer to the start of the list of robot capsule velocities.
    * @param robot_capsule_velocities_end Pointer to the end of the list of robot capsule velocities.
-   * @param 
+   * @param alpha_i List of max cart acceleration values for each robot capsule.
+   * @param beta_i List of max angular acceleration values for each robot capsule.
+   * @param delta_s Time difference between two time steps.
    * @return true if ECC could occur
    * @return false if ECC cannot occur
    */
@@ -203,7 +205,10 @@ class VerifyISO : public Verify {
       const std::vector<reach_lib::AABB>& environment_elements,
       double d_human,
       const std::vector<std::vector<RobotReach::CapsuleVelocity>>::const_iterator& robot_capsule_velocities_start,
-      const std::vector<std::vector<RobotReach::CapsuleVelocity>>::const_iterator& robot_capsule_velocities_end);
+      const std::vector<std::vector<RobotReach::CapsuleVelocity>>::const_iterator& robot_capsule_velocities_end,
+      const std::vector<double>& alpha_i,
+      const std::vector<double>& beta_i,
+      double delta_s);
 
   /**
    * @brief Verify if clamping between the robot, human, and environment is possible.
@@ -221,6 +226,9 @@ class VerifyISO : public Verify {
    * @param unclampable_enclosures_map List of pairs of robot links that cannot cause clamping.
    * @param robot_capsule_velocities_it Iterator pointing to the beginning of the list of robot capsule velocities for this short-term plan.
    * @param robot_capsule_velocities_end Iterator pointing to the end of the list of robot capsule velocities for this short-term plan.
+   * @param alpha_i List of max cart acceleration values for each robot capsule.
+   * @param beta_i List of max angular acceleration values for each robot capsule.
+   * @param delta_s Time difference between two time steps.
    * @return true: if clamping between the given human model and the robot can occur
    * @return false: if no clamping can occur
    */
@@ -230,7 +238,10 @@ class VerifyISO : public Verify {
       const std::vector<double>& human_radii,
       const std::unordered_map<int, std::set<int>>& unclampable_enclosures_map,
       std::vector<std::vector<RobotReach::CapsuleVelocity>>::const_iterator robot_capsule_velocities_it,
-      std::vector<std::vector<RobotReach::CapsuleVelocity>>::const_iterator robot_capsule_velocities_end);
+      std::vector<std::vector<RobotReach::CapsuleVelocity>>::const_iterator robot_capsule_velocities_end,
+      const std::vector<double>& alpha_i,
+      const std::vector<double>& beta_i,
+      double delta_s);
 
   /**
    * @brief Verify if clamping between the robot, human, and environment is possible.
@@ -248,6 +259,9 @@ class VerifyISO : public Verify {
    * @param unclampable_enclosures_map List of pairs of robot links that cannot cause clamping.
    * @param robot_capsule_velocities_it Iterator pointing to the beginning of the list of robot capsule velocities for this short-term plan.
    * @param robot_capsule_velocities_end Iterator pointing to the end of the list of robot capsule velocities for this short-term plan.
+   * @param alpha_i List of max cart acceleration values for each robot capsule.
+   * @param beta_i List of max angular acceleration values for each robot capsule.
+   * @param delta_s Time difference between two time steps.
    * @return true: if no clamping can occur
    * @return false: if clamping can occur
    */
@@ -257,7 +271,10 @@ class VerifyISO : public Verify {
       const std::vector<std::vector<double>>& human_radii,
       const std::unordered_map<int, std::set<int>>& unclampable_enclosures_map,
       std::vector<std::vector<RobotReach::CapsuleVelocity>>::const_iterator robot_capsule_velocities_it,
-      std::vector<std::vector<RobotReach::CapsuleVelocity>>::const_iterator robot_capsule_velocities_end);
+      std::vector<std::vector<RobotReach::CapsuleVelocity>>::const_iterator robot_capsule_velocities_end,
+      const std::vector<double>& alpha_i,
+      const std::vector<double>& beta_i,
+      double delta_s);
 };
 }  // namespace safety_shield
 

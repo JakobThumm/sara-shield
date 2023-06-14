@@ -11,6 +11,7 @@ LongTermTraj::LongTermTraj(const std::vector<Motion>& long_term_traj, double sam
   // Initialize alpha_i_ with 0
   for (int i = 0; i < nb_modules; i++) {
     alpha_i_.push_back(0.0);
+    beta_i_.push_back(0.0);
   }
   max_cart_vel_ = 0;
   capsule_velocities_.resize(length_);
@@ -24,14 +25,17 @@ LongTermTraj::LongTermTraj(const std::vector<Motion>& long_term_traj, double sam
       capsule_velocities_[i][j] = robot_reach.getVelocityOfCapsule(j, motion.getVelocityRef());
       // Max velocity of this capsule
       motion_vel = std::max(
-        robot_reach.getMaxCartVelocityOfCapsulePoint(j, capsule_velocities_[i][j].first),
-        robot_reach.getMaxCartVelocityOfCapsulePoint(j, capsule_velocities_[i][j].second)
+        robot_reach.getMaxCartVelocityOfCapsulePoint(j, capsule_velocities_[i][j].v1),
+        robot_reach.getMaxCartVelocityOfCapsulePoint(j, capsule_velocities_[i][j].v2)
       );
       if (i > 0) {
         double dt = motion.getTime() - long_term_traj_[i-1].getTime();
-        double alpha_1 = (std::abs(capsule_velocities_[i][j].first.first.norm() - capsule_velocities_[i-1][j].first.first.norm())) / dt;
-        double alpha_2 = (std::abs(capsule_velocities_[i][j].second.first.norm() - capsule_velocities_[i-1][j].second.first.norm())) / dt;
+        double alpha_1 = (std::abs(capsule_velocities_[i][j].v1.v.norm() - capsule_velocities_[i-1][j].v1.v.norm())) / dt;
+        double alpha_2 = (std::abs(capsule_velocities_[i][j].v2.v.norm() - capsule_velocities_[i-1][j].v2.v.norm())) / dt;
+        double beta_1 = (std::abs(capsule_velocities_[i][j].v1.w.norm() - capsule_velocities_[i-1][j].v1.w.norm())) / dt;
+        double beta_2 = (std::abs(capsule_velocities_[i][j].v2.w.norm() - capsule_velocities_[i-1][j].v2.w.norm())) / dt;
         alpha_i_[j] = std::max(alpha_i_[j], std::max(alpha_1, alpha_2));
+        beta_i_[j] = std::max(beta_i_[j], std::max(beta_1, beta_2));
       }
     }
     // Max velocity of this motion

@@ -75,7 +75,7 @@ void VerifyISO::build_contact_maps(const std::vector<reach_lib::Capsule>& robot_
     //   continue;
     // }
     // Collisions with static environment elements
-    std::vector<int> environment_collisions = find_human_robot_contact(human_capsules[i], robot_capsules);
+    std::vector<int> environment_collisions = find_human_environment_contact(human_capsules[i], environment_elements);
     if (environment_collisions.size() > 0) {
       if (environment_collision_map.find(i) == environment_collision_map.end()) {
         environment_collision_map[i] = std::vector<int>();
@@ -178,11 +178,11 @@ bool VerifyISO::capsule_moving_towards_element(const RobotReach::CapsuleVelocity
       double radius,
       double velocity_error) {
   // d = v \cdot n
-  double d1 = velocity_capsule.first.first.dot(normal);
-  double d2 = velocity_capsule.second.first.dot(normal);
+  double d1 = velocity_capsule.v1.v.dot(normal);
+  double d2 = velocity_capsule.v2.v.dot(normal);
   // d_{\omega} >= - |r| * |n x \omega|
-  double dw1 = - abs(radius) * normal.cross(velocity_capsule.first.second).norm();
-  double dw2 = - abs(radius) * normal.cross(velocity_capsule.second.second).norm();
+  double dw1 = - abs(radius) * normal.cross(velocity_capsule.v1.w).norm();
+  double dw2 = - abs(radius) * normal.cross(velocity_capsule.v2.w).norm();
   // d + d_{\omega} < 0 -> link is moving towards environment element
   return (d1 + dw1 < velocity_error || d2 + dw2 < velocity_error);
 }
@@ -211,13 +211,16 @@ bool VerifyISO::environmentally_constrained_collision_check(const std::vector<in
       const std::vector<reach_lib::AABB>& environment_elements,
       double d_human,
       const std::vector<std::vector<RobotReach::CapsuleVelocity>>::const_iterator& robot_capsule_velocities_start,
-      const std::vector<std::vector<RobotReach::CapsuleVelocity>>::const_iterator& robot_capsule_velocities_end) {
+      const std::vector<std::vector<RobotReach::CapsuleVelocity>>::const_iterator& robot_capsule_velocities_end,
+      const std::vector<double>& alpha_i,
+      const std::vector<double>& beta_i,
+      double delta_s) {
   // Check distance between link and environment
   // by expanding the link capsule by the human body diameter
   // and checking for intersection with the environment element.
   for (const int& environment_collision : environment_collisions) {
-    for (const int& robot_collision : robot_collisions) {
-      reach_lib::Capsule expanded_robot_capsule = create_expanded_capsule(robot_capsules[robot_collision], d_human);
+    for (const int& link_index : robot_collisions) {
+      reach_lib::Capsule expanded_robot_capsule = create_expanded_capsule(robot_capsules[link_index], d_human);
       if (!reach_lib::intersections::capsule_aabb_intersection(expanded_robot_capsule,
           environment_elements[environment_collision])) {
         continue;
@@ -225,14 +228,16 @@ bool VerifyISO::environmentally_constrained_collision_check(const std::vector<in
       // Check if the link is moving towards the environment element
       // Find normal vector on the environment element pointing towards the link
       Eigen::Vector3d normal;
-      if (!calculate_normal_vector(robot_capsules[robot_collision], environment_elements[environment_collision], normal)) {
+      if (!calculate_normal_vector(robot_capsules[link_index], environment_elements[environment_collision], normal)) {
         // If the calculation of the normal vector fails, the velocity criterion fails.
         return true;
       }
       // Calculate maximal velocity error
-      // \epsilon = 1/2 \Delta s (\alpha_i + \beta_i * r_i)
-      double velocity_error = 0;  // TODO
-      if (capsule_trajectory_moving_towards_element(robot_capsule_velocities_start, robot_capsule_velocities_end, robot_capsules, robot_collision, normal, velocity_error)) {
+      // \epsilon <= 1/2 \Delta s (\alpha_i + \beta_i * r_i)
+      assert (link_index < alpha_i.size());
+      assert (link_index < beta_i.size());
+      double velocity_error = 1/2 * delta_s * (alpha_i[link_index] + beta_i[link_index] * robot_capsules[link_index].r_);
+      if (capsule_trajectory_moving_towards_element(robot_capsule_velocities_start, robot_capsule_velocities_end, robot_capsules, link_index, normal, velocity_error)) {
         return true;
       }
     }
@@ -246,7 +251,10 @@ bool VerifyISO::clamping_possible(const std::vector<reach_lib::Capsule>& robot_c
       const std::vector<double>& human_radii,
       const std::unordered_map<int, std::set<int>>& unclampable_enclosures_map,
       std::vector<std::vector<RobotReach::CapsuleVelocity>>::const_iterator robot_capsule_velocities_it,
-      std::vector<std::vector<RobotReach::CapsuleVelocity>>::const_iterator robot_capsule_velocities_end) {
+      std::vector<std::vector<RobotReach::CapsuleVelocity>>::const_iterator robot_capsule_velocities_end,
+      const std::vector<double>& alpha_i,
+      const std::vector<double>& beta_i,
+      double delta_s) {
   // Build a map that maps the robot capsule/environment indices in collision with the human capsules
   // We choose this indexing to be in line with the paper.
   assert(robot_capsules.size() == robot_capsule_velocities_it->size());
@@ -267,7 +275,7 @@ bool VerifyISO::clamping_possible(const std::vector<reach_lib::Capsule>& robot_c
     }
     if (environmentally_constrained_collision_check(robot_collisions.second, robot_capsules,
         environment_collision_map.at(human_index), environment_elements, d_human,
-        robot_capsule_velocities_it, robot_capsule_velocities_end)) {
+        robot_capsule_velocities_it, robot_capsule_velocities_end, alpha_i, beta_i, delta_s)) {
       return true;
     }
   }
@@ -280,13 +288,16 @@ bool VerifyISO::verify_clamping(const std::vector<reach_lib::Capsule>& robot_cap
       const std::vector<std::vector<double>>& human_radii,
       const std::unordered_map<int, std::set<int>>& unclampable_enclosures_map,
       std::vector<std::vector<RobotReach::CapsuleVelocity>>::const_iterator robot_capsule_velocities_it,
-      std::vector<std::vector<RobotReach::CapsuleVelocity>>::const_iterator robot_capsule_velocities_end) 
+      std::vector<std::vector<RobotReach::CapsuleVelocity>>::const_iterator robot_capsule_velocities_end,
+      const std::vector<double>& alpha_i,
+      const std::vector<double>& beta_i,
+      double delta_s) 
 {
   try {
     for (int i = 0; i < human_capsules.size(); i++) {
       // If no collision occured, we are safe and don't have to check the rest.
       if(!clamping_possible(robot_capsules, human_capsules[i], environment_elements, human_radii[i], unclampable_enclosures_map,
-          robot_capsule_velocities_it, robot_capsule_velocities_end)) {
+          robot_capsule_velocities_it, robot_capsule_velocities_end, alpha_i, beta_i, delta_s)) {
         return true;
       }
     }

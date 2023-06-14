@@ -560,7 +560,6 @@ Motion SafetyShield::step(double cycle_begin_time) {
   try {
     // Get current motion
     Motion current_motion = getCurrentMotion();
-    std::vector<double> alpha_i;
     // If the new LTT was processed at least once and is labeled safe, replace old LTT with new one.
     if (new_ltt_ && new_ltt_processed_) {
       if (is_safe_ || current_motion.isStopped()) {
@@ -613,13 +612,16 @@ Motion SafetyShield::step(double cycle_begin_time) {
     // Compute a new potential trajectory
     Motion goal_motion = computesPotentialTrajectory(is_safe_, next_motion_.getVelocity());
     std::vector<std::vector<RobotReach::CapsuleVelocity>>::const_iterator vel_cap_start, vel_cap_end;
+    std::vector<double> alpha_i, beta_i;
     if (new_ltt_) {
       alpha_i = new_long_term_trajectory_.getAlphaI();
+      beta_i = new_long_term_trajectory_.getBetaI();
       vel_cap_start = new_long_term_trajectory_.getVelocityCapsuleIterator(
         new_long_term_trajectory_.getLowerIndex(current_motion.getS()));
       vel_cap_end = new_long_term_trajectory_.getVelocityCapsuleIterator(new_long_term_trajectory_.getUpperIndex(goal_motion.getS()));
     } else {
       alpha_i = long_term_trajectory_.getAlphaI();
+      beta_i = long_term_trajectory_.getBetaI();
       vel_cap_start = long_term_trajectory_.getVelocityCapsuleIterator(
         long_term_trajectory_.getLowerIndex(current_motion.getS()));
       vel_cap_end = long_term_trajectory_.getVelocityCapsuleIterator(long_term_trajectory_.getUpperIndex(goal_motion.getS()));
@@ -640,7 +642,7 @@ Motion SafetyShield::step(double cycle_begin_time) {
         // Verify if the robot and human reachable sets are collision free
         is_safe_ = verify_->verify_clamping(robot_capsules_, human_capsules_, environment_elements_,
             human_reach_->getAllHumanRadii(), robot_reach_->getUnclampableEnclosures(),
-            vel_cap_start, vel_cap_end);
+            vel_cap_start, vel_cap_end, alpha_i, beta_i, sample_time_);
         // is_safe_ = verify_->verify_human_reach(robot_capsules_, human_capsules_); 
         // if (shield_type_ == ShieldType::PFL) {
         //  is_safe_ = is_safe_ || is_under_v_limit_;
