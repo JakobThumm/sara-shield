@@ -17,6 +17,8 @@
 #include <algorithm>
 #include <vector>
 #include <set>
+#include <unordered_map>
+#include <unordered_set>
 
 #include "reach_lib.hpp"
 #include "safety_shield/verify.h"
@@ -97,6 +99,21 @@ class VerifyISO : public Verify {
       const std::vector<reach_lib::AABB>& environment_elements,
       std::unordered_map<int, std::vector<int>>& robot_collision_map,
       std::unordered_map<int, std::vector<int>>& environment_collision_map);
+  
+  /**
+   * @brief Check if a self-constrained collision (SCC) could occur with the given human capsule.
+   * 
+   * @param robot_collisions Robot capsule indices in contact with the given human capsule.
+   * @param unclampable_enclosures_map List of pairs of robot links that cannot cause clamping.
+   * @param robot_capsules List of robot capsules.
+   * @param d_human Human diameter
+   * @return true SCC could occur
+   * @return false SCC cannot occur
+   */
+  bool self_constrained_collision_check(const std::vector<int>& robot_collisions,
+      const std::unordered_map<int, std::set<int>>& unclampable_enclosures_map,
+      const std::vector<reach_lib::Capsule>& robot_capsules,
+      double d_human);
 
   /**
    * @brief Verify if clamping between the robot, human, and environment is possible.
