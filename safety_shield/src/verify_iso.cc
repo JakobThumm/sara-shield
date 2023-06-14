@@ -173,6 +173,38 @@ bool VerifyISO::calculate_normal_vector(const reach_lib::Capsule& robot_capsule,
   return true;
 }
 
+bool VerifyISO::capsule_moving_towards_element(const RobotReach::CapsuleVelocity velocity_capsule,
+      const Eigen::Vector3d& normal,
+      double radius,
+      double velocity_error) {
+  // d = v \cdot n
+  double d1 = velocity_capsule.first.first.dot(normal);
+  double d2 = velocity_capsule.second.first.dot(normal);
+  // d_{\omega} >= - |r| * |n x \omega|
+  double dw1 = - abs(radius) * normal.cross(velocity_capsule.first.second).norm();
+  double dw2 = - abs(radius) * normal.cross(velocity_capsule.second.second).norm();
+  // d + d_{\omega} < 0 -> link is moving towards environment element
+  return (d1 + dw1 < velocity_error || d2 + dw2 < velocity_error);
+}
+
+bool VerifyISO::capsule_trajectory_moving_towards_element(
+      const std::vector<std::vector<RobotReach::CapsuleVelocity>>::const_iterator& robot_capsule_velocities_start,
+      const std::vector<std::vector<RobotReach::CapsuleVelocity>>::const_iterator& robot_capsule_velocities_end,
+      const std::vector<reach_lib::Capsule>& robot_capsules,
+      int capsule_index,
+      const Eigen::Vector3d& normal,
+      double velocity_error) {
+  // For every velocity of the link, check if the link is moving towards the environment element normal vector
+  std::vector<std::vector<RobotReach::CapsuleVelocity>>::const_iterator robot_capsule_velocities_it = robot_capsule_velocities_start;
+  while (robot_capsule_velocities_it != robot_capsule_velocities_end) {
+    if (capsule_moving_towards_element((*robot_capsule_velocities_it)[capsule_index], normal, robot_capsules[capsule_index].r_, velocity_error)) {
+      return true;
+    }
+    robot_capsule_velocities_it++;
+  }
+  return false;
+}
+
 bool VerifyISO::environmentally_constrained_collision_check(const std::vector<int>& robot_collisions,
       const std::vector<reach_lib::Capsule>& robot_capsules,
       const std::vector<int>& environment_collisions,
@@ -199,22 +231,9 @@ bool VerifyISO::environmentally_constrained_collision_check(const std::vector<in
       }
       // Calculate maximal velocity error
       // \epsilon = 1/2 \Delta s (\alpha_i + \beta_i * r_i)
-      double vel_error = 0;  // TODO
-      // For every velocity of the link, check if the link is moving towards the environment element normal vector
-      std::vector<std::vector<RobotReach::CapsuleVelocity>>::const_iterator robot_capsule_velocities_it = robot_capsule_velocities_start;
-      while (robot_capsule_velocities_it != robot_capsule_velocities_end) {
-        // d = v \cdot n
-        double d1 = (*robot_capsule_velocities_it)[robot_collision].first.first.dot(normal);
-        double d2 = (*robot_capsule_velocities_it)[robot_collision].second.first.dot(normal);
-        // d_{\omega} >= - |r| * |n x \omega|
-        double dw1 = - abs(robot_capsules[robot_collision].r_) * normal.cross((*robot_capsule_velocities_it)[robot_collision].first.second).norm();
-        double dw2 = - abs(robot_capsules[robot_collision].r_) * normal.cross((*robot_capsule_velocities_it)[robot_collision].second.second).norm();
-        // d + d_{\omega} < 0 -> link is moving towards environment element
-        if (d1 + dw1 < vel_error || d2 + dw2 < vel_error) {
-          // Link is moving towards environment element
-          return true;
-        }
-        robot_capsule_velocities_it++;
+      double velocity_error = 0;  // TODO
+      if (capsule_trajectory_moving_towards_element(robot_capsule_velocities_start, robot_capsule_velocities_end, robot_capsules, robot_collision, normal, velocity_error)) {
+        return true;
       }
     }
   }

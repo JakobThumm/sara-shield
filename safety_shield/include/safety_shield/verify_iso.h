@@ -149,6 +149,41 @@ class VerifyISO : public Verify {
       Eigen::Vector3d& normal);
 
   /**
+   * @brief Check if the given robot capsule is moving towards the given element in one time step.
+   * 
+   * @param velocity_capsule The velocity of the two points defining the robot capsule.
+   * @param normal Normal vector of the element's surface pointing towards the robot capsule.
+   * @param radius Radius of the robot capsule.
+   * @param velocity_error Maximal error in velocity calculation.
+   * @return true if the robot capsule could be moving towards the element.
+   * @return false if the robot capsule is not moving towards the element.
+   */
+  bool capsule_moving_towards_element(const RobotReach::CapsuleVelocity velocity_capsule,
+      const Eigen::Vector3d& normal,
+      double radius,
+      double velocity_error);
+
+  /**
+   * @brief Check if the given robot capsule is moving towards the given element over a sequence of time steps.
+   * 
+   * @param robot_capsule_velocities_start Pointer to the start of the list of robot capsule velocities.
+   * @param robot_capsule_velocities_end Pointer to the end of the list of robot capsule velocities.
+   * @param robot_capsules List of robot capsules.
+   * @param capsule_index Index of the robot capsule to check.
+   * @param normal Normal vector of the element's surface pointing towards the robot capsule.
+   * @param velocity_error Maximal error in velocity calculation.
+   * @return true 
+   * @return false 
+   */
+  bool capsule_trajectory_moving_towards_element(
+      const std::vector<std::vector<RobotReach::CapsuleVelocity>>::const_iterator& robot_capsule_velocities_start,
+      const std::vector<std::vector<RobotReach::CapsuleVelocity>>::const_iterator& robot_capsule_velocities_end,
+      const std::vector<reach_lib::Capsule>& robot_capsules,
+      int capsule_index,
+      const Eigen::Vector3d& normal,
+      double velocity_error);
+
+  /**
    * @brief Check if an environmentally constrained collision (ECC) could occur with the given human capsule.
    * 
    * @param robot_collisions Robot capsule indices in contact with the given human capsule. 
