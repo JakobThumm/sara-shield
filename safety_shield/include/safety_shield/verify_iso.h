@@ -64,6 +64,41 @@ class VerifyISO : public Verify {
       std::vector<std::vector<reach_lib::Capsule>> human_capsules);
 
   /**
+   * @brief For a given human capsule, find all robot capsules in contact and return their indices.
+   * 
+   * @param human_capsule Human capsule to check for contact with robot capsules.
+   * @param robot_capsules List of robot capsules.
+   * @returns List of indices of robot capsules in contact with the given human capsule.
+   */
+  std::vector<int> find_human_robot_contact(const reach_lib::Capsule& human_capsule,
+      const std::vector<reach_lib::Capsule>& robot_capsules);
+  
+  /**
+   * @brief For a given human capsule, find all environment elements in contact and return their indices.
+   * 
+   * @param human_capsule Human capsule to check for contact with environment elements.
+   * @param environment_elements List of environment elements.
+   * @returns List of indices of environment elements in contact with the given human capsule.
+   */
+  std::vector<int> find_human_environment_contact(const reach_lib::Capsule& human_capsule,
+      const std::vector<reach_lib::AABB>& environment_elements);
+
+  /**
+   * @brief Build two maps, which map robot and environment elements to their human capsule in contact.
+   * 
+   * @param[in] robot_capsules List of robot capsules.
+   * @param[in] human_capsules List of human capsules.
+   * @param[in] environment_elements List of environment elements.
+   * @param[out] robot_collision_map Maps robot capsule indices to human capsule indices in contact.
+   * @param[out] environment_collision_map Maps environment element indices to human capsule indices in contact.
+   */
+  void build_contact_maps(const std::vector<reach_lib::Capsule>& robot_capsules, 
+      const std::vector<reach_lib::Capsule>& human_capsules,
+      const std::vector<reach_lib::AABB>& environment_elements,
+      std::unordered_map<int, std::vector<int>>& robot_collision_map,
+      std::unordered_map<int, std::vector<int>>& environment_collision_map);
+
+  /**
    * @brief Verify if clamping between the robot, human, and environment is possible.
    * 
    * @details This function checks two types of constrained collisions.

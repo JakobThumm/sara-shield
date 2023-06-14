@@ -32,6 +32,59 @@ bool VerifyISO::verify_human_reach(const std::vector<reach_lib::Capsule>& robot_
   }
 }
 
+std::vector<int> VerifyISO::find_human_robot_contact(const reach_lib::Capsule& human_capsule,
+      const std::vector<reach_lib::Capsule>& robot_capsules) {
+  std::vector<int> human_robot_collisions;
+  for (int i = 0; i < robot_capsules.size(); i++) {
+    if (capsuleCollisionCheck(human_capsule, robot_capsules[i])) {
+      // Robot link i and human body part j could intersect.
+      human_robot_collisions.push_back(i);
+    }
+  }
+  return human_robot_collisions;
+}
+
+std::vector<int> VerifyISO::find_human_environment_contact(const reach_lib::Capsule& human_capsule,
+      const std::vector<reach_lib::AABB>& environment_elements) {
+  std::vector<int> human_environment_collisions;
+  for (int i = 0; i < environment_elements.size(); i++) {
+      if (reach_lib::intersections::capsule_aabb_intersection(human_capsule, environment_elements[i])) {
+        // Robot link i and human body part j could intersect.
+        human_environment_collisions.push_back(i);
+      }
+  }
+  return human_environment_collisions;
+}
+
+void VerifyISO::build_contact_maps(const std::vector<reach_lib::Capsule>& robot_capsules, 
+      const std::vector<reach_lib::Capsule>& human_capsules,
+      const std::vector<reach_lib::AABB>& environment_elements,
+      std::unordered_map<int, std::vector<int>>& robot_collision_map,
+      std::unordered_map<int, std::vector<int>>& environment_collision_map) {
+  for (int i = 0; i < human_capsules.size(); i++) {
+    // Collisions with robot links
+    std::vector<int> robot_collisions = find_human_robot_contact(human_capsules[i], robot_capsules);
+    if (robot_collisions.size() > 0) {
+      if (robot_collision_map.find(i) == robot_collision_map.end()) {
+        robot_collision_map[i] = std::vector<int>();
+      }
+      robot_collision_map[i].insert(robot_collision_map[i].end(), robot_collisions.begin(), robot_collisions.end());
+    }
+    // Maybe:
+    // if (robot_collision_map.find(i) == robot_collision_map.end()) {
+    //   continue;
+    // }
+    // Collisions with static environment elements
+    std::vector<int> environment_collisions = find_human_robot_contact(human_capsules[i], robot_capsules);
+    if (environment_collisions.size() > 0) {
+      if (environment_collision_map.find(i) == environment_collision_map.end()) {
+        environment_collision_map[i] = std::vector<int>();
+      }
+      environment_collision_map[i].insert(environment_collision_map[i].end(), environment_collisions.begin(), environment_collisions.end());
+    }
+  }
+}
+
 bool VerifyISO::clamping_possible(const std::vector<reach_lib::Capsule>& robot_capsules, 
       const std::vector<reach_lib::Capsule>& human_capsules,
       const std::vector<reach_lib::AABB>& environment_elements,
@@ -44,32 +97,7 @@ bool VerifyISO::clamping_possible(const std::vector<reach_lib::Capsule>& robot_c
   // We choose this indexing to be in line with the paper.
   std::unordered_map<int, std::vector<int>> robot_collision_map;
   std::unordered_map<int, std::vector<int>> environment_collision_map;
-  for (int j = 0; j < human_capsules.size(); j++) {
-    // Collisions with robot links
-    for (int i = 0; i < robot_capsules.size(); i++) {
-      if (capsuleCollisionCheck(human_capsules[j], robot_capsules[i])) {
-        // Robot link i and human body part j could intersect.
-        if (robot_collision_map.find(j) == robot_collision_map.end()) {
-          robot_collision_map[j] = std::vector<int>();
-        }
-        robot_collision_map[j].push_back(i);
-      }
-    }
-    // Maybe:
-    // if (robot_collision_map.find(j) == robot_collision_map.end()) {
-    //   continue;
-    // }
-    // Collisions with static environment elements
-    for (int k = 0; k < environment_elements.size(); k++) {
-      if (reach_lib::intersections::capsule_aabb_intersection(human_capsules[j], environment_elements[k])) {
-        // Human body part j and environment element k could intersect.
-        if (environment_collision_map.find(j) == environment_collision_map.end()) {
-          environment_collision_map[j] = std::vector<int>();
-        }
-        environment_collision_map[j].push_back(k);
-      }
-    }
-  }
+  build_contact_maps(robot_capsules, human_capsules, environment_elements, robot_collision_map, environment_collision_map);
   for (const auto& robot_collisions : robot_collision_map) {
     int human_index = robot_collisions.first;
     if (robot_collisions.second.size() >= 2) {
