@@ -43,18 +43,9 @@ LongTermTraj::LongTermTraj(const std::vector<Motion>& long_term_traj, double sam
 
 Motion LongTermTraj::interpolate(double s, double ds, double dds, double ddds, std::vector<double>& v_max_allowed,
                                  std::vector<double>& a_max_allowed, std::vector<double>& j_max_allowed) {
-  // Example: s=2.465, sample_time = 0.004 --> ind = 616.25
-  assert(sample_time_ != 0);
-  double ind = s / sample_time_;
-  double intpart;
-  // Example: intpart = 616.0, ind_mod = 0.25
-  double ind_mod = modf(ind, &intpart);
-  // floor(s/sample_time) + 1 ==> lower index
-  int ind1 = static_cast<int>(intpart);
-  // ceil(s/sample_time) + 1 ==> upper index
-  int ind2 = static_cast<int>(ceil(ind));
-  // time from first index to interpolation point
-  double dt = ind_mod * sample_time_;
+  int ind1 = getLowerIndex(s);
+  int ind2 = getUpperIndex(s);
+  double dt = getModIndex(s) * sample_time_;
   std::vector<double> q1 = getNextMotionAtIndex(ind1).getAngle();
   std::vector<double> dq1 = getNextMotionAtIndex(ind1).getVelocity();
   std::vector<double> ddq1 = getNextMotionAtIndex(ind1).getAcceleration();

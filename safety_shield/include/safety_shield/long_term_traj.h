@@ -216,6 +216,39 @@ class LongTermTraj {
   }
 
   /**
+   * @brief Get the floor index of the LTT at the given s position.
+   * 
+   * @param s continuous trajectory time
+   * @return int LTT index
+   */
+  inline int getLowerIndex(double s) const {
+    assert(sample_time_ != 0);
+    return static_cast<int>(floor(s / sample_time_));
+  }
+
+  /**
+   * @brief Get the ceil index of the LTT at the given s position.
+   * 
+   * @param s continuous trajectory time
+   * @return int LTT index
+   */
+  inline int getUpperIndex(double s) const {
+    assert(sample_time_ != 0);
+    return static_cast<int>(ceil(s / sample_time_));
+  }
+
+  /**
+   * @brief Get the floating-point remainder of the index given s position and the lower LTT index.
+   * 
+   * @param s continuous trajectory time
+   * @return int LTT index difference
+   */
+  inline double getModIndex(double s) const {
+    assert(sample_time_ != 0);
+    return fmod(s, sample_time_);
+  }
+
+  /**
    * @brief Get the motion at index from current pos
    *
    * @param index steps from current pos
