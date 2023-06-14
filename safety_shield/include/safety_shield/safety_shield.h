@@ -86,7 +86,7 @@ class SafetyShield {
    *
    * Takes the robot and human capsules as input and checks them for collision.
    */
-  Verify* verify_;
+  VerifyISO* verify_;
 
   /**
    * @brief The visualization of reachable sets
@@ -446,7 +446,7 @@ class SafetyShield {
     const LongTermTraj &long_term_trajectory, 
     RobotReach* robot_reach,
     HumanReach* human_reach,
-    Verify* verify,
+    VerifyISO* verify,
     const std::vector<reach_lib::AABB> &environment_elements,
     ShieldType shield_type);
 

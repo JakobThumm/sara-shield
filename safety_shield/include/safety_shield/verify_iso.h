@@ -20,6 +20,7 @@
 
 #include "reach_lib.hpp"
 #include "safety_shield/verify.h"
+#include "safety_shield/robot_reach.h"
 #include "spdlog/spdlog.h"  // https://github.com/gabime/spdlog
 
 #ifndef VERIFY_ISO_H
@@ -76,6 +77,8 @@ class VerifyISO : public Verify {
    * @param environment_elements List of environment elements
    * @param human_radii List of radii of human body parts/extremities.
    * @param unclampable_enclosures_map List of pairs of robot links that cannot cause clamping.
+   * @param robot_capsule_velocities_it Iterator pointing to the beginning of the list of robot capsule velocities for this short-term plan.
+   * @param robot_capsule_velocities_end Iterator pointing to the end of the list of robot capsule velocities for this short-term plan.
    * @return true: if clamping between the given human model and the robot can occur
    * @return false: if no clamping can occur
    */
@@ -83,7 +86,9 @@ class VerifyISO : public Verify {
       const std::vector<reach_lib::Capsule>& human_capsules,
       const std::vector<reach_lib::AABB>& environment_elements,
       const std::vector<double>& human_radii,
-      const std::unordered_map<int, std::set<int>>& unclampable_enclosures_map);
+      const std::unordered_map<int, std::set<int>>& unclampable_enclosures_map,
+      std::vector<std::vector<RobotReach::CapsuleVelocity>>::const_iterator robot_capsule_velocities_it,
+      std::vector<std::vector<RobotReach::CapsuleVelocity>>::const_iterator robot_capsule_velocities_end);
 
   /**
    * @brief Verify if clamping between the robot, human, and environment is possible.
@@ -99,6 +104,8 @@ class VerifyISO : public Verify {
    * @param environment_elements List of environment elements
    * @param human_radii List of list of radii. Each list of radii corresponds to a human reachable set model.
    * @param unclampable_enclosures_map List of pairs of robot links that cannot cause clamping.
+   * @param robot_capsule_velocities_it Iterator pointing to the beginning of the list of robot capsule velocities for this short-term plan.
+   * @param robot_capsule_velocities_end Iterator pointing to the end of the list of robot capsule velocities for this short-term plan.
    * @return true: if no clamping can occur
    * @return false: if clamping can occur
    */
@@ -106,7 +113,9 @@ class VerifyISO : public Verify {
       const std::vector<std::vector<reach_lib::Capsule>>& human_capsules,
       const std::vector<reach_lib::AABB>& environment_elements,
       const std::vector<std::vector<double>>& human_radii,
-      const std::unordered_map<int, std::set<int>>& unclampable_enclosures_map);
+      const std::unordered_map<int, std::set<int>>& unclampable_enclosures_map,
+      std::vector<std::vector<RobotReach::CapsuleVelocity>>::const_iterator robot_capsule_velocities_it,
+      std::vector<std::vector<RobotReach::CapsuleVelocity>>::const_iterator robot_capsule_velocities_end);
 };
 }  // namespace safety_shield
 

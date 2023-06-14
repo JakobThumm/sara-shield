@@ -44,12 +44,11 @@ LongTermTraj::LongTermTraj(const std::vector<Motion>& long_term_traj, double sam
 Motion LongTermTraj::interpolate(double s, double ds, double dds, double ddds, std::vector<double>& v_max_allowed,
                                  std::vector<double>& a_max_allowed, std::vector<double>& j_max_allowed) {
   int ind1 = getLowerIndex(s);
-  int ind2 = getUpperIndex(s);
   double dt = getModIndex(s) * sample_time_;
-  std::vector<double> q1 = getNextMotionAtIndex(ind1).getAngle();
-  std::vector<double> dq1 = getNextMotionAtIndex(ind1).getVelocity();
-  std::vector<double> ddq1 = getNextMotionAtIndex(ind1).getAcceleration();
-  std::vector<double> dddq1 = getNextMotionAtIndex(ind1).getJerk();
+  std::vector<double> q1 = long_term_traj_[ind1].getAngle();
+  std::vector<double> dq1 = long_term_traj_[ind1].getVelocity();
+  std::vector<double> ddq1 = long_term_traj_[ind1].getAcceleration();
+  std::vector<double> dddq1 = long_term_traj_[ind1].getJerk();
   std::vector<double> q(q1.size());
   std::vector<double> dq(q1.size());
   std::vector<double> ddq(q1.size());

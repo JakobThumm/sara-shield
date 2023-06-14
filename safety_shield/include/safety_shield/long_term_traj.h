@@ -223,7 +223,7 @@ class LongTermTraj {
    */
   inline int getLowerIndex(double s) const {
     assert(sample_time_ != 0);
-    return static_cast<int>(floor(s / sample_time_));
+    return getTrajectoryIndex(static_cast<int>(floor(s / sample_time_)));
   }
 
   /**
@@ -234,7 +234,7 @@ class LongTermTraj {
    */
   inline int getUpperIndex(double s) const {
     assert(sample_time_ != 0);
-    return static_cast<int>(ceil(s / sample_time_));
+    return getTrajectoryIndex(static_cast<int>(ceil(s / sample_time_)));
   }
 
   /**
@@ -316,6 +316,16 @@ class LongTermTraj {
    */
   inline Motion& getMotion(unsigned long index) {
     return long_term_traj_[index];
+  }
+
+  /**
+   * @brief Gets a const. pointer to a the velocity capsule given by the index
+   *
+   * @param index of motion in LTT
+   */
+  inline std::vector<std::vector<RobotReach::CapsuleVelocity>>::const_iterator getVelocityCapsuleIterator(int index) {
+    assert (index >= 0 && index < capsule_velocities_.size());
+    return capsule_velocities_.begin() + index;
   }
 
   /**

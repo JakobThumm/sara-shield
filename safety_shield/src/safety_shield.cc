@@ -24,7 +24,7 @@ SafetyShield::SafetyShield(
       const LongTermTraj &long_term_trajectory, 
       RobotReach* robot_reach,
       HumanReach* human_reach,
-      Verify* verify,
+      VerifyISO* verify,
       const std::vector<reach_lib::AABB> &environment_elements,
       ShieldType shield_type = ShieldType::SSM):
   nb_joints_(nb_joints),
@@ -606,17 +606,25 @@ Motion SafetyShield::step(double cycle_begin_time) {
         new_ltt_ = false;
       }
     }
-    if (new_ltt_) {
-      alpha_i = new_long_term_trajectory_.getAlphaI();
-    } else {
-      alpha_i = long_term_trajectory_.getAlphaI();
-    }
     // If there is a new long term trajectory (LTT), always override is_safe with false.
     if (new_ltt_ && !new_ltt_processed_) {
       is_safe_ = false;
     }
     // Compute a new potential trajectory
     Motion goal_motion = computesPotentialTrajectory(is_safe_, next_motion_.getVelocity());
+    std::vector<std::vector<RobotReach::CapsuleVelocity>>::const_iterator vel_cap_start, vel_cap_end;
+    if (new_ltt_) {
+      alpha_i = new_long_term_trajectory_.getAlphaI();
+      vel_cap_start = new_long_term_trajectory_.getVelocityCapsuleIterator(
+        new_long_term_trajectory_.getLowerIndex(current_motion.getS()));
+      vel_cap_end = new_long_term_trajectory_.getVelocityCapsuleIterator(new_long_term_trajectory_.getUpperIndex(goal_motion.getS()));
+    } else {
+      alpha_i = long_term_trajectory_.getAlphaI();
+      vel_cap_start = long_term_trajectory_.getVelocityCapsuleIterator(
+        long_term_trajectory_.getLowerIndex(current_motion.getS()));
+      vel_cap_end = long_term_trajectory_.getVelocityCapsuleIterator(long_term_trajectory_.getUpperIndex(goal_motion.getS()));
+    }
+    
     if (shield_type_ != ShieldType::OFF) {
       // Check motion for joint limits (goal motion needed here as it is end of failsafe)
       if (!checkMotionForJointLimits(goal_motion)) {
@@ -630,7 +638,9 @@ Motion SafetyShield::step(double cycle_begin_time) {
         human_reach_->humanReachabilityAnalysis(cycle_begin_time_, goal_motion.getTime());
         human_capsules_ = human_reach_->getAllCapsules();
         // Verify if the robot and human reachable sets are collision free
-        is_safe_ = verify_->verify_clamping(robot_capsules_, human_capsules_, environment_elements_, human_reach_->getAllHumanRadii(), robot_reach_->getUnclampableEnclosures());
+        is_safe_ = verify_->verify_clamping(robot_capsules_, human_capsules_, environment_elements_,
+            human_reach_->getAllHumanRadii(), robot_reach_->getUnclampableEnclosures(),
+            vel_cap_start, vel_cap_end);
         // is_safe_ = verify_->verify_human_reach(robot_capsules_, human_capsules_); 
         // if (shield_type_ == ShieldType::PFL) {
         //  is_safe_ = is_safe_ || is_under_v_limit_;

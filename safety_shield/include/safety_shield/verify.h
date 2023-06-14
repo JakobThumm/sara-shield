@@ -19,6 +19,7 @@
 #include <set>
 
 #include "reach_lib.hpp"
+#include "safety_shield/robot_reach.h"
 
 #ifndef VERIFY_H
 #define VERIFY_H
@@ -31,7 +32,7 @@ namespace safety_shield {
 class Verify {
  public:
   /**
-   * @brief A basic VerifyISO constructor
+   * @brief A basic Verify constructor
    */
   Verify() {}
 
@@ -60,22 +61,6 @@ class Verify {
    */
   virtual bool verify_human_reach(const std::vector<reach_lib::Capsule>& robot_capsules, 
       std::vector<std::vector<reach_lib::Capsule>> human_capsules) = 0;
-
-  /**
-   * @brief Verify if clamping between the robot, human, and environment is possible.
-   * 
-   * @param robot_capsules Reachable capsules of the robot
-   * @param human_capsules List of list of capsules. Each list of capsules corresponds to a human reachable set model.
-   * @param environment_elements List of environment elements
-   * @param human_radii List of list of radii. Each list of radii corresponds to a human reachable set model.
-   * @return true: if no clamping can occur
-   * @return false: if clamping can occur
-   */
-  virtual bool verify_clamping(const std::vector<reach_lib::Capsule>& robot_capsules, 
-      const std::vector<std::vector<reach_lib::Capsule>>& human_capsules,
-      const std::vector<reach_lib::AABB>& environment_elements,
-      const std::vector<std::vector<double>>& human_radii,
-      const std::unordered_map<int, std::set<int>>& unclampable_enclosures_map) = 0;
 };
 }  // namespace safety_shield
 
