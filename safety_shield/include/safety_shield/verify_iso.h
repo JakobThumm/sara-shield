@@ -106,13 +106,30 @@ class VerifyISO : public Verify {
    * @param robot_collisions Robot capsule indices in contact with the given human capsule.
    * @param unclampable_enclosures_map List of pairs of robot links that cannot cause clamping.
    * @param robot_capsules List of robot capsules.
-   * @param d_human Human diameter
-   * @return true SCC could occur
-   * @return false SCC cannot occur
+   * @param d_human Human diameter.
+   * @return true if SCC could occur
+   * @return false if SCC cannot occur
    */
   bool self_constrained_collision_check(const std::vector<int>& robot_collisions,
       const std::unordered_map<int, std::set<int>>& unclampable_enclosures_map,
       const std::vector<reach_lib::Capsule>& robot_capsules,
+      double d_human);
+
+  /**
+   * @brief Check if an environmentally constrained collision (ECC) could occur with the given human capsule.
+   * 
+   * @param robot_collisions Robot capsule indices in contact with the given human capsule. 
+   * @param robot_capsules List of robot capsules.
+   * @param environment_collisions Environment element indices in contact with the given human capsule.
+   * @param environment_elements List of environment elements.
+   * @param d_human Human diameter.
+   * @return true if ECC could occur
+   * @return false if ECC cannot occur
+   */
+  bool environmentally_constrained_collision_check(const std::vector<int>& robot_collisions,
+      const std::vector<reach_lib::Capsule>& robot_capsules,
+      const std::vector<int>& environment_collisions,
+      const std::vector<reach_lib::AABB>& environment_elements,
       double d_human);
 
   /**

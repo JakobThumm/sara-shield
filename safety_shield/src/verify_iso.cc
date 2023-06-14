@@ -126,6 +126,35 @@ bool VerifyISO::self_constrained_collision_check(const std::vector<int>& robot_c
   return false;
 }
 
+bool VerifyISO::environmentally_constrained_collision_check(const std::vector<int>& robot_collisions,
+      const std::vector<reach_lib::Capsule>& robot_capsules,
+      const std::vector<int>& environment_collisions,
+      const std::vector<reach_lib::AABB>& environment_elements,
+      double d_human) {
+  // Check distance between link and environment
+  // by expanding the link capsule by the human body diameter
+  // and checking for intersection with the environment element.
+  for (const int& environment_collision : environment_collisions) {
+    for (const int& robot_collision : robot_collisions) {
+      reach_lib::Capsule expanded_robot_capsule(
+        reach_lib::Point(
+          robot_capsules[robot_collision].p1_.x,
+          robot_capsules[robot_collision].p1_.y,
+          robot_capsules[robot_collision].p1_.z),
+        reach_lib::Point(
+          robot_capsules[robot_collision].p2_.x,
+          robot_capsules[robot_collision].p2_.y,
+          robot_capsules[robot_collision].p2_.z),
+        robot_capsules[robot_collision].r_ + d_human);
+      if (reach_lib::intersections::capsule_aabb_intersection(expanded_robot_capsule,
+          environment_elements[environment_collision])) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
 bool VerifyISO::clamping_possible(const std::vector<reach_lib::Capsule>& robot_capsules, 
       const std::vector<reach_lib::Capsule>& human_capsules,
       const std::vector<reach_lib::AABB>& environment_elements,
@@ -148,27 +177,12 @@ bool VerifyISO::clamping_possible(const std::vector<reach_lib::Capsule>& robot_c
       return true;
     }
     // Environmentally-constrained collision check
-    if (environment_collision_map.find(human_index) != environment_collision_map.end()) {
-      // Check distance between link and environment
-      // by expanding the link capsule by the human body diameter
-      // and checking for intersection with the environment element.
-      double d_human = 2 * human_radii[human_index];
-      for (const auto& environment_collision : environment_collision_map[human_index]) {
-        reach_lib::Capsule expanded_robot_capsule(
-          reach_lib::Point(
-            robot_capsules[robot_collisions.second[0]].p1_.x,
-            robot_capsules[robot_collisions.second[0]].p1_.y,
-            robot_capsules[robot_collisions.second[0]].p1_.z),
-          reach_lib::Point(
-            robot_capsules[robot_collisions.second[0]].p2_.x,
-            robot_capsules[robot_collisions.second[0]].p2_.y,
-            robot_capsules[robot_collisions.second[0]].p2_.z),
-          robot_capsules[robot_collisions.second[0]].r_ + d_human);
-        if (reach_lib::intersections::capsule_aabb_intersection(expanded_robot_capsule,
-            environment_elements[environment_collision])) {
-          return true;
-        }
-      }
+    if (environment_collision_map.find(human_index) == environment_collision_map.end()) {
+      continue;
+    }
+    if (environmentally_constrained_collision_check(robot_collisions.second, robot_capsules,
+        environment_collision_map.at(human_index), environment_elements, d_human)) {
+      return true;
     }
   }
   return false;
