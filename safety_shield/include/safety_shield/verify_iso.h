@@ -100,6 +100,26 @@ class VerifyISO : public Verify {
       std::unordered_map<int, std::vector<int>>& robot_collision_map,
       std::unordered_map<int, std::vector<int>>& environment_collision_map);
   
+  inline bool link_pair_unclampable(int link1, int link2, 
+      const std::unordered_map<int, std::set<int>>& unclampable_enclosures_map) const {
+    return ((unclampable_enclosures_map.find(link1) != unclampable_enclosures_map.end() &&
+        unclampable_enclosures_map.at(link1).find(link2) != unclampable_enclosures_map.at(link1).end()) ||
+        (unclampable_enclosures_map.find(link2) != unclampable_enclosures_map.end() &&
+        unclampable_enclosures_map.at(link2).find(link1) != unclampable_enclosures_map.at(link2).end()));
+  };
+
+  /**
+   * @brief Create a capsule with a larger radius than the given capsule.
+   * 
+   * @param cap original capsule
+   * @param additional_radius additional radius to add to the original capsule
+   * @return reach_lib::Capsule expanded capsule
+   */
+  inline reach_lib::Capsule create_expanded_capsule(reach_lib::Capsule cap, double additional_radius) const {
+    cap.r_ += additional_radius;
+    return cap;
+  };
+
   /**
    * @brief Check if a self-constrained collision (SCC) could occur with the given human capsule.
    * 

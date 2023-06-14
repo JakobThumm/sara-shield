@@ -99,23 +99,11 @@ bool VerifyISO::self_constrained_collision_check(const std::vector<int>& robot_c
       // Check if the two links cannot cause a self-constrained collision
       int link1 = robot_collisions[i];
       int link2 = robot_collisions[j];
-      if ((unclampable_enclosures_map.find(link1) != unclampable_enclosures_map.end() &&
-          unclampable_enclosures_map.at(link1).find(link2) != unclampable_enclosures_map.at(link1).end()) ||
-          (unclampable_enclosures_map.find(link2) != unclampable_enclosures_map.end() &&
-          unclampable_enclosures_map.at(link2).find(link1) != unclampable_enclosures_map.at(link2).end())) {
+      if (link_pair_unclampable(link1, link2, unclampable_enclosures_map)) {
         continue;
       }
       // Check if the two links can cause a self-constrained collision
-      reach_lib::Capsule expanded_robot_capsule(
-        reach_lib::Point(
-          robot_capsules[link1].p1_.x,
-          robot_capsules[link1].p1_.y,
-          robot_capsules[link1].p1_.z),
-        reach_lib::Point(
-          robot_capsules[link1].p2_.x,
-          robot_capsules[link1].p2_.y,
-          robot_capsules[link1].p2_.z),
-        robot_capsules[link1].r_ + d_human);
+      reach_lib::Capsule expanded_robot_capsule = create_expanded_capsule(robot_capsules[link1], d_human);
       if (capsuleCollisionCheck(expanded_robot_capsule, robot_capsules[link2])) {
         // Self-constrained collision detected
         return true;
@@ -136,16 +124,7 @@ bool VerifyISO::environmentally_constrained_collision_check(const std::vector<in
   // and checking for intersection with the environment element.
   for (const int& environment_collision : environment_collisions) {
     for (const int& robot_collision : robot_collisions) {
-      reach_lib::Capsule expanded_robot_capsule(
-        reach_lib::Point(
-          robot_capsules[robot_collision].p1_.x,
-          robot_capsules[robot_collision].p1_.y,
-          robot_capsules[robot_collision].p1_.z),
-        reach_lib::Point(
-          robot_capsules[robot_collision].p2_.x,
-          robot_capsules[robot_collision].p2_.y,
-          robot_capsules[robot_collision].p2_.z),
-        robot_capsules[robot_collision].r_ + d_human);
+      reach_lib::Capsule expanded_robot_capsule = create_expanded_capsule(robot_capsules[robot_collision], d_human);
       if (reach_lib::intersections::capsule_aabb_intersection(expanded_robot_capsule,
           environment_elements[environment_collision])) {
         return true;
