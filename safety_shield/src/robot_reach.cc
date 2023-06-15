@@ -83,11 +83,9 @@ std::vector<reach_lib::Capsule> RobotReach::reach(Motion& start_config, Motion& 
       // Calculate radius of ball enclosing point p1 before and after
       double r_1 =
           reach_lib::Point::norm(before.p1_ - after.p1_) / 2.0 + alpha_i[i] * s_diff * s_diff / 8.0 + robot_capsules_[i].r_;
-      spdlog::info("r_1: {}", r_1);
       // Calculate radius of ball enclosing point p2 before and after
       double r_2 = reach_lib::Point::norm(before.p2_ - after.p2_) / 2.0 + alpha_i[i] * s_diff * s_diff / 8.0 +
                    robot_capsules_[i].r_;
-      spdlog::info("r_2: {}", r_2);
       // Final radius is maximum of r_1 and r_2 plus the radius expansion for modelling errors.
       double radius = std::max(r_1, r_2) + secure_radius_;
       // Enclosure capsule radius is max of ball around p1 and ball around p2
