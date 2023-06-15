@@ -20,11 +20,7 @@ LongTermTraj::LongTermTraj(const std::vector<Motion>& long_term_traj, double sam
     robot_reach.calculateAllTransformationMatricesAndCapsules(motion.getAngleRef());
     for (int j = 0; j < long_term_traj_[i].getNbModules(); j++) {
       RobotReach::CapsuleVelocity capsule_velocity = robot_reach.getVelocityOfCapsule(j, motion.getVelocityRef());
-      // Max velocity of this capsule
-      motion_vel = std::max(
-        robot_reach.getMaxCartVelocityOfCapsulePoint(j, capsule_velocity.first),
-        robot_reach.getMaxCartVelocityOfCapsulePoint(j, capsule_velocity.second)
-      );
+      motion_vel = robot_reach.approximateVelOfCapsule(j, capsule_velocity.second.first, capsule_velocity.second.second);
       if (i > 0) {
         double dt = motion.getTime() - long_term_traj_[i-1].getTime();
         double alpha_1 = (std::abs(capsule_velocity.first.first.norm() - previous_capsule_velocities[j].first.first.norm())) / dt;
