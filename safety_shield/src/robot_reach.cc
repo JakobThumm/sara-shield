@@ -65,6 +65,7 @@ reach_lib::Capsule RobotReach::transformCapsule(const int& n_joint, const Eigen:
 std::vector<reach_lib::Capsule> RobotReach::reach(Motion& start_config, Motion& goal_config, double s_diff,
                                                   std::vector<double> alpha_i) {
   try {
+    assert(alpha_i.size() == nb_joints_);
     Eigen::Matrix4d T_before = transformation_matrices_[0];
     Eigen::Matrix4d T_after = transformation_matrices_[0];
     std::vector<reach_lib::Capsule> reach_capsules;
@@ -84,10 +85,12 @@ std::vector<reach_lib::Capsule> RobotReach::reach(Motion& start_config, Motion& 
       reach_lib::Point p_2_k = (before.p2_ + after.p2_) * 0.5;
       // Calculate radius of ball enclosing point p1 before and after
       double r_1 =
-          reach_lib::Point::norm(before.p1_ - after.p1_) / 2 + alpha_i[i] * s_diff * s_diff / 8 + robot_capsules_[i].r_;
+          reach_lib::Point::norm(before.p1_ - after.p1_) / 2.0 + alpha_i[i] * s_diff * s_diff / 8.0 + robot_capsules_[i].r_;
+      spdlog::info("r_1: {}", r_1);
       // Calculate radius of ball enclosing point p2 before and after
-      double r_2 = reach_lib::Point::norm(before.p2_ - after.p2_) / 2 + alpha_i[i + 1] * s_diff * s_diff / 8 +
+      double r_2 = reach_lib::Point::norm(before.p2_ - after.p2_) / 2.0 + alpha_i[i] * s_diff * s_diff / 8.0 +
                    robot_capsules_[i].r_;
+      spdlog::info("r_2: {}", r_2);
       // Final radius is maximum of r_1 and r_2 plus the radius expansion for modelling errors.
       double radius = std::max(r_1, r_2) + secure_radius_;
       // Enclosure capsule radius is max of ball around p1 and ball around p2

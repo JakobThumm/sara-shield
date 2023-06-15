@@ -175,19 +175,19 @@ class RobotReach {
     T = T * Rz;
   }
 
-  Eigen::Vector4d pointToVector(const reach_lib::Point& p) {
+  inline Eigen::Vector4d pointToVector(const reach_lib::Point& p) {
     Eigen::Vector4d vec;
     vec << p.x, p.y, p.z, 1.0;
     return vec;
   }
 
-  Eigen::Vector3d pointTo3dVector(const reach_lib::Point& p) {
+  inline Eigen::Vector3d pointTo3dVector(const reach_lib::Point& p) {
     Eigen::Vector3d vec;
     vec << p.x, p.y, p.z;
     return vec;
   }
 
-  reach_lib::Point vectorToPoint(const Eigen::Vector4d& vec) {
+  inline reach_lib::Point vectorToPoint(const Eigen::Vector4d& vec) {
     return reach_lib::Point(vec(0), vec(1), vec(2));
   }
 
