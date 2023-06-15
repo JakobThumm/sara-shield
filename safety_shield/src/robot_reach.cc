@@ -143,25 +143,11 @@ RobotReach::CapsuleVelocity RobotReach::getVelocityOfCapsule(const int capsule, 
 
 double RobotReach::getMaxVelocityOfCapsule(const int capsule, std::vector<double> q_dot) {
   RobotReach::CapsuleVelocity capsule_velocity = getVelocityOfCapsule(capsule, q_dot);
-  return std::max(
-    getMaxCartVelocityOfCapsulePoint(capsule, capsule_velocity.v1),
-    getMaxCartVelocityOfCapsulePoint(capsule, capsule_velocity.v2)
-  );
-}
-
-double RobotReach::getMaxCartVelocityOfCapsulePoint(const int capsule, const RobotReach::SE3Vel& velocity) {
-  double epsilon = 1e-6;
-  if (velocity.w.norm() < epsilon) {
-    // no angular velocity
-    return velocity.v.norm();
+  if (velocity_method_ == APPROXIMATE) {
+    return approximateVelOfCapsule(capsule, capsule_velocity.v2.v, capsule_velocity.v2.w);
   } else {
-    // with angular velocity
-    if (velocity_method_ == APPROXIMATE) {
-      return approximateVelOfCapsule(capsule, velocity.v, velocity.w);
-    } else {
-      // velocity_method_ == EXACT
-      return exactVelOfCapsule(capsule, velocity.v, velocity.w);
-    }
+    // velocity_method_ == EXACT
+    return exactVelOfCapsule(capsule, capsule_velocity.v2.v, capsule_velocity.v2.w);
   }
 }
 

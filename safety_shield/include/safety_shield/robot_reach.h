@@ -247,15 +247,6 @@ class RobotReach {
   CapsuleVelocity getVelocityOfCapsule(const int capsule, std::vector<double> q_dot);
 
   /**
-   * @brief Get the maximum Cartesian velocity of a specific capsule point
-   * 
-   * @param capsule 
-   * @param velocity velocity in SE3 of capsule point
-   * @return double maximum cartesian velocity of capsule point
-   */
-  double getMaxCartVelocityOfCapsulePoint(const int capsule, const SE3Vel& velocity);
-
-  /**
    * @brief Calculate the maximum norm of the cartesian velocity for a specific capsule
    * @assumption calculateAlltransformationMatricesAndCapsules() was called before
    * @param capsule which capsule
