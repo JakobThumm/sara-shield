@@ -220,16 +220,19 @@ bool VerifyISO::environmentally_constrained_collision_check(const std::vector<in
   // and checking for intersection with the environment element.
   for (const int& environment_collision : environment_collisions) {
     for (const int& link_index : robot_collisions) {
+      spdlog::info("Checking link {} against environment element {}", link_index, environment_collision);
       reach_lib::Capsule expanded_robot_capsule = create_expanded_capsule(robot_capsules[link_index], d_human);
       if (!reach_lib::intersections::capsule_aabb_intersection(expanded_robot_capsule,
           environment_elements[environment_collision])) {
         continue;
       }
+      spdlog::info("Collision is possible between link {} and environment element {}", link_index, environment_collision);
       // Check if the link is moving towards the environment element
       // Find normal vector on the environment element pointing towards the link
       Eigen::Vector3d normal;
       if (!calculate_normal_vector(robot_capsules[link_index], environment_elements[environment_collision], normal)) {
         // If the calculation of the normal vector fails, the velocity criterion fails.
+        spdlog::info("Could not calculate normal vector for link {} and environment element {}", link_index, environment_collision);
         return true;
       }
       // Calculate maximal velocity error
@@ -238,8 +241,10 @@ bool VerifyISO::environmentally_constrained_collision_check(const std::vector<in
       assert (link_index < beta_i.size());
       double velocity_error = 1/2 * delta_s * (alpha_i[link_index] + beta_i[link_index] * robot_capsules[link_index].r_);
       if (capsule_trajectory_moving_towards_element(robot_capsule_velocities_start, robot_capsule_velocities_end, robot_capsules, link_index, normal, velocity_error)) {
+        spdlog::info("Link {} moving towards environment element {}", link_index, environment_collision);
         return true;
       }
+      spdlog::info("Collision between link {} and environment element {} was disregarded.", link_index, environment_collision);
     }
   }
   return false;
