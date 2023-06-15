@@ -10,7 +10,7 @@
 namespace safety_shield {
 
 TEST_F(RobotReachTest, InitializationTest) {
-  EXPECT_DOUBLE_EQ(0, 0.0);
+  EXPECT_NEAR(0, 0.0, 1e-8);
 }
 
 TEST_F(RobotReachTest, ForwardKinematicTest0) {
@@ -154,6 +154,68 @@ TEST_F(RobotReachTest, ReachTest1) {
     EXPECT_NEAR(result[i].p2_.z, expect[i].p2_.z, 1e-5);
     EXPECT_NEAR(result[i].r_, expect[i].r_, 1e-5);
   }
+}
+
+// Test this function
+/*
+Eigen::Matrix<double, 6, Eigen::Dynamic> RobotReach::getJacobian(const int joint, const reach_lib::Point& point) {
+  Eigen::Matrix<double, 6, Eigen::Dynamic> jacobian;
+  jacobian.setZero(6, joint + 1);
+  Eigen::Vector3d p_e = pointTo3dVector(point);
+  for (int i = 0; i < joint + 1; ++i) {
+    Eigen::Vector3d z_i = z_vectors_[i + 1];
+    Eigen::Vector3d p_i = pointTo3dVector(robot_capsules_for_velocity_[i].p1_);
+    Eigen::Vector3d upper = z_i.cross(p_e - p_i);
+    Eigen::Vector<double, 6> column;
+    column << upper, z_i;
+    jacobian.col(i) = column;
+  }
+  return jacobian;
+}
+*/
+TEST_F(RobotReachTest, GetJacobianTest0) {
+  robot_reach_->calculateAllTransformationMatricesAndCapsules(std::vector<double>{0.0});
+  reach_lib::Point point(0.0, 0.0, 1.1);
+  Eigen::Matrix<double, 6, Eigen::Dynamic> jacobian = robot_reach_->getJacobian(0, point);
+  Eigen::Matrix<double, 6, Eigen::Dynamic> expect;
+  expect.setZero(6, 1);
+  expect << 0, 0, 0, 0, -1, 0;
+  EXPECT_NEAR(jacobian(0, 0), expect(0, 0), 1e-8);
+  EXPECT_NEAR(jacobian(1, 0), expect(1, 0), 1e-8);
+  EXPECT_NEAR(jacobian(2, 0), expect(2, 0), 1e-8);
+  EXPECT_NEAR(jacobian(3, 0), expect(3, 0), 1e-8);
+  EXPECT_NEAR(jacobian(4, 0), expect(4, 0), 1e-8);
+  EXPECT_NEAR(jacobian(5, 0), expect(5, 0), 1e-8);
+}
+
+TEST_F(RobotReachTest, GetJacobianTest1) {
+  robot_reach_->calculateAllTransformationMatricesAndCapsules(std::vector<double>{0.0});
+  reach_lib::Point point(0.0, 0.0, 1.0);
+  Eigen::Matrix<double, 6, Eigen::Dynamic> jacobian = robot_reach_->getJacobian(0, point);
+  Eigen::Matrix<double, 6, Eigen::Dynamic> expect;
+  expect.setZero(6, 1);
+  expect << 0.1, 0, 0, 0, -1, 0;
+  EXPECT_NEAR(jacobian(0, 0), expect(0, 0), 1e-8);
+  EXPECT_NEAR(jacobian(1, 0), expect(1, 0), 1e-8);
+  EXPECT_NEAR(jacobian(2, 0), expect(2, 0), 1e-8);
+  EXPECT_NEAR(jacobian(3, 0), expect(3, 0), 1e-8);
+  EXPECT_NEAR(jacobian(4, 0), expect(4, 0), 1e-8);
+  EXPECT_NEAR(jacobian(5, 0), expect(5, 0), 1e-8);
+}
+
+TEST_F(RobotReachTest, GetJacobianTest2) {
+  robot_reach_->calculateAllTransformationMatricesAndCapsules(std::vector<double>{M_PI/2.0});
+  reach_lib::Point point(0.1, 0.0, 1.1);
+  Eigen::Matrix<double, 6, Eigen::Dynamic> jacobian = robot_reach_->getJacobian(0, point);
+  Eigen::Matrix<double, 6, Eigen::Dynamic> expect;
+  expect.setZero(6, 1);
+  expect << 0.0, 0, 0.1, 0, -1, 0;
+  EXPECT_NEAR(jacobian(0, 0), expect(0, 0), 1e-8);
+  EXPECT_NEAR(jacobian(1, 0), expect(1, 0), 1e-8);
+  EXPECT_NEAR(jacobian(2, 0), expect(2, 0), 1e-8);
+  EXPECT_NEAR(jacobian(3, 0), expect(3, 0), 1e-8);
+  EXPECT_NEAR(jacobian(4, 0), expect(4, 0), 1e-8);
+  EXPECT_NEAR(jacobian(5, 0), expect(5, 0), 1e-8);
 }
 
 }  // namespace safety_shield
