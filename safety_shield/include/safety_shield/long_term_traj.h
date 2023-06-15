@@ -250,7 +250,9 @@ class LongTermTraj {
    */
   inline double getModIndex(double s) const {
     assert(sample_time_ != 0);
-    return fmod(s, sample_time_);
+    double ind = s / sample_time_;
+    double intpart;
+    return modf(ind, &intpart);
   }
 
   /**
