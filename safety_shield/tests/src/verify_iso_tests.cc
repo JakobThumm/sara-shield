@@ -46,6 +46,36 @@ TEST_F(VerifyIsoTest, VerifyHumanReachTest) {
   EXPECT_TRUE(verify_iso_.verify_human_reach(r_caps, h_caps_list));
 }
 
+TEST_F(VerifyIsoTest, FindHumanRobotContactTest) {
+  reach_lib::Capsule r_cap1(reach_lib::Point(0.0, 0.0, 0.0), reach_lib::Point(0.0, 0.0, 1.0), 0.1);
+  reach_lib::Capsule r_cap2(reach_lib::Point(0.0, 0.0, 1.0), reach_lib::Point(0.0, 0.0, 2.0), 0.1);
+  std::vector<reach_lib::Capsule> r_caps = {r_cap1, r_cap2};
+  reach_lib::Capsule h_cap1(reach_lib::Point(1.0, 0.0, 0.0), reach_lib::Point(1.0, 0.0, 1.0), 0.5);
+  reach_lib::Capsule h_cap2(reach_lib::Point(1.0, 0.0, 0.0), reach_lib::Point(0.0, 0.0, 1.0), 0.5);
+  reach_lib::Capsule h_cap3(reach_lib::Point(1.0, 0.0, 0.0), reach_lib::Point(0.0, 0.0, 0.1), 0.5);
+  std::vector<int> human_robot_collisions_1 = verify_iso_.find_human_robot_contact(h_cap1, r_caps);
+  EXPECT_EQ(human_robot_collisions_1.size(), 0);
+  std::vector<int> human_robot_collisions_2 = verify_iso_.find_human_robot_contact(h_cap2, r_caps);
+  EXPECT_EQ(human_robot_collisions_2.size(), 2);
+  EXPECT_EQ(human_robot_collisions_2[0], 0);
+  EXPECT_EQ(human_robot_collisions_2[1], 1);
+  std::vector<int> human_robot_collisions_3 = verify_iso_.find_human_robot_contact(h_cap3, r_caps);
+  EXPECT_EQ(human_robot_collisions_3.size(), 1);
+  EXPECT_EQ(human_robot_collisions_3[0], 0);
+}
+
+TEST_F(VerifyIsoTest, FindHumanEnvironmentContactTest) {
+  reach_lib::Capsule h_cap1(reach_lib::Point(0.0, 0.0, 0.0), reach_lib::Point(0.0, 0.0, 1.0), 0.1);
+  reach_lib::Capsule h_cap2(reach_lib::Point(0.0, 0.0, 1.0), reach_lib::Point(0.0, 0.0, 2.0), 0.1);
+  reach_lib::AABB env1({-1.0, -1.0, -0.5}, {1.0, 1.0, 0.0});
+  reach_lib::AABB env2({-1.0, -1.0, -1.0}, {1.0, -0.5, 1.0});
+  std::vector<reach_lib::AABB> envs = {env1, env2};
+  std::vector<int> human_env_collisions_1 = verify_iso_.find_human_environment_contact(h_cap1, envs);
+  EXPECT_EQ(human_env_collisions_1.size(), 1);
+  EXPECT_EQ(human_env_collisions_1[0], 0);
+  std::vector<int> human_env_collisions_2 = verify_iso_.find_human_environment_contact(h_cap2, envs);
+  EXPECT_EQ(human_env_collisions_2.size(), 0);
+}
 }  // namespace safety_shield
 
 int main(int argc, char **argv) {
