@@ -1,11 +1,12 @@
 #include <gtest/gtest.h>
-#include <math.h>
 
 #include <Eigen/Dense>
+#include <cmath>
 
 #include "robot_reach_fixture.h"
 #include "safety_shield/robot_reach.h"
 #include "spdlog/spdlog.h"
+
 
 namespace safety_shield {
 
@@ -272,6 +273,54 @@ TEST_F(RobotReachTest, ApproximateVelOfCapsuleTest1) {
   RobotReach::CapsuleVelocity capsule_velocity = robot_reach_->getVelocityOfCapsule(0, q_dot);
   double v_approx = robot_reach_->approximateVelOfCapsule(0, capsule_velocity.second.first, capsule_velocity.second.second);
   EXPECT_NEAR(v_approx, 0.11, 1e-8);
+}
+
+// position vector of tcp from siciliano p. 114
+// a1 = a2 = a3 = 1
+reach_lib::Point position_tcp_siciliano(std::vector<double> q) {
+    double x = cos(q[0]) + cos(q[0] + q[1]) + cos(q[0] + q[1] + q[2]);
+    double y = sin(q[0]) + sin(q[0] + q[1]) + sin(q[0] + q[1] + q[2]);
+    return reach_lib::Point(x, y, 0);
+}
+
+// jacobian of tcp from siciliano p. 114
+// a1 = a2 = a3 = 1
+Eigen::Matrix<double, 6, Eigen::Dynamic> jacobian_tcp_siciliano(std::vector<double> q) {
+    Eigen::Matrix<double, 6, Eigen::Dynamic> jacobian;
+    jacobian.setZero(6, 3);
+    double element_00 = -sin(q[0]) - sin(q[0] + q[1]) - sin(q[0] + q[1] + q[2]);
+    double element_01 = cos(q[0]) + cos(q[0] + q[1]) + cos(q[0] + q[1] + q[2]);
+    double element_10 = -sin(q[0] + q[1]) - sin(q[0] + q[1] + q[2]);
+    double element_11 = cos(q[0] + q[1]) + cos(q[0] + q[1] + q[2]);
+    double element_20 = -sin(q[0] + q[1] + q[2]);
+    double element_21 = cos(q[0] + q[1] + q[2]);
+
+    Eigen::Vector<double, 6> col_0;
+    col_0 << element_00, element_01, 0, 0, 0, 1;
+    jacobian.col(0) = col_0;
+
+    Eigen::Vector<double, 6> col_1;
+    col_1 << element_10, element_11, 0, 0, 0, 1;
+    jacobian.col(1) = col_1;
+
+    Eigen::Vector<double, 6> col_2;
+    col_2 << element_20, element_21, 0, 0, 0, 1;
+    jacobian.col(2) = col_2;
+
+    return jacobian;
+}
+
+TEST_F(RobotReachTestVelocity, JacobianSicilianoTest1) {
+    std::vector<double> q = {0.0, 0.0, 0.0};
+    robot_reach_->calculateAllTransformationMatricesAndCapsules(q);
+    reach_lib::Point point = position_tcp_siciliano(q);
+    Eigen::Matrix<double, 6, Eigen::Dynamic> jacobian = robot_reach_->getJacobian(2, point);
+    Eigen::Matrix<double, 6, Eigen::Dynamic> expect = jacobian_tcp_siciliano(q);
+    std::cout << "sara shield:" << std::endl;
+    std::cout << jacobian << std::endl;
+    std::cout << "siciliano: " << std::endl;
+    std::cout << expect << std::endl;
+    ASSERT_TRUE((jacobian - expect).norm() < 0.01);
 }
 
 }  // namespace safety_shield

@@ -84,8 +84,9 @@ protected:
      * @brief Create the robot reach object
      */
     void SetUp() override {
-        // setup for tests with jacobian matrix, testing with schunk robot
-        std::filesystem::path config_file = std::filesystem::current_path().parent_path() / "config/robot_parameters_schunk.yaml";
+        // setup for tests with jacobian matrix, testing with siciliano planar robot from p. 69 and p. 114
+        // a1 = a2 = a3 = 1
+        std::filesystem::path config_file = std::filesystem::current_path().parent_path() / "config/robot_reach_test_siciliano.yaml";
         YAML::Node robot_config = YAML::LoadFile(config_file.string());
         double nb_joints = robot_config["nb_joints"].as<int>();
         std::vector<double> transformation_matrices = robot_config["transformation_matrices"].as<std::vector<double>>();
@@ -102,6 +103,8 @@ protected:
         q_ = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
         motion_ = Motion(0.0, q_, q_);
     }
+
+
 };
 
 } // namespace safety_shield
