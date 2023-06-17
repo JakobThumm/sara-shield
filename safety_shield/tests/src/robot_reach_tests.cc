@@ -316,10 +316,37 @@ TEST_F(RobotReachTestVelocity, JacobianSicilianoTest1) {
     reach_lib::Point point = position_tcp_siciliano(q);
     Eigen::Matrix<double, 6, Eigen::Dynamic> jacobian = robot_reach_->getJacobian(2, point);
     Eigen::Matrix<double, 6, Eigen::Dynamic> expect = jacobian_tcp_siciliano(q);
-    std::cout << "sara shield:" << std::endl;
+    ASSERT_TRUE((jacobian - expect).norm() < 0.01);
+}
+
+TEST_F(RobotReachTestVelocity, JacobianSicilianoTest2) {
+    std::vector<double> q = {1.0, 1.0, 1.0};
+    robot_reach_->calculateAllTransformationMatricesAndCapsules(q);
+    reach_lib::Point point = position_tcp_siciliano(q);
+    Eigen::Matrix<double, 6, Eigen::Dynamic> jacobian = robot_reach_->getJacobian(2, point);
+    Eigen::Matrix<double, 6, Eigen::Dynamic> expect = jacobian_tcp_siciliano(q);
+    std::cout << "sara-shield:" << std::endl;
     std::cout << jacobian << std::endl;
-    std::cout << "siciliano: " << std::endl;
+    std::cout << "siciliano" << std::endl;
     std::cout << expect << std::endl;
+    ASSERT_TRUE((jacobian - expect).norm() < 0.01);
+}
+
+TEST_F(RobotReachTestVelocity, JacobianSicilianoTest3) {
+    std::vector<double> q = {2.0, 2.0, 2.0};
+    robot_reach_->calculateAllTransformationMatricesAndCapsules(q);
+    reach_lib::Point point = position_tcp_siciliano(q);
+    Eigen::Matrix<double, 6, Eigen::Dynamic> jacobian = robot_reach_->getJacobian(2, point);
+    Eigen::Matrix<double, 6, Eigen::Dynamic> expect = jacobian_tcp_siciliano(q);
+    ASSERT_TRUE((jacobian - expect).norm() < 0.01);
+}
+
+TEST_F(RobotReachTestVelocity, JacobianSicilianoTest4) {
+    std::vector<double> q = {1.247, 0.373, 2.142};
+    robot_reach_->calculateAllTransformationMatricesAndCapsules(q);
+    reach_lib::Point point = position_tcp_siciliano(q);
+    Eigen::Matrix<double, 6, Eigen::Dynamic> jacobian = robot_reach_->getJacobian(2, point);
+    Eigen::Matrix<double, 6, Eigen::Dynamic> expect = jacobian_tcp_siciliano(q);
     ASSERT_TRUE((jacobian - expect).norm() < 0.01);
 }
 
