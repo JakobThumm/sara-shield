@@ -76,6 +76,65 @@ TEST_F(VerifyIsoTest, FindHumanEnvironmentContactTest) {
   std::vector<int> human_env_collisions_2 = verify_iso_.find_human_environment_contact(h_cap2, envs);
   EXPECT_EQ(human_env_collisions_2.size(), 0);
 }
+
+// Test this function
+/*
+void VerifyISO::build_contact_maps(const std::vector<reach_lib::Capsule>& robot_capsules, 
+      const std::vector<reach_lib::Capsule>& human_capsules,
+      const std::vector<reach_lib::AABB>& environment_elements,
+      std::unordered_map<int, std::vector<int>>& robot_collision_map,
+      std::unordered_map<int, std::vector<int>>& environment_collision_map) {
+  for (int i = 0; i < human_capsules.size(); i++) {
+    // Collisions with robot links
+    std::vector<int> robot_collisions = find_human_robot_contact(human_capsules[i], robot_capsules);
+    if (robot_collisions.size() > 0) {
+      if (robot_collision_map.find(i) == robot_collision_map.end()) {
+        robot_collision_map[i] = std::vector<int>();
+      }
+      robot_collision_map[i].insert(robot_collision_map[i].end(), robot_collisions.begin(), robot_collisions.end());
+    }
+    std::vector<int> environment_collisions = find_human_environment_contact(human_capsules[i], environment_elements);
+    if (environment_collisions.size() > 0) {
+      if (environment_collision_map.find(i) == environment_collision_map.end()) {
+        environment_collision_map[i] = std::vector<int>();
+      }
+      environment_collision_map[i].insert(environment_collision_map[i].end(), environment_collisions.begin(), environment_collisions.end());
+    }
+  }
+}
+*/
+TEST_F(VerifyIsoTest, BuildContactMapsTest) {
+  reach_lib::Capsule r_cap1(reach_lib::Point(0.0, 0.0, 0.0), reach_lib::Point(0.0, 0.0, 1.0), 0.1);
+  reach_lib::Capsule r_cap2(reach_lib::Point(0.0, 0.0, 1.0), reach_lib::Point(0.0, 0.0, 2.0), 0.1);
+  std::vector<reach_lib::Capsule> r_caps = {r_cap1, r_cap2};
+  reach_lib::Capsule h_cap1(reach_lib::Point(1.0, 0.0, 0.0), reach_lib::Point(0.0, 0.0, 1.0), 0.5);
+  reach_lib::Capsule h_cap2(reach_lib::Point(1.0, 0.0, 0.0), reach_lib::Point(0.0, 0.0, -1.0), 0.5);
+  reach_lib::Capsule h_cap3(reach_lib::Point(0.0, 0.0, 0.0), reach_lib::Point(0.0, 0.0, 0.0), 0.5);
+  std::vector<reach_lib::Capsule> h_caps = {h_cap1, h_cap2, h_cap3};
+  reach_lib::AABB env1({-1.0, -1.0, 1.0}, {1.0, 1.0, 1.5});
+  reach_lib::AABB env2({-1.0, -1.0, 1.9}, {1.0, 1.0, 2.0});
+  std::vector<reach_lib::AABB> envs = {env1, env2};
+  std::unordered_map<int, std::vector<int>> robot_collision_map;
+  std::unordered_map<int, std::vector<int>> environment_collision_map;
+  verify_iso_.build_contact_maps(r_caps, h_caps, envs, robot_collision_map, environment_collision_map);
+  EXPECT_EQ(robot_collision_map.size(), 2);
+  // h_cap1 collides with r_cap1 and r_cap2
+  EXPECT_EQ(robot_collision_map[0].size(), 2);
+  EXPECT_EQ(robot_collision_map[0][0], 0);
+  EXPECT_EQ(robot_collision_map[0][1], 1);
+  // h_cap2 doesn't collide with any robot capsule
+  EXPECT_TRUE(robot_collision_map.find(1) == robot_collision_map.end());
+  // h_cap3 collides with r_cap1
+  EXPECT_EQ(robot_collision_map[2].size(), 1);
+  EXPECT_EQ(robot_collision_map[2][0], 0);
+  // h_cap1 collides with env1
+  EXPECT_EQ(environment_collision_map[0].size(), 1);
+  EXPECT_EQ(environment_collision_map[0][0], 0);
+  // h_cap2 doesn't collide with any environment element
+  EXPECT_TRUE(environment_collision_map.find(1) == environment_collision_map.end());
+  // h_cap3 doesn't collide with any environment element
+  EXPECT_TRUE(environment_collision_map.find(2) == environment_collision_map.end());
+}
 }  // namespace safety_shield
 
 int main(int argc, char **argv) {
