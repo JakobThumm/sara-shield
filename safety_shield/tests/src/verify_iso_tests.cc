@@ -77,32 +77,6 @@ TEST_F(VerifyIsoTest, FindHumanEnvironmentContactTest) {
   EXPECT_EQ(human_env_collisions_2.size(), 0);
 }
 
-// Test this function
-/*
-void VerifyISO::build_contact_maps(const std::vector<reach_lib::Capsule>& robot_capsules, 
-      const std::vector<reach_lib::Capsule>& human_capsules,
-      const std::vector<reach_lib::AABB>& environment_elements,
-      std::unordered_map<int, std::vector<int>>& robot_collision_map,
-      std::unordered_map<int, std::vector<int>>& environment_collision_map) {
-  for (int i = 0; i < human_capsules.size(); i++) {
-    // Collisions with robot links
-    std::vector<int> robot_collisions = find_human_robot_contact(human_capsules[i], robot_capsules);
-    if (robot_collisions.size() > 0) {
-      if (robot_collision_map.find(i) == robot_collision_map.end()) {
-        robot_collision_map[i] = std::vector<int>();
-      }
-      robot_collision_map[i].insert(robot_collision_map[i].end(), robot_collisions.begin(), robot_collisions.end());
-    }
-    std::vector<int> environment_collisions = find_human_environment_contact(human_capsules[i], environment_elements);
-    if (environment_collisions.size() > 0) {
-      if (environment_collision_map.find(i) == environment_collision_map.end()) {
-        environment_collision_map[i] = std::vector<int>();
-      }
-      environment_collision_map[i].insert(environment_collision_map[i].end(), environment_collisions.begin(), environment_collisions.end());
-    }
-  }
-}
-*/
 TEST_F(VerifyIsoTest, BuildContactMapsTest) {
   reach_lib::Capsule r_cap1(reach_lib::Point(0.0, 0.0, 0.0), reach_lib::Point(0.0, 0.0, 1.0), 0.1);
   reach_lib::Capsule r_cap2(reach_lib::Point(0.0, 0.0, 1.0), reach_lib::Point(0.0, 0.0, 2.0), 0.1);
@@ -134,6 +108,31 @@ TEST_F(VerifyIsoTest, BuildContactMapsTest) {
   EXPECT_TRUE(environment_collision_map.find(1) == environment_collision_map.end());
   // h_cap3 doesn't collide with any environment element
   EXPECT_TRUE(environment_collision_map.find(2) == environment_collision_map.end());
+}
+
+TEST_F(VerifyIsoTest, SelfConstrainedCollisionCheckTest0) {
+  reach_lib::Capsule r_cap1(reach_lib::Point(0.0, 0.0, 0.0), reach_lib::Point(0.0, 1.0, 0.0), 0.1);
+  reach_lib::Capsule r_cap2(reach_lib::Point(1.0, 0.0, 0.0), reach_lib::Point(1.0, 1.0, 0.0), 0.1);
+  reach_lib::Capsule r_cap3(reach_lib::Point(1.0, 1.0, 0.0), reach_lib::Point(1.0, 1.1, 0.0), 0.1);
+  reach_lib::Capsule r_cap4(reach_lib::Point(0.0, 0.0, 0.0), reach_lib::Point(0.0, 0.0, 1.0), 0.1);
+  reach_lib::Capsule r_cap5(reach_lib::Point(-0.5, 0.0, 0.5), reach_lib::Point(0.5, 0.0, 0.5), 0.1);
+  std::vector<reach_lib::Capsule> r_caps = {r_cap1, r_cap2, r_cap3, r_cap4, r_cap5};
+  std::unordered_map<int, std::set<int>> unclampable_enclosures_map;
+  unclampable_enclosures_map[1] = {2};
+  unclampable_enclosures_map[2] = {1};
+  double d_human = 0.1;
+  std::vector<int> robot_collisions_1 = {0, 1, 2};
+  EXPECT_FALSE(verify_iso_.self_constrained_collision_check(robot_collisions_1, unclampable_enclosures_map, r_caps, d_human));
+  std::vector<int> robot_collisions_2 = {0, 3};
+  EXPECT_TRUE(verify_iso_.self_constrained_collision_check(robot_collisions_2, unclampable_enclosures_map, r_caps, d_human));
+  std::vector<int> robot_collisions_3 = {3, 4};
+  EXPECT_TRUE(verify_iso_.self_constrained_collision_check(robot_collisions_3, unclampable_enclosures_map, r_caps, d_human));
+  d_human = 0.3;
+  std::vector<int> robot_collisions_4 = {0, 4};
+  EXPECT_TRUE(verify_iso_.self_constrained_collision_check(robot_collisions_4, unclampable_enclosures_map, r_caps, d_human));
+  d_human = 0.29;
+  std::vector<int> robot_collisions_5 = {0, 4};
+  EXPECT_FALSE(verify_iso_.self_constrained_collision_check(robot_collisions_5, unclampable_enclosures_map, r_caps, d_human));
 }
 }  // namespace safety_shield
 
