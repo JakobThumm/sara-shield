@@ -260,6 +260,10 @@ class RobotReach {
     return cross;
   }
 
+  inline reach_lib::Point getTcpOfVelocityCapsule() {
+      return robot_capsules_for_velocity_[robot_capsules_for_velocity_.size() - 1].p2_;
+  }
+
 };
 }  // namespace safety_shield
 

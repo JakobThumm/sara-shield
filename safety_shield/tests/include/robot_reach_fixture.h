@@ -54,7 +54,7 @@ class RobotReachTest : public ::testing::Test {
     robot_reach_ = new RobotReach(transformation_matrices, 
       nb_joints, 
       enclosures, 
-      0.0, 0.0, 1.0, 
+      0.0, 0.0, 1.0,
       0.0, 0.0, 0.0,
       secure_radius);
   }
@@ -69,16 +69,6 @@ protected:
      * @brief The robot reach object
      */
     RobotReach* robot_reach_;
-
-    /**
-     * @brief Motion object
-     */
-    Motion motion_;
-
-    /**
-     * @brief robot-configuration
-     */
-    std::vector<double> q_;
 
     /**
      * @brief Create the robot reach object
@@ -98,10 +88,6 @@ protected:
                                       0.0, 0.0, 0.0,
                                       0.0, 0.0, 0.0,
                                       secure_radius);
-
-        //q_ = {1.0, 2.0, 3.0, 4.0, 5.0, 6.0};
-        q_ = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
-        motion_ = Motion(0.0, q_, q_);
     }
 
 
