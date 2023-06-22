@@ -7,7 +7,6 @@
 #include "safety_shield/robot_reach.h"
 #include "spdlog/spdlog.h"
 
-
 namespace safety_shield {
 
 TEST_F(RobotReachTest, InitializationTest) {
@@ -100,12 +99,9 @@ TEST_F(RobotReachTest, ReachTest0) {
   double s_diff = 0.1;
   std::vector<reach_lib::Capsule> result = robot_reach_->reach(start_config, goal_config, s_diff, alpha_i);
   std::vector<reach_lib::Capsule> expect;
-  double expexted_radius = 0.01 + 1.0/8.0 * s_diff * s_diff * alpha_i[0] + 0.03;
-  reach_lib::Capsule capsule(
-    reach_lib::Point(0.0, 0.0, 1.0 + 0.1),
-    reach_lib::Point(0.0, 0.0, 1.0 + 0.1 - 0.1),
-    expexted_radius
-  );
+  double expexted_radius = 0.01 + 1.0 / 8.0 * s_diff * s_diff * alpha_i[0] + 0.03;
+  reach_lib::Capsule capsule(reach_lib::Point(0.0, 0.0, 1.0 + 0.1), reach_lib::Point(0.0, 0.0, 1.0 + 0.1 - 0.1),
+                             expexted_radius);
   expect.push_back(capsule);
   for (int i = 0; i < 1; i++) {
     EXPECT_EQ(result[i].p1_.x, expect[i].p1_.x);
@@ -120,17 +116,18 @@ TEST_F(RobotReachTest, ReachTest0) {
 
 TEST_F(RobotReachTest, ReachTest1) {
   Motion start_config(0, std::vector<double>{0.0}, 0);
-  Motion goal_config(0.1, std::vector<double>{M_PI/8.0}, 0.1);
+  Motion goal_config(0.1, std::vector<double>{M_PI / 8.0}, 0.1);
   std::vector<double> alpha_i{1.0};
   double s_diff = 0.1;
   std::vector<reach_lib::Capsule> result = robot_reach_->reach(start_config, goal_config, s_diff, alpha_i);
   std::vector<reach_lib::Capsule> expect;
-  double expexted_radius = sqrt(pow(0.03826834, 2) + pow(1.1 - 0.09238795 - 1.0, 2))/2.0 + 0.01 + 1.0/8.0 * pow(s_diff, 2) * alpha_i[0] + 0.03;
-  /* T = 
+  double expexted_radius = sqrt(pow(0.03826834, 2) + pow(1.1 - 0.09238795 - 1.0, 2)) / 2.0 + 0.01 +
+                           1.0 / 8.0 * pow(s_diff, 2) * alpha_i[0] + 0.03;
+  /* T =
     [ 1, 0, 0, 0;
-      0, 0, -1, 0; 
-      0, 1, 0, 1.1; 
-      0, 0, 0, 1, ] * 
+      0, 0, -1, 0;
+      0, 1, 0, 1.1;
+      0, 0, 0, 1, ] *
     [  0.9238795, -0.3826834,  0.0000000, 0.0;
        0.3826834,  0.9238795,  0.0000000, 0.0;
        0.0000000,  0.0000000,  1.0000000, 0.0;
@@ -140,11 +137,8 @@ TEST_F(RobotReachTest, ReachTest1) {
          0.3827    0.9239         0    1.1000
          0         0         0    1.0000]
   */
-  reach_lib::Capsule capsule(
-    reach_lib::Point(0.0, 0.0, 1.1),
-    reach_lib::Point(0.03826834/2.0, 0.0, ((1.1 - 0.09238795) + 1.0) / 2),
-    expexted_radius
-  );
+  reach_lib::Capsule capsule(reach_lib::Point(0.0, 0.0, 1.1),
+                             reach_lib::Point(0.03826834 / 2.0, 0.0, ((1.1 - 0.09238795) + 1.0) / 2), expexted_radius);
   expect.push_back(capsule);
   for (int i = 0; i < 1; i++) {
     EXPECT_NEAR(result[i].p1_.x, expect[i].p1_.x, 1e-5);
@@ -174,6 +168,17 @@ Eigen::Matrix<double, 6, Eigen::Dynamic> RobotReach::getJacobian(const int joint
   return jacobian;
 }
 */
+
+void compareJacobians(Eigen::Matrix<double, 6, Eigen::Dynamic>& jacobian,
+                      Eigen::Matrix<double, 6, Eigen::Dynamic>& expect) {
+  ASSERT_TRUE(jacobian.size() == expect.size());
+  for (unsigned i = 0; i < jacobian.rows(); ++i) {
+    for (unsigned j = 0; j < jacobian.cols(); ++j) {
+      EXPECT_NEAR(jacobian(i, j), expect(i, j), 1e-8);
+    }
+  }
+}
+
 TEST_F(RobotReachTest, GetJacobianTest0) {
   robot_reach_->calculateAllTransformationMatricesAndCapsules(std::vector<double>{0.0});
   reach_lib::Point point(0.0, 0.0, 1.1);
@@ -205,7 +210,7 @@ TEST_F(RobotReachTest, GetJacobianTest1) {
 }
 
 TEST_F(RobotReachTest, GetJacobianTest2) {
-  robot_reach_->calculateAllTransformationMatricesAndCapsules(std::vector<double>{M_PI/2.0});
+  robot_reach_->calculateAllTransformationMatricesAndCapsules(std::vector<double>{M_PI / 2.0});
   reach_lib::Point point(0.1, 0.0, 1.1);
   Eigen::Matrix<double, 6, Eigen::Dynamic> jacobian = robot_reach_->getJacobian(0, point);
   Eigen::Matrix<double, 6, Eigen::Dynamic> expect;
@@ -240,7 +245,7 @@ TEST_F(RobotReachTest, GetVelocityOfCapsuleTest0) {
 }
 
 TEST_F(RobotReachTest, GetVelocityOfCapsuleTest1) {
-  robot_reach_->calculateAllTransformationMatricesAndCapsules(std::vector<double>{M_PI/2.0});
+  robot_reach_->calculateAllTransformationMatricesAndCapsules(std::vector<double>{M_PI / 2.0});
   std::vector<double> q_dot{1.0};
   RobotReach::CapsuleVelocity capsule_velocity = robot_reach_->getVelocityOfCapsule(0, q_dot);
   RobotReach::SE3Vel vel1 = capsule_velocity.first;
@@ -263,93 +268,242 @@ TEST_F(RobotReachTest, ApproximateVelOfCapsuleTest0) {
   robot_reach_->calculateAllTransformationMatricesAndCapsules(std::vector<double>{0.0});
   std::vector<double> q_dot{1.0};
   RobotReach::CapsuleVelocity capsule_velocity = robot_reach_->getVelocityOfCapsule(0, q_dot);
-  double v_approx = robot_reach_->approximateVelOfCapsule(0, capsule_velocity.second.first, capsule_velocity.second.second);
+  double v_approx =
+      robot_reach_->approximateVelOfCapsule(0, capsule_velocity.second.first, capsule_velocity.second.second);
   EXPECT_NEAR(v_approx, 0.11, 1e-8);
 }
 
 TEST_F(RobotReachTest, ApproximateVelOfCapsuleTest1) {
-  robot_reach_->calculateAllTransformationMatricesAndCapsules(std::vector<double>{M_PI/2.0});
+  robot_reach_->calculateAllTransformationMatricesAndCapsules(std::vector<double>{M_PI / 2.0});
   std::vector<double> q_dot{1.0};
   RobotReach::CapsuleVelocity capsule_velocity = robot_reach_->getVelocityOfCapsule(0, q_dot);
-  double v_approx = robot_reach_->approximateVelOfCapsule(0, capsule_velocity.second.first, capsule_velocity.second.second);
+  double v_approx =
+      robot_reach_->approximateVelOfCapsule(0, capsule_velocity.second.first, capsule_velocity.second.second);
   EXPECT_NEAR(v_approx, 0.11, 1e-8);
 }
 
 // jacobian of tcp from siciliano p. 114
 // a1 = a2 = a3 = 1
 Eigen::Matrix<double, 6, Eigen::Dynamic> jacobian_tcp_siciliano(std::vector<double> q) {
-    Eigen::Matrix<double, 6, Eigen::Dynamic> jacobian;
-    jacobian.setZero(6, 3);
-    double element_00 = -sin(q[0]) - sin(q[0] + q[1]) - sin(q[0] + q[1] + q[2]);
-    double element_01 = cos(q[0]) + cos(q[0] + q[1]) + cos(q[0] + q[1] + q[2]);
-    double element_10 = -sin(q[0] + q[1]) - sin(q[0] + q[1] + q[2]);
-    double element_11 = cos(q[0] + q[1]) + cos(q[0] + q[1] + q[2]);
-    double element_20 = -sin(q[0] + q[1] + q[2]);
-    double element_21 = cos(q[0] + q[1] + q[2]);
+  Eigen::Matrix<double, 6, Eigen::Dynamic> jacobian;
+  jacobian.setZero(6, 3);
+  double element_00 = -sin(q[0]) - sin(q[0] + q[1]) - sin(q[0] + q[1] + q[2]);
+  double element_01 = cos(q[0]) + cos(q[0] + q[1]) + cos(q[0] + q[1] + q[2]);
+  double element_10 = -sin(q[0] + q[1]) - sin(q[0] + q[1] + q[2]);
+  double element_11 = cos(q[0] + q[1]) + cos(q[0] + q[1] + q[2]);
+  double element_20 = -sin(q[0] + q[1] + q[2]);
+  double element_21 = cos(q[0] + q[1] + q[2]);
 
-    Eigen::Vector<double, 6> col_0;
-    col_0 << element_00, element_01, 0, 0, 0, 1;
-    jacobian.col(0) = col_0;
+  Eigen::Vector<double, 6> col_0;
+  col_0 << element_00, element_01, 0, 0, 0, 1;
+  jacobian.col(0) = col_0;
 
-    Eigen::Vector<double, 6> col_1;
-    col_1 << element_10, element_11, 0, 0, 0, 1;
-    jacobian.col(1) = col_1;
+  Eigen::Vector<double, 6> col_1;
+  col_1 << element_10, element_11, 0, 0, 0, 1;
+  jacobian.col(1) = col_1;
 
-    Eigen::Vector<double, 6> col_2;
-    col_2 << element_20, element_21, 0, 0, 0, 1;
-    jacobian.col(2) = col_2;
+  Eigen::Vector<double, 6> col_2;
+  col_2 << element_20, element_21, 0, 0, 0, 1;
+  jacobian.col(2) = col_2;
 
-    return jacobian;
+  return jacobian;
 }
 
 TEST_F(RobotReachTestVelocity, JacobianSicilianoTest0) {
-    std::vector<double> q = {0.0, 0.0, 0.0};
-    robot_reach_->calculateAllTransformationMatricesAndCapsules(q);
-    reach_lib::Point point = robot_reach_->getTcpOfVelocityCapsule();
-    Eigen::Matrix<double, 6, Eigen::Dynamic> jacobian = robot_reach_->getJacobian(2, point);
-    Eigen::Matrix<double, 6, Eigen::Dynamic> expect = jacobian_tcp_siciliano(q);
-    ASSERT_TRUE((jacobian - expect).norm() < 1e-8);
+  std::vector<double> q = {0.0, 0.0, 0.0};
+  robot_reach_->calculateAllTransformationMatricesAndCapsules(q);
+  reach_lib::Point point = robot_reach_->getRobotCapsulesForVelocity()[2].p2_;
+  Eigen::Matrix<double, 6, Eigen::Dynamic> jacobian = robot_reach_->getJacobian(2, point);
+  Eigen::Matrix<double, 6, Eigen::Dynamic> expect = jacobian_tcp_siciliano(q);
+
+  // column 0
+  EXPECT_NEAR(jacobian(0, 0), expect(0, 0), 1e-8);
+  EXPECT_NEAR(jacobian(1, 0), expect(1, 0), 1e-8);
+  EXPECT_NEAR(jacobian(2, 0), expect(2, 0), 1e-8);
+  EXPECT_NEAR(jacobian(3, 0), expect(3, 0), 1e-8);
+  EXPECT_NEAR(jacobian(4, 0), expect(4, 0), 1e-8);
+  EXPECT_NEAR(jacobian(5, 0), expect(5, 0), 1e-8);
+
+  // column 1
+  EXPECT_NEAR(jacobian(0, 1), expect(0, 1), 1e-8);
+  EXPECT_NEAR(jacobian(1, 1), expect(1, 1), 1e-8);
+  EXPECT_NEAR(jacobian(2, 1), expect(2, 1), 1e-8);
+  EXPECT_NEAR(jacobian(3, 1), expect(3, 1), 1e-8);
+  EXPECT_NEAR(jacobian(4, 1), expect(4, 1), 1e-8);
+  EXPECT_NEAR(jacobian(5, 1), expect(5, 1), 1e-8);
+
+  // column 2
+  EXPECT_NEAR(jacobian(0, 2), expect(0, 2), 1e-8);
+  EXPECT_NEAR(jacobian(1, 2), expect(1, 2), 1e-8);
+  EXPECT_NEAR(jacobian(2, 2), expect(2, 2), 1e-8);
+  EXPECT_NEAR(jacobian(3, 2), expect(3, 2), 1e-8);
+  EXPECT_NEAR(jacobian(4, 2), expect(4, 2), 1e-8);
+  EXPECT_NEAR(jacobian(5, 2), expect(5, 2), 1e-8);
 }
 
 TEST_F(RobotReachTestVelocity, JacobianSicilianoTest1) {
-    std::vector<double> q = {1.0, 1.0, 1.0};
-    robot_reach_->calculateAllTransformationMatricesAndCapsules(q);
-    reach_lib::Point point = robot_reach_->getTcpOfVelocityCapsule();
-    Eigen::Matrix<double, 6, Eigen::Dynamic> jacobian = robot_reach_->getJacobian(2, point);
-    Eigen::Matrix<double, 6, Eigen::Dynamic> expect = jacobian_tcp_siciliano(q);
-    ASSERT_TRUE((jacobian - expect).norm() < 1e-8);
+  std::vector<double> q = {1.0, 1.0, 1.0};
+  robot_reach_->calculateAllTransformationMatricesAndCapsules(q);
+  reach_lib::Point point = robot_reach_->getRobotCapsulesForVelocity()[2].p2_;
+  Eigen::Matrix<double, 6, Eigen::Dynamic> jacobian = robot_reach_->getJacobian(2, point);
+  Eigen::Matrix<double, 6, Eigen::Dynamic> expect = jacobian_tcp_siciliano(q);
+
+  // column 0
+  EXPECT_NEAR(jacobian(0, 0), expect(0, 0), 1e-8);
+  EXPECT_NEAR(jacobian(1, 0), expect(1, 0), 1e-8);
+  EXPECT_NEAR(jacobian(2, 0), expect(2, 0), 1e-8);
+  EXPECT_NEAR(jacobian(3, 0), expect(3, 0), 1e-8);
+  EXPECT_NEAR(jacobian(4, 0), expect(4, 0), 1e-8);
+  EXPECT_NEAR(jacobian(5, 0), expect(5, 0), 1e-8);
+
+  // column 1
+  EXPECT_NEAR(jacobian(0, 1), expect(0, 1), 1e-8);
+  EXPECT_NEAR(jacobian(1, 1), expect(1, 1), 1e-8);
+  EXPECT_NEAR(jacobian(2, 1), expect(2, 1), 1e-8);
+  EXPECT_NEAR(jacobian(3, 1), expect(3, 1), 1e-8);
+  EXPECT_NEAR(jacobian(4, 1), expect(4, 1), 1e-8);
+  EXPECT_NEAR(jacobian(5, 1), expect(5, 1), 1e-8);
+
+  // column 2
+  EXPECT_NEAR(jacobian(0, 2), expect(0, 2), 1e-8);
+  EXPECT_NEAR(jacobian(1, 2), expect(1, 2), 1e-8);
+  EXPECT_NEAR(jacobian(2, 2), expect(2, 2), 1e-8);
+  EXPECT_NEAR(jacobian(3, 2), expect(3, 2), 1e-8);
+  EXPECT_NEAR(jacobian(4, 2), expect(4, 2), 1e-8);
+  EXPECT_NEAR(jacobian(5, 2), expect(5, 2), 1e-8);
 }
 
 TEST_F(RobotReachTestVelocity, JacobianSicilianoTest2) {
-    std::vector<double> q = {2.0, 2.0, 2.0};
-    robot_reach_->calculateAllTransformationMatricesAndCapsules(q);
-    reach_lib::Point point = robot_reach_->getTcpOfVelocityCapsule();
-    Eigen::Matrix<double, 6, Eigen::Dynamic> jacobian = robot_reach_->getJacobian(2, point);
-    Eigen::Matrix<double, 6, Eigen::Dynamic> expect = jacobian_tcp_siciliano(q);
-    ASSERT_TRUE((jacobian - expect).norm() < 1e-8);
+  std::vector<double> q = {2.0, 2.0, 2.0};
+  robot_reach_->calculateAllTransformationMatricesAndCapsules(q);
+  reach_lib::Point point = robot_reach_->getRobotCapsulesForVelocity()[2].p2_;
+  Eigen::Matrix<double, 6, Eigen::Dynamic> jacobian = robot_reach_->getJacobian(2, point);
+  Eigen::Matrix<double, 6, Eigen::Dynamic> expect = jacobian_tcp_siciliano(q);
+
+  // column 0
+  EXPECT_NEAR(jacobian(0, 0), expect(0, 0), 1e-8);
+  EXPECT_NEAR(jacobian(1, 0), expect(1, 0), 1e-8);
+  EXPECT_NEAR(jacobian(2, 0), expect(2, 0), 1e-8);
+  EXPECT_NEAR(jacobian(3, 0), expect(3, 0), 1e-8);
+  EXPECT_NEAR(jacobian(4, 0), expect(4, 0), 1e-8);
+  EXPECT_NEAR(jacobian(5, 0), expect(5, 0), 1e-8);
+
+  // column 1
+  EXPECT_NEAR(jacobian(0, 1), expect(0, 1), 1e-8);
+  EXPECT_NEAR(jacobian(1, 1), expect(1, 1), 1e-8);
+  EXPECT_NEAR(jacobian(2, 1), expect(2, 1), 1e-8);
+  EXPECT_NEAR(jacobian(3, 1), expect(3, 1), 1e-8);
+  EXPECT_NEAR(jacobian(4, 1), expect(4, 1), 1e-8);
+  EXPECT_NEAR(jacobian(5, 1), expect(5, 1), 1e-8);
+
+  // column 2
+  EXPECT_NEAR(jacobian(0, 2), expect(0, 2), 1e-8);
+  EXPECT_NEAR(jacobian(1, 2), expect(1, 2), 1e-8);
+  EXPECT_NEAR(jacobian(2, 2), expect(2, 2), 1e-8);
+  EXPECT_NEAR(jacobian(3, 2), expect(3, 2), 1e-8);
+  EXPECT_NEAR(jacobian(4, 2), expect(4, 2), 1e-8);
+  EXPECT_NEAR(jacobian(5, 2), expect(5, 2), 1e-8);
 }
 
 TEST_F(RobotReachTestVelocity, JacobianSicilianoTest3) {
-    std::vector<double> q = {1.247, 0.373, 2.142};
-    robot_reach_->calculateAllTransformationMatricesAndCapsules(q);
-    reach_lib::Point point = robot_reach_->getTcpOfVelocityCapsule();
-    Eigen::Matrix<double, 6, Eigen::Dynamic> jacobian = robot_reach_->getJacobian(2, point);
-    Eigen::Matrix<double, 6, Eigen::Dynamic> expect = jacobian_tcp_siciliano(q);
-    ASSERT_TRUE((jacobian - expect).norm() < 1e-8);
+  std::vector<double> q = {1.0, 0.5, -1.0};
+  robot_reach_->calculateAllTransformationMatricesAndCapsules(q);
+  reach_lib::Point point = robot_reach_->getRobotCapsulesForVelocity()[2].p2_;
+  Eigen::Matrix<double, 6, Eigen::Dynamic> jacobian = robot_reach_->getJacobian(2, point);
+  Eigen::Matrix<double, 6, Eigen::Dynamic> expect = jacobian_tcp_siciliano(q);
+
+  // column 0
+  EXPECT_NEAR(jacobian(0, 0), expect(0, 0), 1e-8);
+  EXPECT_NEAR(jacobian(1, 0), expect(1, 0), 1e-8);
+  EXPECT_NEAR(jacobian(2, 0), expect(2, 0), 1e-8);
+  EXPECT_NEAR(jacobian(3, 0), expect(3, 0), 1e-8);
+  EXPECT_NEAR(jacobian(4, 0), expect(4, 0), 1e-8);
+  EXPECT_NEAR(jacobian(5, 0), expect(5, 0), 1e-8);
+
+  // column 1
+  EXPECT_NEAR(jacobian(0, 1), expect(0, 1), 1e-8);
+  EXPECT_NEAR(jacobian(1, 1), expect(1, 1), 1e-8);
+  EXPECT_NEAR(jacobian(2, 1), expect(2, 1), 1e-8);
+  EXPECT_NEAR(jacobian(3, 1), expect(3, 1), 1e-8);
+  EXPECT_NEAR(jacobian(4, 1), expect(4, 1), 1e-8);
+  EXPECT_NEAR(jacobian(5, 1), expect(5, 1), 1e-8);
+
+  // column 2
+  EXPECT_NEAR(jacobian(0, 2), expect(0, 2), 1e-8);
+  EXPECT_NEAR(jacobian(1, 2), expect(1, 2), 1e-8);
+  EXPECT_NEAR(jacobian(2, 2), expect(2, 2), 1e-8);
+  EXPECT_NEAR(jacobian(3, 2), expect(3, 2), 1e-8);
+  EXPECT_NEAR(jacobian(4, 2), expect(4, 2), 1e-8);
+  EXPECT_NEAR(jacobian(5, 2), expect(5, 2), 1e-8);
 }
 
 TEST_F(RobotReachTestVelocity, JacobianSicilianoTest4) {
-    std::vector<double> q = {10.216, 4.263, 1.984};
-    robot_reach_->calculateAllTransformationMatricesAndCapsules(q);
-    reach_lib::Point point = robot_reach_->getTcpOfVelocityCapsule();
-    Eigen::Matrix<double, 6, Eigen::Dynamic> jacobian = robot_reach_->getJacobian(2, point);
-    Eigen::Matrix<double, 6, Eigen::Dynamic> expect = jacobian_tcp_siciliano(q);
-    ASSERT_TRUE((jacobian - expect).norm() < 1e-8);
+  std::vector<double> q = {-0.5, 1.0, 1.0};
+  robot_reach_->calculateAllTransformationMatricesAndCapsules(q);
+  reach_lib::Point point = robot_reach_->getRobotCapsulesForVelocity()[2].p2_;
+  Eigen::Matrix<double, 6, Eigen::Dynamic> jacobian = robot_reach_->getJacobian(2, point);
+  Eigen::Matrix<double, 6, Eigen::Dynamic> expect = jacobian_tcp_siciliano(q);
+
+  // column 0
+  EXPECT_NEAR(jacobian(0, 0), expect(0, 0), 1e-8);
+  EXPECT_NEAR(jacobian(1, 0), expect(1, 0), 1e-8);
+  EXPECT_NEAR(jacobian(2, 0), expect(2, 0), 1e-8);
+  EXPECT_NEAR(jacobian(3, 0), expect(3, 0), 1e-8);
+  EXPECT_NEAR(jacobian(4, 0), expect(4, 0), 1e-8);
+  EXPECT_NEAR(jacobian(5, 0), expect(5, 0), 1e-8);
+
+  // column 1
+  EXPECT_NEAR(jacobian(0, 1), expect(0, 1), 1e-8);
+  EXPECT_NEAR(jacobian(1, 1), expect(1, 1), 1e-8);
+  EXPECT_NEAR(jacobian(2, 1), expect(2, 1), 1e-8);
+  EXPECT_NEAR(jacobian(3, 1), expect(3, 1), 1e-8);
+  EXPECT_NEAR(jacobian(4, 1), expect(4, 1), 1e-8);
+  EXPECT_NEAR(jacobian(5, 1), expect(5, 1), 1e-8);
+
+  // column 2
+  EXPECT_NEAR(jacobian(0, 2), expect(0, 2), 1e-8);
+  EXPECT_NEAR(jacobian(1, 2), expect(1, 2), 1e-8);
+  EXPECT_NEAR(jacobian(2, 2), expect(2, 2), 1e-8);
+  EXPECT_NEAR(jacobian(3, 2), expect(3, 2), 1e-8);
+  EXPECT_NEAR(jacobian(4, 2), expect(4, 2), 1e-8);
+  EXPECT_NEAR(jacobian(5, 2), expect(5, 2), 1e-8);
+}
+
+TEST_F(RobotReachTestVelocity, JacobianSicilianoTest5) {
+  std::vector<double> q = {-1.0, -1.0, -1.0};
+  robot_reach_->calculateAllTransformationMatricesAndCapsules(q);
+  reach_lib::Point point = robot_reach_->getRobotCapsulesForVelocity()[2].p2_;
+  Eigen::Matrix<double, 6, Eigen::Dynamic> jacobian = robot_reach_->getJacobian(2, point);
+  Eigen::Matrix<double, 6, Eigen::Dynamic> expect = jacobian_tcp_siciliano(q);
+
+  // column 0
+  EXPECT_NEAR(jacobian(0, 0), expect(0, 0), 1e-8);
+  EXPECT_NEAR(jacobian(1, 0), expect(1, 0), 1e-8);
+  EXPECT_NEAR(jacobian(2, 0), expect(2, 0), 1e-8);
+  EXPECT_NEAR(jacobian(3, 0), expect(3, 0), 1e-8);
+  EXPECT_NEAR(jacobian(4, 0), expect(4, 0), 1e-8);
+  EXPECT_NEAR(jacobian(5, 0), expect(5, 0), 1e-8);
+
+  // column 1
+  EXPECT_NEAR(jacobian(0, 1), expect(0, 1), 1e-8);
+  EXPECT_NEAR(jacobian(1, 1), expect(1, 1), 1e-8);
+  EXPECT_NEAR(jacobian(2, 1), expect(2, 1), 1e-8);
+  EXPECT_NEAR(jacobian(3, 1), expect(3, 1), 1e-8);
+  EXPECT_NEAR(jacobian(4, 1), expect(4, 1), 1e-8);
+  EXPECT_NEAR(jacobian(5, 1), expect(5, 1), 1e-8);
+
+  // column 2
+  EXPECT_NEAR(jacobian(0, 2), expect(0, 2), 1e-8);
+  EXPECT_NEAR(jacobian(1, 2), expect(1, 2), 1e-8);
+  EXPECT_NEAR(jacobian(2, 2), expect(2, 2), 1e-8);
+  EXPECT_NEAR(jacobian(3, 2), expect(3, 2), 1e-8);
+  EXPECT_NEAR(jacobian(4, 2), expect(4, 2), 1e-8);
+  EXPECT_NEAR(jacobian(5, 2), expect(5, 2), 1e-8);
 }
 
 }  // namespace safety_shield
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

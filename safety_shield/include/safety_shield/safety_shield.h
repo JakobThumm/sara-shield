@@ -147,7 +147,7 @@ class SafetyShield {
 
   /**
    * @brief Whether or not the potential path is under the safe velocity the entire time.
-   * 
+   *
    */
   bool is_under_v_limit_ = false;
 
@@ -320,12 +320,12 @@ class SafetyShield {
 
   /**
    * @brief Computes the fail-safe path for PFL mode.
-   * 
+   *
    * @details Sets the failsafe_path_2_ variable.
-   * 
+   *
    * @param[in] a_max_manoeuvre Maximum path acceleration
    * @param[in] j_max_manoeuvre Maximum path jerk
-   * 
+   *
    * @return true planning was successful
    * @return false planning failed
    */
@@ -451,9 +451,8 @@ class SafetyShield {
    * @param shield_type What type of safety shield to use, select from `OFF`, `SSM`, or `PFL`
    */
   SafetyShield(double sample_time, std::string trajectory_config_file, std::string robot_config_file,
-                        std::string mocap_config_file, double init_x, double init_y, double init_z, double init_roll,
-                        double init_pitch, double init_yaw, const std::vector<double>& init_qpos,
-                        ShieldType shield_type);
+               std::string mocap_config_file, double init_x, double init_y, double init_z, double init_roll,
+               double init_pitch, double init_yaw, const std::vector<double>& init_qpos, ShieldType shield_type);
 
   /**
    * @brief A SafetyShield destructor

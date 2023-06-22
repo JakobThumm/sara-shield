@@ -106,9 +106,8 @@ class RobotReach {
    * @param secure_radius Expand the radius of the robot capsules by this amount to
    *  account for measurement and modelling errors.
    */
-  RobotReach(std::vector<double> transformation_matrices, int nb_joints, std::vector<double> geom_par,
-             double x = 0, double y = 0, double z = 0,
-             double roll = 0, double pitch = 0, double yaw = 0, double secure_radius = 0);
+  RobotReach(std::vector<double> transformation_matrices, int nb_joints, std::vector<double> geom_par, double x = 0,
+             double y = 0, double z = 0, double roll = 0, double pitch = 0, double yaw = 0, double secure_radius = 0);
 
   /**
    *  @brief A robot destructor
@@ -221,7 +220,8 @@ class RobotReach {
 
   /**
    * @brief Returns Jacobian of a point attached to the i-th joint.
-   * @details You often take robot_capsules_for_velocity_[joint].p1_ or robot_capsules_for_velocity_[joint].p2_ as point.
+   * @details You often take robot_capsules_for_velocity_[joint].p1_ or robot_capsules_for_velocity_[joint].p2_ as
+   * point.
    * @assumption calculateAlltransformationMatricesAndCapsules() was called before
    * @param joint Jacobian for which joint
    * @param point Jacobian for which point
@@ -260,10 +260,13 @@ class RobotReach {
     return cross;
   }
 
-  inline reach_lib::Point getTcpOfVelocityCapsule() {
-      return robot_capsules_for_velocity_[robot_capsules_for_velocity_.size() - 1].p2_;
+  /**
+   * @brief returns robot capsules for velocity
+   * @return robot capsules for velocity
+   */
+  inline std::vector<occupancy_containers::capsule::Capsule>& getRobotCapsulesForVelocity() {
+    return robot_capsules_for_velocity_;
   }
-
 };
 }  // namespace safety_shield
 
