@@ -151,7 +151,7 @@ TEST_F(VerifyIsoTest, CalculateNormalVectorTest) {
   reach_lib::Capsule robot_capsule3(reach_lib::Point(2.0, 0.0, 0.0), reach_lib::Point(0.0, 2.0, 0.0), 0.1);
   Eigen::Vector3d expected_normal3(sqrt(0.5), sqrt(0.5), 0.0);
   reach_lib::Capsule robot_capsule4(reach_lib::Point(1.5, 0.5, 1.5), reach_lib::Point(2.0, 1.0, 2.0), 0.1);
-  Eigen::Vector3d expected_normal4(sqrt(1.0/3.0), sqrt(1.0/3.0), sqrt(1.0/3.0));
+  Eigen::Vector3d expected_normal4(sqrt(1.0 / 3.0), sqrt(1.0 / 3.0), sqrt(1.0 / 3.0));
   Eigen::Vector3d normal;
   EXPECT_TRUE(verify_iso_.calculate_normal_vector(robot_capsule0, environment_element, normal));
   double tol = 1e-6;
@@ -171,6 +171,40 @@ TEST_F(VerifyIsoTest, CalculateNormalVectorTest) {
   EXPECT_NEAR(normal.x(), expected_normal4.x(), tol);
   EXPECT_NEAR(normal.y(), expected_normal4.y(), tol);
   EXPECT_NEAR(normal.z(), expected_normal4.z(), tol);
+}
+
+TEST_F(VerifyIsoTest, CapsuleMovingTowardsElementTest) {
+  Eigen::Vector3d normal(0.0, 1.0, 0.0);
+  RobotReach::CapsuleVelocity capsule_velocity0(
+      RobotReach::SE3Vel(Eigen::Vector3d(0.0, 0.0, 0.0), Eigen::Vector3d(0.0, 0.0, -1.0)),
+      RobotReach::SE3Vel(Eigen::Vector3d(0.0, 0.0, 0.0), Eigen::Vector3d(0.0, 0.0, -1.0)));
+  RobotReach::CapsuleVelocity capsule_velocity1(
+      RobotReach::SE3Vel(Eigen::Vector3d(0.0, -1.0, 0.0), Eigen::Vector3d(0.0, 0.0, 0.0)),
+      RobotReach::SE3Vel(Eigen::Vector3d(0.0, 1.0, 0.0), Eigen::Vector3d(0.0, 0.0, 0.0)));
+  RobotReach::CapsuleVelocity capsule_velocity2(
+      RobotReach::SE3Vel(Eigen::Vector3d(1.0, 0.0, 0.0), Eigen::Vector3d(0.0, 0.0, 0.0)),
+      RobotReach::SE3Vel(Eigen::Vector3d(1.0, 0.0, 0.0), Eigen::Vector3d(0.0, 0.0, 0.0)));
+  RobotReach::CapsuleVelocity capsule_velocity3(
+      RobotReach::SE3Vel(Eigen::Vector3d(0.0, 1.0, 0.0), Eigen::Vector3d(0.0, 0.0, 0.0)),
+      RobotReach::SE3Vel(Eigen::Vector3d(0.0, 1.0, 0.0), Eigen::Vector3d(0.0, 0.0, 0.0)));
+  RobotReach::CapsuleVelocity capsule_velocity4(
+      RobotReach::SE3Vel(Eigen::Vector3d(0.0, -0.1, 0.0), Eigen::Vector3d(0.0, 0.0, 0.0)),
+      RobotReach::SE3Vel(Eigen::Vector3d(0.0, -0.1, 0.0), Eigen::Vector3d(0.0, 0.0, 0.0)));
+  RobotReach::CapsuleVelocity capsule_velocity5(
+      RobotReach::SE3Vel(Eigen::Vector3d(0.0, 0.1, 0.0), Eigen::Vector3d(0.0, 0.0, -1.0)),
+      RobotReach::SE3Vel(Eigen::Vector3d(0.0, 0.1, 0.0), Eigen::Vector3d(0.0, 0.0, -1.0)));
+  RobotReach::CapsuleVelocity capsule_velocity6(
+      RobotReach::SE3Vel(Eigen::Vector3d(0.0, 0.111, 0.0), Eigen::Vector3d(0.0, 0.0, -1.0)),
+      RobotReach::SE3Vel(Eigen::Vector3d(0.0, 0.111, 0.0), Eigen::Vector3d(0.0, 0.0, -1.0)));
+  double radius = 0.1;
+  double velocity_error = 0.01;
+  EXPECT_TRUE(verify_iso_.capsule_moving_towards_element(capsule_velocity0, normal, radius, velocity_error));
+  EXPECT_TRUE(verify_iso_.capsule_moving_towards_element(capsule_velocity1, normal, radius, velocity_error));
+  EXPECT_TRUE(verify_iso_.capsule_moving_towards_element(capsule_velocity2, normal, radius, velocity_error));
+  EXPECT_FALSE(verify_iso_.capsule_moving_towards_element(capsule_velocity3, normal, radius, velocity_error));
+  EXPECT_TRUE(verify_iso_.capsule_moving_towards_element(capsule_velocity4, normal, radius, velocity_error));
+  EXPECT_TRUE(verify_iso_.capsule_moving_towards_element(capsule_velocity5, normal, radius, velocity_error));
+  EXPECT_FALSE(verify_iso_.capsule_moving_towards_element(capsule_velocity6, normal, radius, velocity_error));
 }
 
 }  // namespace safety_shield
