@@ -122,18 +122,57 @@ TEST_F(VerifyIsoTest, SelfConstrainedCollisionCheckTest0) {
   unclampable_enclosures_map[2] = {1};
   double d_human = 0.1;
   std::vector<int> robot_collisions_1 = {0, 1, 2};
-  EXPECT_FALSE(verify_iso_.self_constrained_collision_check(robot_collisions_1, unclampable_enclosures_map, r_caps, d_human));
+  EXPECT_FALSE(
+      verify_iso_.self_constrained_collision_check(robot_collisions_1, unclampable_enclosures_map, r_caps, d_human));
   std::vector<int> robot_collisions_2 = {0, 3};
-  EXPECT_TRUE(verify_iso_.self_constrained_collision_check(robot_collisions_2, unclampable_enclosures_map, r_caps, d_human));
+  EXPECT_TRUE(
+      verify_iso_.self_constrained_collision_check(robot_collisions_2, unclampable_enclosures_map, r_caps, d_human));
   std::vector<int> robot_collisions_3 = {3, 4};
-  EXPECT_TRUE(verify_iso_.self_constrained_collision_check(robot_collisions_3, unclampable_enclosures_map, r_caps, d_human));
+  EXPECT_TRUE(
+      verify_iso_.self_constrained_collision_check(robot_collisions_3, unclampable_enclosures_map, r_caps, d_human));
   d_human = 0.3;
   std::vector<int> robot_collisions_4 = {0, 4};
-  EXPECT_TRUE(verify_iso_.self_constrained_collision_check(robot_collisions_4, unclampable_enclosures_map, r_caps, d_human));
+  EXPECT_TRUE(
+      verify_iso_.self_constrained_collision_check(robot_collisions_4, unclampable_enclosures_map, r_caps, d_human));
   d_human = 0.29;
   std::vector<int> robot_collisions_5 = {0, 4};
-  EXPECT_FALSE(verify_iso_.self_constrained_collision_check(robot_collisions_5, unclampable_enclosures_map, r_caps, d_human));
+  EXPECT_FALSE(
+      verify_iso_.self_constrained_collision_check(robot_collisions_5, unclampable_enclosures_map, r_caps, d_human));
 }
+
+TEST_F(VerifyIsoTest, CalculateNormalVectorTest) {
+  reach_lib::AABB environment_element({-1.0, -0.05, -1.0}, {1.0, 0.0, 1.0});
+  reach_lib::Capsule robot_capsule0(reach_lib::Point(0.0, 1.0, -1.0), reach_lib::Point(0.0, 1.0, 1.0), 0.1);
+  Eigen::Vector3d expected_normal0(0.0, 1.0, 0.0);
+  reach_lib::Capsule robot_capsule1(reach_lib::Point(0.5, 0.2, 0.0), reach_lib::Point(0.5, 1.0, 0.0), 0.1999);
+  Eigen::Vector3d expected_normal1(0.0, 1.0, 0.0);
+  reach_lib::Capsule robot_capsule2(reach_lib::Point(0.5, -0.2, 0.0), reach_lib::Point(0.5, 0.2, 0.0), 0.1);
+  // EXPECT FALSE
+  reach_lib::Capsule robot_capsule3(reach_lib::Point(2.0, 0.0, 0.0), reach_lib::Point(0.0, 2.0, 0.0), 0.1);
+  Eigen::Vector3d expected_normal3(sqrt(0.5), sqrt(0.5), 0.0);
+  reach_lib::Capsule robot_capsule4(reach_lib::Point(1.5, 0.5, 1.5), reach_lib::Point(2.0, 1.0, 2.0), 0.1);
+  Eigen::Vector3d expected_normal4(sqrt(1.0/3.0), sqrt(1.0/3.0), sqrt(1.0/3.0));
+  Eigen::Vector3d normal;
+  EXPECT_TRUE(verify_iso_.calculate_normal_vector(robot_capsule0, environment_element, normal));
+  double tol = 1e-6;
+  EXPECT_NEAR(normal.x(), expected_normal0.x(), tol);
+  EXPECT_NEAR(normal.y(), expected_normal0.y(), tol);
+  EXPECT_NEAR(normal.z(), expected_normal0.z(), tol);
+  EXPECT_TRUE(verify_iso_.calculate_normal_vector(robot_capsule1, environment_element, normal));
+  EXPECT_NEAR(normal.x(), expected_normal1.x(), tol);
+  EXPECT_NEAR(normal.y(), expected_normal1.y(), tol);
+  EXPECT_NEAR(normal.z(), expected_normal1.z(), tol);
+  EXPECT_FALSE(verify_iso_.calculate_normal_vector(robot_capsule2, environment_element, normal));
+  EXPECT_TRUE(verify_iso_.calculate_normal_vector(robot_capsule3, environment_element, normal));
+  EXPECT_NEAR(normal.x(), expected_normal3.x(), tol);
+  EXPECT_NEAR(normal.y(), expected_normal3.y(), tol);
+  EXPECT_NEAR(normal.z(), expected_normal3.z(), tol);
+  EXPECT_TRUE(verify_iso_.calculate_normal_vector(robot_capsule4, environment_element, normal));
+  EXPECT_NEAR(normal.x(), expected_normal4.x(), tol);
+  EXPECT_NEAR(normal.y(), expected_normal4.y(), tol);
+  EXPECT_NEAR(normal.z(), expected_normal4.z(), tol);
+}
+
 }  // namespace safety_shield
 
 int main(int argc, char **argv) {
