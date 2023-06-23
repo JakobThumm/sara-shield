@@ -207,6 +207,79 @@ TEST_F(VerifyIsoTest, CapsuleMovingTowardsElementTest) {
   EXPECT_FALSE(verify_iso_.capsule_moving_towards_element(capsule_velocity6, normal, radius, velocity_error));
 }
 
+// Write a test for this function
+/*
+   * @brief Check if an environmentally constrained collision (ECC) could occur with the given human capsule.
+   *
+   * @param robot_collisions Robot capsule indices in contact with the given human capsule.
+   * @param robot_capsules List of robot capsules.
+   * @param environment_collisions Environment element indices in contact with the given human capsule.
+   * @param environment_elements List of environment elements.
+   * @param d_human Human diameter.
+   * @param robot_capsule_velocities_start Pointer to the start of the list of robot capsule velocities.
+   * @param robot_capsule_velocities_end Pointer to the end of the list of robot capsule velocities.
+   * @param alpha_i List of max cart acceleration values for each robot capsule.
+   * @param beta_i List of max angular acceleration values for each robot capsule.
+   * @param delta_s Time difference between two time steps.
+   * @return true if ECC could occur
+   * @return false if ECC cannot occur
+  bool environmentally_constrained_collision_check(const std::vector<int>& robot_collisions,
+      const std::vector<reach_lib::Capsule>& robot_capsules,
+      const std::vector<int>& environment_collisions,
+      const std::vector<reach_lib::AABB>& environment_elements,
+      double d_human,
+      const std::vector<std::vector<RobotReach::CapsuleVelocity>>::const_iterator& robot_capsule_velocities_start,
+      const std::vector<std::vector<RobotReach::CapsuleVelocity>>::const_iterator& robot_capsule_velocities_end,
+      const std::vector<double>& alpha_i,
+      const std::vector<double>& beta_i,
+      double delta_s);
+*/
+TEST_F(VerifyIsoTest, EnvironmentallyConstrainedCollisionCheckTest) {
+  // Environment element
+  std::vector<reach_lib::AABB> environment_elements{reach_lib::AABB({-1.0, -0.05, -1.0}, {1.0, 0.0, 1.0})};
+  std::vector<int> environment_collisions = {0};
+  // Human capsule
+  double d_human = 0.1;
+  // Robot capsules
+  // 1 capsule moving upwards (+y) for the first 3 time steps and downwards for the next 3 time steps
+  // The capsule is located at (0.5, 0.05, -0.5), (0.5, 0.05, 0.5) in the first step and moves only in y-direction.
+  std::vector<int> robot_collisions = {0};
+  std::vector<reach_lib::Capsule> robot_capsules = {reach_lib::Capsule({0.5, 0.05, -0.5}, {0.5, 0.05, 0.5}, 0.1)};
+  std::vector<std::vector<RobotReach::CapsuleVelocity>> robot_capsule_velocities = {
+       {RobotReach::CapsuleVelocity(RobotReach::SE3Vel(Eigen::Vector3d(0.0, 1.0, 0.0), Eigen::Vector3d(0.0, 0.0, 1.0)),
+                                   RobotReach::SE3Vel(Eigen::Vector3d(0.0, 1.0, 0.0), Eigen::Vector3d(0.0, 0.0, 1.0)))},
+       {RobotReach::CapsuleVelocity(RobotReach::SE3Vel(Eigen::Vector3d(0.0, 1.0, 0.0), Eigen::Vector3d(0.0, 0.0, 1.0)),
+                                   RobotReach::SE3Vel(Eigen::Vector3d(0.0, 1.0, 0.0), Eigen::Vector3d(0.0, 0.0, 1.0)))},
+       {RobotReach::CapsuleVelocity(
+           RobotReach::SE3Vel(Eigen::Vector3d(0.0, 0.111, 0.0), Eigen::Vector3d(0.0, 0.0, 1.0)),
+           RobotReach::SE3Vel(Eigen::Vector3d(0.0, 0.111, 0.0), Eigen::Vector3d(0.0, 0.0, 1.0)))},
+       {RobotReach::CapsuleVelocity(RobotReach::SE3Vel(Eigen::Vector3d(0.0, -1.0, 0.0), Eigen::Vector3d(0.0, 0.0, 0.0)),
+                                   RobotReach::SE3Vel(Eigen::Vector3d(0.0, -1.0, 0.0), Eigen::Vector3d(0.0, 0.0, 0.0)))},
+       {RobotReach::CapsuleVelocity(RobotReach::SE3Vel(Eigen::Vector3d(0.0, -1.0, 0.0), Eigen::Vector3d(0.0, 0.0, 0.0)),
+                                   RobotReach::SE3Vel(Eigen::Vector3d(0.0, -1.0, 0.0), Eigen::Vector3d(0.0, 0.0, 0.0)))},
+       {RobotReach::CapsuleVelocity(RobotReach::SE3Vel(Eigen::Vector3d(0.0, -1.0, 0.0), Eigen::Vector3d(0.0, 0.0, 0.0)),
+                                   RobotReach::SE3Vel(Eigen::Vector3d(0.0, -1.0, 0.0), Eigen::Vector3d(0.0, 0.0, 0.0)))}};
+  // Velocity error = 1/2 \Delta s (\alpha_i + \beta_i r_i)
+  // 0.01 = 1/2 * 0.01 * (1.0 + 10.0 * 0.1)
+  std::vector<double> alpha_i = {1.0};
+  std::vector<double> beta_i = {10.0};
+  double delta_s = 0.01;
+  // Check if ECC could occur for upwards movement (no ECC should occur)
+  std::vector<std::vector<RobotReach::CapsuleVelocity>>::const_iterator robot_capsule_velocities_start =
+      robot_capsule_velocities.begin();
+  std::vector<std::vector<RobotReach::CapsuleVelocity>>::const_iterator robot_capsule_velocities_end =
+      robot_capsule_velocities.end() - 3;
+  EXPECT_FALSE(verify_iso_.environmentally_constrained_collision_check(
+      robot_collisions, robot_capsules, environment_collisions, environment_elements, d_human,
+      robot_capsule_velocities_start, robot_capsule_velocities_end, alpha_i, beta_i, delta_s));
+  // Check if ECC could occur for downwards movement (ECC should occur)
+  robot_capsule_velocities_start = robot_capsule_velocities.begin() + 3;
+  robot_capsule_velocities_end = robot_capsule_velocities.end();
+  EXPECT_TRUE(verify_iso_.environmentally_constrained_collision_check(
+      robot_collisions, robot_capsules, environment_collisions, environment_elements, d_human,
+      robot_capsule_velocities_start, robot_capsule_velocities_end, alpha_i, beta_i, delta_s));
+}
+
 }  // namespace safety_shield
 
 int main(int argc, char **argv) {
