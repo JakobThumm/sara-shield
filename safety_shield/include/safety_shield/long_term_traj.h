@@ -43,6 +43,11 @@ class LongTermTraj {
   int length_;
 
   /**
+   * @brief Number of modules of the robot.
+   */
+  int nb_modules_;
+
+  /**
    * @brief Time between two timesteps.
    */
   double sample_time_;
@@ -96,16 +101,25 @@ class LongTermTraj {
   std::vector<std::vector<RobotReach::CapsuleVelocity>> capsule_velocities_;
 
   /**
-   * @brief sets maximum cartesian velocity for all Motions in LTT
+   * @brief sets the cartesian velocity for all Motions in LTT
    * @param[in] robot_reach is used to calculate jacobians and velocities
+   * @sets capsule_velocities_
+   * @sets max_cart_vel_
    */
   void velocitiesOfAllMotions(RobotReach& robot_reach);
+
+  /**
+   * @brief Calculates the max cartesian acceleration and jerk of each joint during the LTT.
+   * @sets alpha_i_
+   * @sets beta_i_
+   */
+  void calculateAlphaBeta();
 
  public:
   /**
    * @brief Construct a new Long Term Traj object.
    */
-  LongTermTraj() : current_pos_(0), starting_index_(0), length_(1), sample_time_(0.01) {
+  LongTermTraj() : current_pos_(0), starting_index_(0), length_(1), nb_modules_(1), sample_time_(0.01) {
     long_term_traj_.push_back(Motion(1));
     for (int i = 0; i < 2; i++) {
       alpha_i_.push_back(1.0);
@@ -121,9 +135,11 @@ class LongTermTraj {
   LongTermTraj(const std::vector<Motion>& long_term_traj, double sample_time, int starting_index = 0,
                int sliding_window_k = 10, double alpha_i_max = 1.0)
       : long_term_traj_(long_term_traj), sample_time_(sample_time), current_pos_(0), starting_index_(starting_index) {
-    length_ = long_term_traj.size();
+    length_ = long_term_traj_.size();
+    assert (length_ > 0);
+    nb_modules_ = long_term_traj_[0].getNbModules();
     calculate_max_acc_jerk_window(long_term_traj_, sliding_window_k);
-    for (int i = 0; i < long_term_traj_[0].getNbModules(); i++) {
+    for (int i = 0; i < nb_modules_; i++) {
       alpha_i_.push_back(alpha_i_max);
     }
   }

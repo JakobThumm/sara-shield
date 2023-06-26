@@ -45,8 +45,7 @@ int main() {
       if (i % 10 == 0) {  // % 2
         std::vector<double> qpos{0.2 * t, t, t,
                                  t,       t, std::min(t, 3.1)};  // qpos{0.2*t, 0.0, 0.0, 0.0, 0.0, std::min(t, 3.1)};
-        std::vector<double> qvel{t + 100, t + 100, t + 100,
-                                 t + 100, t + 100, t + 100};  //{0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+        std::vector<double> qvel{0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
         shield.newLongTermTrajectory(qpos, qvel);
         // spdlog::info("new LTT");
       }

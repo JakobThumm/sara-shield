@@ -302,6 +302,15 @@ class RobotReach {
     return cross;
   }
 
+  /**
+   * @brief Get the Nb Joints object
+   * 
+   * @return int 
+   */
+  inline int getNbJoints() {
+    return nb_joints_;
+  }
+
 };
 }  // namespace safety_shield
 
