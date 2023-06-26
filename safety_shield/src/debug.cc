@@ -30,7 +30,7 @@ int main() {
                                   init_y, init_z, init_roll, init_pitch, init_yaw, init_qpos, environment_elements, shield_type);
 
   // Dummy human measurement
-  std::vector<reach_lib::Point> dummy_human_meas(21);
+  std::vector<reach_lib::Point> dummy_human_meas(23);
   dummy_human_meas[0] = reach_lib::Point(1.5177, -0.1214,  0.3653);
   dummy_human_meas[1] = reach_lib::Point(1.3805, -0.1239,  0.3661);
   dummy_human_meas[2] = reach_lib::Point(1.4457, -0.1015,  0.5656);
@@ -53,7 +53,7 @@ int main() {
   dummy_human_meas[19] = reach_lib::Point(2.13130103, -0.05649683,  0.90218228);
   dummy_human_meas[20] = reach_lib::Point(0.76580055, -0.05329701,  0.89958196);
   dummy_human_meas[21] = reach_lib::Point(2.21530148, -0.04149671,  0.89398712);
-  dummy_human_meas[21] = reach_lib::Point(0.68120021, -0.04299688,  0.8933868);
+  dummy_human_meas[22] = reach_lib::Point(0.68120021, -0.04299688,  0.8933868);
 
   spdlog::info("Debug started.");
   double t = 0.0;
