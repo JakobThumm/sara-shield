@@ -78,7 +78,8 @@ class HumanReachTest : public ::testing::Test {
       extremity_end_names.push_back(extremity["end"].as<std::string>());
       extremity_length.push_back(extremity["length"].as<double>());
     }
-    human_reach_ = new HumanReach(joint_names.size(), 
+    human_reach_ = new HumanReach(joint_names.size(),
+      joint_names,
       body_link_joints, 
       thickness, 
       joint_v_max, 
@@ -140,7 +141,8 @@ class HumanReachTestError : public ::testing::Test {
       extremity_end_names.push_back(extremity["end"].as<std::string>());
       extremity_length.push_back(extremity["length"].as<double>());
     }
-    human_reach_ = new HumanReach(joint_names.size(), 
+    human_reach_ = new HumanReach(joint_names.size(),
+      joint_names,
       body_link_joints, 
       thickness, 
       joint_v_max, 
@@ -202,7 +204,8 @@ class HumanReachTestPos : public ::testing::Test {
       extremity_end_names.push_back(extremity["end"].as<std::string>());
       extremity_length.push_back(extremity["length"].as<double>());
     }
-    human_reach_ = new HumanReach(joint_names.size(), 
+    human_reach_ = new HumanReach(joint_names.size(),
+      joint_names,
       body_link_joints, 
       thickness, 
       joint_v_max, 
