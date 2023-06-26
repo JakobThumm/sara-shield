@@ -73,9 +73,11 @@ extremities:
   - name: "lArm"
     base: "lShldr"
     end: "lHand"
-    length: 0.825 # See Tabelle 21 — Reichweite nach vorn (Griffachse) - Half a hand length.
+    length: 1.0 # See Tabelle 21 — Reichweite nach vorn (Griffachse) - Half a hand length.
+    thickness: 0.0
     
   - name: "rArm"
     base: "rShldr"
     end: "rHand"
-    length: 0.825 # See Tabelle 21 — Reichweite nach vorn (Griffachse) - Half a hand length.
+    length: 1.0 # See Tabelle 21 — Reichweite nach vorn (Griffachse) - Half a hand length.
+    thickness: 0.0

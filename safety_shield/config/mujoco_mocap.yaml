@@ -74,8 +74,10 @@ extremities:
     base: "L_ShouLder"
     end: "L_Hand"
     length: 0.825 # 95 percentile of reach to the front according to DIN 33402-2:2020-12
+    thickness: 0.0
     
   - name: "R_Arm"
     base: "R_ShouLder"
     end: "R_Hand"
     length: 0.825 # 95 percentile of reach to the front according to DIN 33402-2:2020-12
+    thickness: 0.0

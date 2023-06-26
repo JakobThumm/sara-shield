@@ -72,13 +72,14 @@ class HumanReachTest : public ::testing::Test {
     // Build extremities
     const YAML::Node& extremities = human_config["extremities"];
     std::vector<std::string> extremity_base_names;
-    std::vector<std::string> extremity_end_names;
-    std::vector<double> extremity_length;
+    std::vector<std::string> extremity_end_names; 
+    std::vector<double> extremity_length, extremity_thickness;
     for (YAML::const_iterator it = extremities.begin(); it != extremities.end(); ++it) {
       const YAML::Node& extremity = *it;
       extremity_base_names.push_back(extremity["base"].as<std::string>());
       extremity_end_names.push_back(extremity["end"].as<std::string>());
       extremity_length.push_back(extremity["length"].as<double>());
+      extremity_thickness.push_back(extremity["thickness"].as<double>());
     }
     human_reach_ = new HumanReach(joint_names.size(),
       joint_names,
@@ -89,6 +90,7 @@ class HumanReachTest : public ::testing::Test {
       extremity_base_names, 
       extremity_end_names, 
       extremity_length,
+      extremity_thickness,
       measurement_error_pos, 
       measurement_error_vel, 
       delay);
@@ -137,13 +139,14 @@ class HumanReachTestError : public ::testing::Test {
     // Build extremities
     const YAML::Node& extremities = human_config["extremities"];
     std::vector<std::string> extremity_base_names;
-    std::vector<std::string> extremity_end_names;
-    std::vector<double> extremity_length;
+    std::vector<std::string> extremity_end_names; 
+    std::vector<double> extremity_length, extremity_thickness;
     for (YAML::const_iterator it = extremities.begin(); it != extremities.end(); ++it) {
       const YAML::Node& extremity = *it;
       extremity_base_names.push_back(extremity["base"].as<std::string>());
       extremity_end_names.push_back(extremity["end"].as<std::string>());
       extremity_length.push_back(extremity["length"].as<double>());
+      extremity_thickness.push_back(extremity["thickness"].as<double>());
     }
     human_reach_ = new HumanReach(joint_names.size(),
       joint_names,
@@ -154,6 +157,7 @@ class HumanReachTestError : public ::testing::Test {
       extremity_base_names, 
       extremity_end_names, 
       extremity_length,
+      extremity_thickness,
       measurement_error_pos, 
       measurement_error_vel, 
       delay);
@@ -202,13 +206,14 @@ class HumanReachTestPos : public ::testing::Test {
     // Build extremities
     const YAML::Node& extremities = human_config["extremities"];
     std::vector<std::string> extremity_base_names;
-    std::vector<std::string> extremity_end_names;
-    std::vector<double> extremity_length;
+    std::vector<std::string> extremity_end_names; 
+    std::vector<double> extremity_length, extremity_thickness;
     for (YAML::const_iterator it = extremities.begin(); it != extremities.end(); ++it) {
       const YAML::Node& extremity = *it;
       extremity_base_names.push_back(extremity["base"].as<std::string>());
       extremity_end_names.push_back(extremity["end"].as<std::string>());
       extremity_length.push_back(extremity["length"].as<double>());
+      extremity_thickness.push_back(extremity["thickness"].as<double>());
     }
     human_reach_ = new HumanReach(joint_names.size(),
       joint_names,
@@ -219,6 +224,7 @@ class HumanReachTestPos : public ::testing::Test {
       extremity_base_names, 
       extremity_end_names, 
       extremity_length,
+      extremity_thickness,
       measurement_error_pos, 
       measurement_error_vel, 
       delay);
