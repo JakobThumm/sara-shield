@@ -192,7 +192,7 @@ TEST_F(HumanReachTestPos, HumanReachAnalysisPos){
   human_reach_->humanReachabilityAnalysis(t_command, t_break);
   double t = (t_command - t_meas) + t_break + human_reach_->getDelay();
   double length = 0.725;
-  double thickness = 0.208;
+  double thickness = 0.0;
   double v_max = 2;
   double r = length + 
       thickness +
