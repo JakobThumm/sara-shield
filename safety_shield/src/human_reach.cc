@@ -11,6 +11,7 @@ HumanReach::HumanReach(int n_joints_meas,
       std::vector<std::string>& extremity_base_names, 
       std::vector<std::string>& extremity_end_names, 
       std::vector<double>& extremity_length,
+      std::vector<double>& extremity_thickness,
       double measurement_error_pos, 
       double measurement_error_vel, 
       double delay):
@@ -32,10 +33,6 @@ HumanReach::HumanReach(int n_joints_meas,
       std::max(max_v.at(joint_names.at(extremity_base_names[i])), max_v.at(joint_names.at(extremity_end_names[i]))));
   }
   assert(extremity_base_names.size() == extremity_end_names.size());
-  std::vector<double> extremity_thickness;
-  for (const std::string& extremity_end_name : extremity_end_names) {
-    extremity_thickness.push_back(thickness.at(extremity_end_name));
-  }
   human_p_ = reach_lib::ArticulatedPos(system, extremity_body_segment_map, extremity_thickness, extremity_max_v, extremity_length);
 
   for (int i = 0; i < n_joints_meas; i++) {

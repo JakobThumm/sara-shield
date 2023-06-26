@@ -74,8 +74,10 @@ extremities:
     base: "L_ShouLder"
     end: "L_Hand"
     length: 0.8
+    thickness: 0.0
     
   - name: "R_Arm"
     base: "R_ShouLder"
     end: "R_Hand"
     length: 0.8
+    thickness: 0.0

@@ -123,6 +123,7 @@ public:
    * @param[in] extremity_base_names The base joints of extremities, e.g., right / left shoulder, right / left hip socket
    * @param[in] extremity_end_names The end joints of extremities, e.g., right / left hand, right / left foot --> Is used for thickness of extremities
    * @param[in] extremity_length The max length of the extremities (related to extremity_base_names)
+   * @param[in] extremity_thickness The thickness of the extremities (usually zero, as it is already considered in extremity_length)
    * @param[in] wrist_names The name identifiers of the two hands
   */
   HumanReach(int n_joints_meas,
@@ -134,6 +135,7 @@ public:
       std::vector<std::string>& extremity_base_names, 
       std::vector<std::string>& extremity_end_names, 
       std::vector<double>& extremity_length, 
+      std::vector<double>& extremity_thickness,
       double measurement_error_pos, 
       double measurement_error_vel, 
       double delay);
