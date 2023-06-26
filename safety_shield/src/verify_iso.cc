@@ -301,11 +301,13 @@ bool VerifyISO::verify_clamping(const std::vector<reach_lib::Capsule>& robot_cap
   try {
     for (int i = 0; i < human_capsules.size(); i++) {
       // If no collision occured, we are safe and don't have to check the rest.
-      if(!clamping_possible(robot_capsules, human_capsules[i], environment_elements, human_radii[i], unclampable_enclosures_map,
+      if (!clamping_possible(robot_capsules, human_capsules[i], environment_elements, human_radii[i], unclampable_enclosures_map,
           robot_capsule_velocities_it, robot_capsule_velocities_end, alpha_i, beta_i, delta_s)) {
+        spdlog::info("Clamping is not possible for human capsule set {}", i);
         return true;
       }
     }
+    spdlog::info("Clamping is possible for all human capsule sets");
     return false;
   } catch (const std::exception &exc) {
     spdlog::error("Exception in VerifyISO::verify_clamping: {}", exc.what());
