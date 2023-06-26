@@ -109,6 +109,7 @@ class HumanReach {
   /**
    * @brief HumanReach constructor
    * @param[in] n_joints_meas Number of joints in the measurement
+   * @param[in] joint_names Maps the joint name to the joint index (key: Joint name, value: Joint index)
    * @param[in] measurement_error_pos Maximal positional measurement error
    * @param[in] measurement_error_vel Maximal velocity measurement error
    * @param[in] delay Delay in measurement processing pipeline
@@ -123,13 +124,22 @@ class HumanReach {
    * @param[in] extremity_end_names The end joints of extremities, e.g., right / left hand, right / left foot --> Is
    * used for thickness of extremities
    * @param[in] extremity_length The max length of the extremities (related to extremity_base_names)
+   * @param[in] extremity_thickness The thickness of the extremities (usually zero, as it is already considered in extremity_length)
    * @param[in] wrist_names The name identifiers of the two hands
-   */
-  HumanReach(int n_joints_meas, std::map<std::string, reach_lib::jointPair>& body_link_joints,
-             const std::map<std::string, double>& thickness, std::vector<double>& max_v, std::vector<double>& max_a,
-             std::vector<std::string>& extremity_base_names, std::vector<std::string>& extremity_end_names,
-             std::vector<double>& extremity_length, double measurement_error_pos, double measurement_error_vel,
-             double delay);
+  */
+  HumanReach(int n_joints_meas,
+      std::map<std::string, int> joint_names,
+      std::map<std::string, reach_lib::jointPair>& body_link_joints, 
+      const std::map<std::string, double>& thickness, 
+      std::vector<double>& max_v, 
+      std::vector<double>& max_a,
+      std::vector<std::string>& extremity_base_names, 
+      std::vector<std::string>& extremity_end_names, 
+      std::vector<double>& extremity_length, 
+      std::vector<double>& extremity_thickness,
+      double measurement_error_pos, 
+      double measurement_error_vel, 
+      double delay);
 
   /**
    * @brief Destructor

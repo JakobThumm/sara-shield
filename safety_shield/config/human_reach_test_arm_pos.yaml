@@ -33,6 +33,7 @@ bodies:
 
 extremities:
   - name: "rightArm"
-    base: "rightUpperArm"
-    end: "rightHand"
+    base: "rightShoulder"
+    end: "rightWrist"
     length: 0.725
+    thickness: 0.0

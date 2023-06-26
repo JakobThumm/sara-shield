@@ -76,11 +76,14 @@ motion_capture:
       - thickness: 0.2
 
   extremities:
-    - lHand:
-      - shoulder: "lShldr"
-      - elbow: "lForeArm"
-      - wristBody: "lHand"
-    - rHand:
-      - shoulder: "rShldr"
-      - elbow: "rForeArm"
-      - wristBody: "rHand"
+  - name: "lArm"
+    base: "lShldr"
+    end: "lHand"
+    length: 0.8
+    thickness: 0.0
+    
+  - name: "rArm"
+    base: "rShldr"
+    end: "rHand"
+    length: 0.8
+    thickness: 0.0
