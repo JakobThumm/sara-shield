@@ -29,8 +29,7 @@ HumanReach::HumanReach(int n_joints_meas,
   for (int i = 0; i < extremity_base_names.size(); i++) {
     extremity_body_segment_map[extremity_base_names[i]] = reach_lib::jointPair(joint_names.at(extremity_base_names[i]), joint_names.at(extremity_end_names[i]));
     extremity_max_v.push_back(
-      std::max(std::max(max_v.at(body_link_joints.at(extremity_base_names[i]).first), max_v.at(body_link_joints.at(extremity_base_names[i]).second)),
-               std::max(max_v.at(body_link_joints.at(extremity_end_names[i]).first), max_v.at(body_link_joints.at(extremity_end_names[i]).second))));
+      std::max(max_v.at(joint_names.at(extremity_base_names[i])), max_v.at(joint_names.at(extremity_end_names[i]))));
   }
   assert(extremity_base_names.size() == extremity_end_names.size());
   std::vector<double> extremity_thickness;
