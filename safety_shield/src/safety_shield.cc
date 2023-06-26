@@ -123,7 +123,7 @@ SafetyShield::SafetyShield(double sample_time, std::string trajectory_config_fil
   double delay = human_config["delay"].as<double>();
 
   std::vector<std::string> joint_name_vec = human_config["joint_names"].as<std::vector<std::string>>();
-  std::unordered_map<std::string, int> joint_names;
+  std::map<std::string, int> joint_names;
   for(std::size_t i = 0; i < joint_name_vec.size(); ++i) {
       joint_names[joint_name_vec[i]] = i;
   }
@@ -151,8 +151,7 @@ SafetyShield::SafetyShield(double sample_time, std::string trajectory_config_fil
     extremity_end_names.push_back(extremity["end"].as<std::string>());
     extremity_length.push_back(extremity["length"].as<double>());
   }
-  human_reach_ =
-      new HumanReach(joint_names.size(), body_link_joints, thickness, joint_v_max, joint_a_max, extremity_base_names,
+  human_reach_ = new HumanReach(joint_names.size(), joint_names, body_link_joints, thickness, joint_v_max, joint_a_max, extremity_base_names,
                      extremity_end_names, extremity_length, measurement_error_pos, measurement_error_vel, delay);
   ///////////// Build verifier
   verify_ = new safety_shield::VerifyISO();

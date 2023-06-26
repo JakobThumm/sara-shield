@@ -2,33 +2,42 @@
 
 namespace safety_shield {
 
-HumanReach::HumanReach(int n_joints_meas, std::map<std::string, reach_lib::jointPair>& body_link_joints,
-                       const std::map<std::string, double>& thickness, std::vector<double>& max_v,
-                       std::vector<double>& max_a, std::vector<std::string>& extremity_base_names,
-                       std::vector<std::string>& extremity_end_names, std::vector<double>& extremity_length,
-                       double measurement_error_pos, double measurement_error_vel, double delay)
-    : n_joints_meas_(n_joints_meas),
-      body_link_joints_(body_link_joints),
-      measurement_error_pos_(measurement_error_pos),
-      measurement_error_vel_(measurement_error_vel),
-      delay_(delay) {
+HumanReach::HumanReach(int n_joints_meas,
+      std::map<std::string, int> joint_names,
+      std::map<std::string, reach_lib::jointPair>& body_link_joints, 
+      const std::map<std::string, double>& thickness, 
+      std::vector<double>& max_v, 
+      std::vector<double>& max_a,
+      std::vector<std::string>& extremity_base_names, 
+      std::vector<std::string>& extremity_end_names, 
+      std::vector<double>& extremity_length,
+      double measurement_error_pos, 
+      double measurement_error_vel, 
+      double delay):
+  n_joints_meas_(n_joints_meas),
+  body_link_joints_(body_link_joints),
+  measurement_error_pos_(measurement_error_pos),
+  measurement_error_vel_(measurement_error_vel),
+  delay_(delay)
+{
   reach_lib::System system(measurement_error_pos, measurement_error_vel, delay);
   human_v_ = reach_lib::ArticulatedVel(system, body_link_joints, thickness, max_v);
   human_a_ = reach_lib::ArticulatedAccel(system, body_link_joints, thickness, max_a);
   // Create extremity map
-  std::map<std::string, reach_lib::jointPair> extremity_base_joints;
+  std::map<std::string, reach_lib::jointPair> extremity_body_segment_map;
   std::vector<double> extremity_max_v;
-  for (const std::string& extremity_base_name : extremity_base_names) {
-    extremity_base_joints[extremity_base_name] = body_link_joints[extremity_base_name];
-    extremity_max_v.push_back(max_v.at(body_link_joints.at(extremity_base_name).first));
+  for (int i = 0; i < extremity_base_names.size(); i++) {
+    extremity_body_segment_map[extremity_base_names[i]] = reach_lib::jointPair(joint_names.at(extremity_base_names[i]), joint_names.at(extremity_end_names[i]));
+    extremity_max_v.push_back(
+      std::max(std::max(max_v.at(body_link_joints.at(extremity_base_names[i]).first), max_v.at(body_link_joints.at(extremity_base_names[i]).second)),
+               std::max(max_v.at(body_link_joints.at(extremity_end_names[i]).first), max_v.at(body_link_joints.at(extremity_end_names[i]).second))));
   }
   assert(extremity_base_names.size() == extremity_end_names.size());
   std::vector<double> extremity_thickness;
   for (const std::string& extremity_end_name : extremity_end_names) {
     extremity_thickness.push_back(thickness.at(extremity_end_name));
   }
-  human_p_ =
-      reach_lib::ArticulatedPos(system, extremity_base_joints, extremity_thickness, extremity_max_v, extremity_length);
+  human_p_ = reach_lib::ArticulatedPos(system, extremity_body_segment_map, extremity_thickness, extremity_max_v, extremity_length);
 
   for (int i = 0; i < n_joints_meas; i++) {
     joint_pos_.push_back(reach_lib::Point(0.0, 0.0, 0.0));
