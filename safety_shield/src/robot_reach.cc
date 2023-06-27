@@ -129,9 +129,11 @@ RobotReach::CapsuleVelocity RobotReach::getVelocityOfCapsule(const int capsule, 
   Eigen::Vector<double, 6> result1 = jacobian1 * velocity.segment(0, capsule + 1);
   RobotReach::SE3Vel vel1(result1.segment(0, 3), result1.segment(3, 3));
   // Point 2: v_2 = v_1 + \omega_1 \times (p_2 - p_1), \omega_2 = \omega_1
-  RobotReach::SE3Vel vel2(vel1.first + vel1.second.cross(pointTo3dVector(robot_capsules_for_velocity_[capsule].p2_ -
-                                                                         robot_capsules_for_velocity_[capsule].p1_)),
-                          vel1.second);
+  RobotReach::SE3Vel vel2(
+      vel1.first + vel1.second.cross(pointTo3dVector(
+                       robot_capsules_for_velocity_[capsule].p2_ - robot_capsules_for_velocity_[capsule].p1_
+                       )),
+      vel1.second);
   return RobotReach::CapsuleVelocity(vel1, vel2);
 }
 

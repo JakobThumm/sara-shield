@@ -264,7 +264,7 @@ class RobotReach {
    * @brief returns robot capsules for velocity
    * @return robot capsules for velocity
    */
-  inline std::vector<occupancy_containers::capsule::Capsule>& getRobotCapsulesForVelocity() {
+  inline std::vector<occupancy_containers::capsule::Capsule> getRobotCapsulesForVelocity() {
     return robot_capsules_for_velocity_;
   }
 };
