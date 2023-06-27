@@ -51,8 +51,9 @@ namespace safety_shield {
  *  OFF: No shield is used.
  *  SSM: Speed and Separation Monitoring: The robot stops for the human.
  *  PFL: Power and Force Limiting: The robot slows down to a safe contact speed for the human.
+ *  SEVERAL_PFL: Power and Force Limiting with different velocities for head and non-head
  */
-enum class ShieldType { OFF, SSM, PFL };
+enum class ShieldType { OFF, SSM, PFL, SEVERAL_PFL };
 
 /**
  * @brief Computes the failsafe trajectory
@@ -106,9 +107,29 @@ class SafetyShield {
   Path failsafe_path_;
 
   /**
+   * @brief head fail-safe path of the current path
+   */
+  Path failsafe_path_head_;
+
+  /**
+   * @brief non-head fail-safe path of the current path
+   */
+  Path failsafe_path_non_head;
+
+  /**
    * @brief fail-safe path of the repair path
    */
   Path failsafe_path_2_;
+
+  /**
+   * @brief head fail-safe path of the repair path
+   */
+  Path failsafe_path_head_2_;
+
+  /**
+   * @brief non-head fail-safe path of the repair path
+   */
+  Path failsafe_path_non_head_2_;
 
   /**
    * @brief verified safe path
@@ -119,6 +140,16 @@ class SafetyShield {
    * @brief the constructed intended step + failsafe path
    */
   Path potential_path_;
+
+  /**
+   * @brief the constructed intended step + head failsafe path
+   */
+  Path potential_path_head_;
+
+  /**
+   * @brief the constructed intended step + non-headfailsafe path
+   */
+  Path potential_path_non_head_;
 
   /**
    * @brief Number of joints of the robot
@@ -139,6 +170,20 @@ class SafetyShield {
    * @brief Time since start
    */
   double path_s_;
+
+  /**
+   * @brief enum for saving which action needs to be taken
+   */
+  enum Verification_level {
+    SAFE,
+    HEAD,
+    NON_HEAD
+  };
+
+  /**
+   * @brief which action needs to be taken in next step
+   */
+  Verification_level verification_level_;
 
   /**
    * @brief Was the last timestep safe
@@ -291,6 +336,16 @@ class SafetyShield {
    * @brief maximum cartesian velocity allowed at collision in m/s
    */
   double v_safe_ = 0.10;
+
+  /**
+   * @brief maximum cartesian velocity allowed at collision in m/s for head
+   */
+  double v_safe_head_ = 0.10;
+
+  /**
+   * @brief maximum cartesian velocity allowed at collision in m/s for non-head
+   */
+  double v_safe_non_head_ = 0.25;
 
  protected:
   /**
