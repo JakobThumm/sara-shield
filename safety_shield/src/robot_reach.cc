@@ -131,8 +131,8 @@ RobotReach::CapsuleVelocity RobotReach::getVelocityOfCapsule(const int capsule, 
   // Point 2: v_2 = v_1 + \omega_1 \times (p_2 - p_1), \omega_2 = \omega_1
   RobotReach::SE3Vel vel2(
       vel1.first + vel1.second.cross(pointTo3dVector(
-                       robot_capsules_for_velocity_[capsule].p2_ - robot_capsules_for_velocity_[capsule].p1_
-                       )),
+        robot_capsules_for_velocity_[capsule].p2_ - robot_capsules_for_velocity_[capsule].p1_
+      )),
       vel1.second);
   return RobotReach::CapsuleVelocity(vel1, vel2);
 }
