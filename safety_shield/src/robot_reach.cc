@@ -3,8 +3,7 @@
 namespace safety_shield {
 
 RobotReach::RobotReach(std::vector<double> transformation_matrices, int nb_joints, std::vector<double> geom_par,
-                       double x, double y, double z, double roll, double pitch, double yaw,
-                       double secure_radius)
+                       double x, double y, double z, double roll, double pitch, double yaw, double secure_radius)
     : nb_joints_(nb_joints), secure_radius_(secure_radius) {
   Eigen::Matrix4d transformation_matrix_first;
   double cr = cos(roll);
@@ -81,8 +80,8 @@ std::vector<reach_lib::Capsule> RobotReach::reach(Motion& start_config, Motion& 
       // Calculate center of ball enclosing point p2 before and after
       reach_lib::Point p_2_k = (before.p2_ + after.p2_) * 0.5;
       // Calculate radius of ball enclosing point p1 before and after
-      double r_1 =
-          reach_lib::Point::norm(before.p1_ - after.p1_) / 2.0 + alpha_i[i] * s_diff * s_diff / 8.0 + robot_capsules_[i].r_;
+      double r_1 = reach_lib::Point::norm(before.p1_ - after.p1_) / 2.0 + alpha_i[i] * s_diff * s_diff / 8.0 +
+                   robot_capsules_[i].r_;
       // Calculate radius of ball enclosing point p2 before and after
       double r_2 = reach_lib::Point::norm(before.p2_ - after.p2_) / 2.0 + alpha_i[i] * s_diff * s_diff / 8.0 +
                    robot_capsules_[i].r_;
@@ -123,7 +122,7 @@ void RobotReach::calculateAllTransformationMatricesAndCapsules(const std::vector
   }
 }
 
-RobotReach::CapsuleVelocity RobotReach::getVelocityOfCapsule(const int capsule, std::vector<double> q_dot){
+RobotReach::CapsuleVelocity RobotReach::getVelocityOfCapsule(const int capsule, std::vector<double> q_dot) {
   Eigen::VectorXd velocity = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(q_dot.data(), q_dot.size());
   // Point 1
   Eigen::Matrix<double, 6, Eigen::Dynamic> jacobian1 = getJacobian(capsule, robot_capsules_for_velocity_[capsule].p1_);
