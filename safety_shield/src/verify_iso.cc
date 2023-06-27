@@ -276,6 +276,7 @@ bool VerifyISO::clamping_possible(const std::vector<reach_lib::Capsule>& robot_c
     }
     // Environmentally-constrained collision check
     if (environment_collision_map.find(human_index) == environment_collision_map.end()) {
+      spdlog::info("Human element {} collides with robot but not with environment.", human_index);
       continue;
     }
     if (environmentally_constrained_collision_check(robot_collisions.second, robot_capsules,
@@ -283,6 +284,7 @@ bool VerifyISO::clamping_possible(const std::vector<reach_lib::Capsule>& robot_c
         robot_capsule_velocities_it, robot_capsule_velocities_end, alpha_i, beta_i, delta_s)) {
       return true;
     }
+    spdlog::info("Human element {} collides with robot and environment but is safe.", human_index);
   }
   return false;
 }
