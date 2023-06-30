@@ -114,7 +114,7 @@ class SafetyShield {
   /**
    * @brief non-head fail-safe path of the current path
    */
-  Path failsafe_path_non_head;
+  Path failsafe_path_non_head_;
 
   /**
    * @brief fail-safe path of the repair path
@@ -387,11 +387,32 @@ class SafetyShield {
   bool planPFLFailsafe(double a_max_manoeuvre, double j_max_manoeuvre);
 
   /**
+   * @brief Computes the fail-safe path for SEVERAL_PFL mode.
+   *
+   * @details Sets the failsafe_path_2_ variable.
+   *
+   * @param[in] a_max_manoeuvre Maximum path acceleration
+   * @param[in] j_max_manoeuvre Maximum path jerk
+   * @param[in] v_safe safe velocity
+   *
+   * @return true planning was successful
+   * @return false planning failed
+   */
+  bool planSeveralPflFailsafe(double a_max_manoeuvre, double j_max_manoeuvre, double v_safe);
+
+  /**
    * @brief Calculate the next desired joint position based on verification of recovery path.
    * @param is_safe Last recovery path + potential path are verified safe.
    * @return next motion
    */
   Motion determineNextMotion(bool is_safe);
+
+  /**
+   * @brief Calculate the next desired joint position based on verification of recovery path for SEVERAL_PFL mode
+   * @param verification_level Last recovery path + potential path have which verification_level
+   * @return next motion
+   */
+  Motion determineNextMotionForSeveralPfl(Verification_level verification_level);
 
   /**
    * @brief Check a given motion if it exceeds the joint limits.
@@ -415,6 +436,11 @@ class SafetyShield {
    * @brief Calculates and returns the current motion
    */
   Motion getCurrentMotion();
+
+  /**
+   * @brief Calculates and returns the current motion for SEVERAL_PFL mode
+   */
+  Motion getCurrentMotionForSeveralPfl();
 
   /**
    * @brief Determines if the current motion is in the acceleration bounds for replanning
@@ -531,12 +557,21 @@ class SafetyShield {
              const std::vector<double>& init_qpos, double current_time, ShieldType shield_type);
 
   /**
-   * @brief Computes the new trajectory depending on dq and if the previous path is safe and publishes it
+   * @brief Computes the new trajectory depending on dq and if the previous path is safe and publishes it (SEVERAL_PFL)
    * @param[in] v is the previous path safe
    * @param[in] prev_speed the velocity of the previous point
    * @returns goal_motion: goal position, velocity, acceleration and time of the computed trajectory to execute.
    */
   Motion computesPotentialTrajectory(bool v, const std::vector<double>& prev_speed);
+
+  /**
+   * @brief Computes the new trajectory depending on dq and if the previous path is safe and publishes it
+   * @param[in] v which verification level the previous path has
+   * @param[in] prev_speed the velocity of the previous point
+   * @param[out] goal_motion_head: goal position, velocity, acceleration and time of the computed head trajectory to execute.
+   * @param[out] goal_motion_non_head: goal position, velocity, acceleration and time of the computed non-head trajectory to execute.
+   */
+  void computesPotentialTrajectoryForSeveralPfl(Verification_level v, const std::vector<double>& prev_speed, Motion* goal_motion_head, Motion* goal_motion_non_head);
 
   /**
    * @brief Gets the information that the next simulation cycle (sample time) has started
@@ -545,6 +580,22 @@ class SafetyShield {
    * @return next motion to be executed
    */
   Motion step(double cycle_begin_time);
+
+  /**
+   * @brief Gets the information that the next simulation cycle (sample time) has started (SSM, OFF, PFL)
+   * @param cycle_begin_time timestep of begin of current cycle in seconds.
+   *
+   * @return next motion to be executed
+   */
+  Motion standardStep(double cycle_begin_time);
+
+  /**
+   * @brief Gets the information that the next simulation cycle (sample time) has started (SEVERAL_PFL)
+   * @param cycle_begin_time timestep of begin of current cycle in seconds.
+   *
+   * @return next motion to be executed
+   */
+  Motion severalPflStep(double cycle_begin_time);
 
   /**
    * @brief Calculates a new trajectory from current joint state to desired goal state.
