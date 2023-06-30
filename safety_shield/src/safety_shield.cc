@@ -497,7 +497,7 @@ bool SafetyShield::planPFLFailsafe(double a_max_manoeuvre, double j_max_manoeuvr
   // TODO: if the current velocity is under iso-velocity, we dont need to compute the failsafe-path of the PFL-criterion
   if(!is_under_iso_velocity) {
     v_limit = v_safe_ / v_max;
-    if(v_limit >= 1 || v_limit <= 0) {
+    if(v_limit > 1 || v_limit < 0) {
       spdlog::error("v_limit not between 0 and 1");
     }
   } else {
