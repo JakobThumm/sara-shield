@@ -461,6 +461,11 @@ bool SafetyShield::planPFLFailsafe(double a_max_manoeuvre, double j_max_manoeuvr
   // Calculate goal
   bool is_under_iso_velocity = false;
   // v_max is maximum of LTT or STP and vel_s_dot is how much path velocity needs to be scaled to be under v_iso
+  // First, plan a failsafe path that ends in a complete stop. This is the longest failsafe path possible.
+  bool planning_success = planSafetyShield(recovery_path_.getPosition(), recovery_path_.getVelocity(), recovery_path_.getAcceleration(), 0.0, a_max_manoeuvre, j_max_manoeuvre, failsafe_path_2_);
+  if (!planning_success) {
+    return false;
+  }
   failsafe_path_2_.getFinalMotion(s_d, ds_d, dds_d);
   double v_max;
   if(!new_ltt_) {
@@ -480,7 +485,8 @@ bool SafetyShield::planPFLFailsafe(double a_max_manoeuvre, double j_max_manoeuvr
   } else {
     v_limit = recovery_path_.getVelocity();
   }
-  bool planning_success = planSafetyShield(recovery_path_.getPosition(), recovery_path_.getVelocity(), recovery_path_.getAcceleration(), v_limit, a_max_manoeuvre, j_max_manoeuvre, failsafe_path_2_);
+  // This is the PFL failsafe path that ends in a velocity that is under v_iso.
+  planning_success = planSafetyShield(recovery_path_.getPosition(), recovery_path_.getVelocity(), recovery_path_.getAcceleration(), v_limit, a_max_manoeuvre, j_max_manoeuvre, failsafe_path_2_);
   // If the entire long-term trajectory is under iso-velocity, we dont need to check the velocity of the failsafe-path
   if(!is_under_iso_velocity) {
     // Check if the entire failsafe path is under iso-velocity
