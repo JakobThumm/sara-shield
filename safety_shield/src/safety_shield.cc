@@ -468,19 +468,23 @@ bool SafetyShield::planPFLFailsafe(double a_max_manoeuvre, double j_max_manoeuvr
   } else {
     v_max = new_long_term_trajectory_.getMaxofMaximumCartesianVelocityWithS(s_d);
   }
+  // Check if the entire long-term trajectory is under iso-velocity
   is_under_iso_velocity = v_max <= v_safe_;
   double v_limit;
   // TODO: if the current velocity is under iso-velocity, we dont need to compute the failsafe-path of the PFL-criterion
   if(!is_under_iso_velocity) {
     v_limit = v_safe_ / v_max;
-    if(v_limit >= 1 || v_limit <= 0) {
+    if(v_limit > 1 || v_limit < 0) {
       spdlog::error("v_limit not between 0 and 1");
     }
   } else {
     v_limit = recovery_path_.getVelocity();
   }
   bool planning_success = planSafetyShield(recovery_path_.getPosition(), recovery_path_.getVelocity(), recovery_path_.getAcceleration(), v_limit, a_max_manoeuvre, j_max_manoeuvre, failsafe_path_2_);
+  // If the entire long-term trajectory is under iso-velocity, we dont need to check the velocity of the failsafe-path
   if(!is_under_iso_velocity) {
+    // Check if the entire failsafe path is under iso-velocity
+    // The failsafe path could start at d_s < 1, so the velocity of the failsafe path could be smaller than the LTT velocity.
     double max_d_s = failsafe_path_2_.getMaxVelocity();
     is_under_v_limit_ = max_d_s < v_limit;
   } else {
