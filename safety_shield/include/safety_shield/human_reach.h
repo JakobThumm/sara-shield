@@ -215,13 +215,13 @@ class HumanReach {
     std::vector<std::vector<double>> radii;
     radii.resize(3);
     for (auto& extremity : human_p_.get_occupancy()) {
-      radii[0].push_back(extremity.get_thickness());
+      radii[0].push_back(extremity.get_thickness() / 2.0);
     }
     for (auto& body_part : human_v_.get_occupancy()) {
-      radii[1].push_back(body_part.get_thicknes());
+      radii[1].push_back(body_part.get_thicknes() / 2.0);
     }
     for (auto& body_part : human_a_.get_occupancy()) {
-      radii[2].push_back(body_part.get_thicknes());
+      radii[2].push_back(body_part.get_thicknes() / 2.0);
     }
     return radii;
   }
