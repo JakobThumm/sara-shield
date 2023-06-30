@@ -63,7 +63,7 @@ class VerifyISO : public Verify {
 
 
   /**
-    * @brief Check a set of robot capsules if they collide with a set of human capsules
+    * @brief Check a set of robot capsules if they collide with a set of human capsules; adds to list if they collide
     *
     * @param[in] robot_capsules The robot capsules
     * @param[in] human_capsules The human occupancy capsules
@@ -71,8 +71,7 @@ class VerifyISO : public Verify {
     * @returns Whether a collision between any two capsules of the robot and human set occured
    */
   std::vector<reach_lib::Capsule> PFL_robotHumanCollision(const std::vector<reach_lib::Capsule>& robot_capsules,
-                               const std::vector<reach_lib::Capsule>& human_capsules,
-                               std::vector<reach_lib::Capsule>& collision_capsules);
+                               const std::vector<reach_lib::Capsule>& human_capsules, std::vector<reach_lib::Capsule>& collision_capsules);
 
   /**
     * @brief Verify the robot motion againt the reachability analysis of the human in position, velocity, and acceleration
@@ -84,7 +83,7 @@ class VerifyISO : public Verify {
     *          False: Otherwise
    */
   std::vector<reach_lib::Capsule> PFL_verify_human_reach(const std::vector<reach_lib::Capsule>& robot_capsules,
-                                                         std::vector<std::vector<reach_lib::Capsule>> human_capsules);
+                                                         const std::vector<std::vector<reach_lib::Capsule>>& human_capsules);
 
 
 };

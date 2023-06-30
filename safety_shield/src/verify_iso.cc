@@ -33,8 +33,8 @@ bool VerifyISO::verify_human_reach(const std::vector<reach_lib::Capsule>& robot_
 }
 
 std::vector<reach_lib::Capsule> VerifyISO::PFL_robotHumanCollision(const std::vector<reach_lib::Capsule>& robot_capsules,
-                                        const std::vector<reach_lib::Capsule>& human_capsules,
-                                        std::vector<reach_lib::Capsule>& collision_capsules) {
+                                        const std::vector<reach_lib::Capsule>& human_capsules, std::vector<reach_lib::Capsule>& collision_capsules) {
+
   // Check position capsules
   for (auto &human_capsule: human_capsules) {
     for (auto &robot_capsule: robot_capsules) {
@@ -47,9 +47,9 @@ std::vector<reach_lib::Capsule> VerifyISO::PFL_robotHumanCollision(const std::ve
   return collision_capsules;
 }
 
-
+// TODO: Kollisions Kapseln müssen menschliche Kapseln sein, wie unterscheide ich zwischen den 3 Menschenmodellen?
 std::vector<reach_lib::Capsule> VerifyISO::PFL_verify_human_reach(const std::vector<reach_lib::Capsule>& robot_capsules,
-                                                                  std::vector<std::vector<reach_lib::Capsule>> human_capsules) {
+                                                                  const std::vector<std::vector<reach_lib::Capsule>>& human_capsules) {
   try {
     std::vector<reach_lib::Capsule> collision_capsules;
     for (const auto &capsule_list: human_capsules) {

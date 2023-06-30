@@ -197,6 +197,18 @@ class SafetyShield {
   bool is_under_v_limit_ = false;
 
   /**
+   * @brief Whether or not the potential path is under the safe head velocity the entire time.
+   *
+   */
+  bool is_under_v_limit_head_ = false;
+
+  /**
+   * @brief Whether or not the potential path is under the safe non-head velocity the entire time.
+   *
+   */
+  bool is_under_v_limit_non_head_ = false;
+
+  /**
    * @brief Indicates if the last replanning was successful or not.
    *
    * Indicates problems in the following statements:
