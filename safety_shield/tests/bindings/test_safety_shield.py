@@ -38,7 +38,6 @@ class TestSafetyShield:
         """
         dir_path = os.path.dirname(os.path.realpath(__file__))
         print(dir_path)
-
         shield = SafetyShield(
             sample_time=0.004,
             trajectory_config_file=dir_path
