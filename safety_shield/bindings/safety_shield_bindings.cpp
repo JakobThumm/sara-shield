@@ -122,6 +122,7 @@ PYBIND11_MODULE(safety_shield_py, handle) {
     .def("getHumanReachCapsules", &safety_shield::SafetyShield::getHumanReachCapsules, py::arg("type") = 1)
     .def("getSafety", &safety_shield::SafetyShield::getSafety)
     .def("getShieldType", &safety_shield::SafetyShield::getShieldType)
+    .def("getCurrentMotion", &safety_shield::SafetyShield::getCurrentMotion)
   ;
   
 }

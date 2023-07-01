@@ -362,11 +362,6 @@ class SafetyShield {
   }
 
   /**
-   * @brief Calculates and returns the current motion
-   */
-  Motion getCurrentMotion();
-
-  /**
    * @brief Determines if the current motion is in the acceleration bounds for replanning
    *
    * @param current_motion current motion
@@ -618,6 +613,11 @@ class SafetyShield {
   inline ShieldType getShieldType() {
     return shield_type_;
   }
+
+  /**
+   * @brief Calculates and returns the current motion
+   */
+  Motion getCurrentMotion();
 };
 }  // namespace safety_shield
 
