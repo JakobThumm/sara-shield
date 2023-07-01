@@ -40,7 +40,6 @@ class TestSafetyShield:
         print(dir_path)
 
         shield = SafetyShield(
-            activate_shield=True,
             sample_time=0.004,
             trajectory_config_file=dir_path
             + "/../../config/trajectory_parameters_modrob1.yaml",
@@ -69,7 +68,6 @@ class TestSafetyShield:
         print(dir_path)
 
         shield = SafetyShield(
-            activate_shield=True,
             sample_time=0.004,
             trajectory_config_file=dir_path
             + "/../../config/trajectory_parameters_schunk.yaml",
@@ -91,8 +89,7 @@ class TestSafetyShield:
         
     def test_reset_safety_shield(self, shield):
         """Test the reset function."""
-        shield.reset(activate_shield=True,
-                     init_x=0.0,
+        shield.reset(init_x=0.0,
                      init_y=0.0,
                      init_z=0.0,
                      init_roll=0.0,
