@@ -38,7 +38,12 @@ bool VerifyISO::verify_human_reach_head(const std::vector<reach_lib::Capsule>& r
                              const std::vector<reach_lib::Capsule>& human_capsules_acc,
                              const std::map<std::string, reach_lib::jointPair>& body_link_joints) {
   try {
-    int index_head = body_link_joints.at("head").first;
+    int index_head;
+    if(body_link_joints.count("head") == 1) {
+      index_head = body_link_joints.at("head").first;
+    } else {
+      index_head = body_link_joints.at("Head").first;
+    }
     bool vel_model = !robotHumanCollision(robot_capsules, {human_capsules_vel.at(index_head)});
     bool acc_model = !robotHumanCollision(robot_capsules, {human_capsules_acc.at(index_head)});
     return vel_model || acc_model;
@@ -53,7 +58,12 @@ bool VerifyISO::verify_human_reach_non_head(const std::vector<reach_lib::Capsule
                                         std::vector<reach_lib::Capsule> human_capsules_acc,
                                         const std::map<std::string, reach_lib::jointPair>& body_link_joints) {
   try {
-    int index_head = body_link_joints.at("head").first;
+    int index_head;
+    if(body_link_joints.count("head") == 1) {
+      index_head = body_link_joints.at("head").first;
+    } else {
+      index_head = body_link_joints.at("Head").first;
+    }
     human_capsules_vel.erase(human_capsules_vel.cbegin() + index_head);
     human_capsules_acc.erase(human_capsules_acc.cbegin() + index_head);
     bool vel_model = !robotHumanCollision(robot_capsules, human_capsules_vel);
