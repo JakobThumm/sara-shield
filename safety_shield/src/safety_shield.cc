@@ -629,16 +629,19 @@ bool SafetyShield::planPFLFailsafe(double a_max_manoeuvre, double j_max_manoeuvr
   return planning_success;
 }
 
-// callen und beide Pfade direkt ausrechnen?
+// TODO: callen und beide Pfade direkt ausrechnen?
 bool SafetyShield::planSeveralPflFailsafe(double a_max_manoeuvre, double j_max_manoeuvre, double v_safe) {
   // Calculate maximal Cartesian velocity in the short-term plan
   double s_d, ds_d, dds_d;
   // Calculate goal
   bool is_under_iso_velocity = false;
   // v_max is maximum of LTT or STP and vel_s_dot is how much path velocity needs to be scaled to be under v_iso
-  // TODO: recovery_path_pos oder failsafe_path_2.getFinalMotion()
-  // failsafe_path_2_.getFinalMotion(s_d, ds_d, dds_d);
-  s_d = recovery_path_.getPosition();
+  // First, plan a failsafe path that ends in a complete stop. This is the longest failsafe path possible.
+  bool planning_success = planSafetyShield(recovery_path_.getPosition(), recovery_path_.getVelocity(), recovery_path_.getAcceleration(), 0.0, a_max_manoeuvre, j_max_manoeuvre, failsafe_path_2_);
+  if (!planning_success) {
+    return false;
+  }
+  failsafe_path_2_.getFinalMotion(s_d, ds_d, dds_d);
   double v_max;
   if (!new_ltt_) {
     v_max = long_term_trajectory_.getMaxofMaximumCartesianVelocityWithS(s_d);
@@ -650,31 +653,32 @@ bool SafetyShield::planSeveralPflFailsafe(double a_max_manoeuvre, double j_max_m
   // TODO: if the current velocity is under iso-velocity, we dont need to compute the failsafe-path of the PFL-criterion
   if (!is_under_iso_velocity) {
     v_limit = v_safe / v_max;
-    if (v_limit >= 1 || v_limit <= 0) {
+    if (v_limit > 1 || v_limit <= 0) {
       spdlog::error("v_limit not between 0 and 1");
     }
   } else {
     v_limit = recovery_path_.getVelocity();
   }
-  bool planning_success;
   if (v_safe == v_safe_head_) {
+    // This is the PFL failsafe path that ends in a velocity v_head that is under v_iso.
     planning_success =
         planSafetyShield(recovery_path_.getPosition(), recovery_path_.getVelocity(), recovery_path_.getAcceleration(),
                          v_limit, a_max_manoeuvre, j_max_manoeuvre, failsafe_path_head_2_);
   } else {
     // v_safe == v_safe_non_head
+    // This is the PFL failsafe path that ends in a velocity v_non_head that is under v_iso.
     planning_success =
         planSafetyShield(recovery_path_.getPosition(), recovery_path_.getVelocity(), recovery_path_.getAcceleration(),
                          v_limit, a_max_manoeuvre, j_max_manoeuvre, failsafe_path_non_head_2_);
   }
   // TODO: unschön gelöst, besser wenn eine Methode für jeweils eine pfl action?
   if (!is_under_iso_velocity) {
-    // TODO: welcher failsafe Pfade?
-    double max_d_s = failsafe_path_head_2_.getMaxVelocity();
     if(v_safe == v_safe_head_) {
+      double max_d_s = failsafe_path_head_2_.getMaxVelocity();
       is_under_v_limit_head_ = max_d_s < v_limit;
     } else {
       // v_safe == v_safe_non_head_
+      double max_d_s = failsafe_path_non_head_2_.getMaxVelocity();
       is_under_v_limit_non_head_ = max_d_s < v_limit;
     }
   } else {
