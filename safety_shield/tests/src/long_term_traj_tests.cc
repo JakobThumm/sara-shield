@@ -243,7 +243,131 @@ TEST_F(LongTermTrajTestVelocity, overapproximation) {
             << std::endl;
 }
 
-}  // namespace safety_shield
+TEST_F(LongTermTrajTest, InterpolateTestConst) {
+  std::vector<Motion> motions;
+  int n_joints = 1;
+  std::vector<double> p0 = {0.0};
+  std::vector<double> v0 = {1.0};
+  std::vector<double> a0 = {0.0};
+  std::vector<double> j0 = {0.0};
+  Motion m0(0, p0, v0, a0, j0);
+  motions.push_back(m0);
+  std::vector<double> p1 = {0.001};
+  std::vector<double> v1 = {1.0};
+  std::vector<double> a1 = {0.0};
+  std::vector<double> j1 = {0.0};
+  Motion m1(0.001, p1, v1, a1, j1);
+  motions.push_back(m1);
+  long_term_trajectory_.setLongTermTrajectory(motions, 0.001);
+  std::vector<double> v_max = {10.0, 10.0};
+  std::vector<double> a_max = {10.0, 10.0};
+  std::vector<double> j_max = {100.0, 100.0};
+  // Slowing down on trajectory
+  double s = 0.001/2.0;
+  double ds = 0.7;
+  double dds = -0.5;
+  double ddds = -2;
+  Motion motion_int = long_term_trajectory_.interpolate(s, ds, dds, ddds, v_max, a_max, j_max);
+  EXPECT_NEAR(motion_int.getAngle()[0], 0.001/2.0, 1e-8);
+  EXPECT_NEAR(motion_int.getVelocity()[0], 0.7, 1e-8);
+  EXPECT_NEAR(motion_int.getAcceleration()[0], -0.5, 1e-8);
+  EXPECT_NEAR(motion_int.getJerk()[0], -2, 1e-5);
+}
+
+TEST_F(LongTermTrajTest, InterpolateTestStanding) {
+  std::vector<Motion> motions;
+  int n_joints = 1;
+  std::vector<double> p0 = {0.0};
+  std::vector<double> v0 = {1.0};
+  std::vector<double> a0 = {1.0};
+  std::vector<double> j0 = {0.0};
+  Motion m0(0, p0, v0, a0, j0);
+  motions.push_back(m0);
+  std::vector<double> p1 = {0.001};  // Not fully correct but not tested here.
+  std::vector<double> v1 = {1.001};
+  std::vector<double> a1 = {1.0};
+  std::vector<double> j1 = {0.0};
+  Motion m1(0.001, p1, v1, a1, j1);
+  motions.push_back(m1);
+  long_term_trajectory_.setLongTermTrajectory(motions, 0.001);
+  std::vector<double> v_max = {10.0, 10.0};
+  std::vector<double> a_max = {10.0, 10.0};
+  std::vector<double> j_max = {100.0, 100.0};
+  // Stopped on trajectory
+  double s = 0.001/2.0;
+  double ds = 0.0;
+  double dds = 0.0;
+  double ddds = 0.0;
+  Motion motion_int = long_term_trajectory_.interpolate(s, ds, dds, ddds, v_max, a_max, j_max);
+  EXPECT_NEAR(motion_int.getVelocity()[0], 0.0, 1e-8);
+  EXPECT_NEAR(motion_int.getAcceleration()[0], 0.0, 1e-8);
+  EXPECT_NEAR(motion_int.getJerk()[0], 0.0, 1e-5);
+}
+
+TEST_F(LongTermTrajTest, InterpolateTestStandingLTT) {
+  std::vector<Motion> motions;
+  int n_joints = 1;
+  std::vector<double> p0 = {0.0};
+  std::vector<double> v0 = {0.0};
+  std::vector<double> a0 = {0.0};
+  std::vector<double> j0 = {0.0};
+  Motion m0(0, p0, v0, a0, j0);
+  motions.push_back(m0);
+  std::vector<double> p1 = {0.0};  // Not fully correct but not tested here.
+  std::vector<double> v1 = {0.0};
+  std::vector<double> a1 = {0.0};
+  std::vector<double> j1 = {0.0};
+  Motion m1(0.001, p1, v1, a1, j1);
+  motions.push_back(m1);
+  long_term_trajectory_.setLongTermTrajectory(motions, 0.001);
+  std::vector<double> v_max = {10.0, 10.0};
+  std::vector<double> a_max = {10.0, 10.0};
+  std::vector<double> j_max = {100.0, 100.0};
+  // Stopped on trajectory
+  double s = 0.001/2.0;
+  double ds = 0.0;
+  double dds = 1.0;
+  double ddds = 10.0;
+  Motion motion_int = long_term_trajectory_.interpolate(s, ds, dds, ddds, v_max, a_max, j_max);
+  EXPECT_NEAR(motion_int.getAngle()[0], 0.0, 1e-8);
+  EXPECT_NEAR(motion_int.getVelocity()[0], 0.0, 1e-8);
+  EXPECT_NEAR(motion_int.getAcceleration()[0], 0.0, 1e-8);
+  EXPECT_NEAR(motion_int.getJerk()[0], 0.0, 1e-5);
+}
+
+TEST_F(LongTermTrajTest, InterpolateTestAcceleratingLTT) {
+  std::vector<Motion> motions;
+  int n_joints = 1;
+  std::vector<double> p0 = {0.0};
+  std::vector<double> v0 = {0.0};
+  std::vector<double> a0 = {1.0};
+  std::vector<double> j0 = {0.0};
+  Motion m0(0, p0, v0, a0, j0);
+  motions.push_back(m0);
+  std::vector<double> p1 = {0.0};  // Not fully correct but not tested here.
+  std::vector<double> v1 = {0.001};
+  std::vector<double> a1 = {1.0};
+  std::vector<double> j1 = {0.0};
+  Motion m1(0.001, p1, v1, a1, j1);
+  motions.push_back(m1);
+  long_term_trajectory_.setLongTermTrajectory(motions, 0.001);
+  std::vector<double> v_max = {10.0, 10.0};
+  std::vector<double> a_max = {10.0, 10.0};
+  std::vector<double> j_max = {100.0, 100.0};
+  // Stopped on trajectory
+  double s = 0.0;
+  double ds = 1.0;
+  double dds = 0.0;
+  double ddds = 0.0;
+  Motion motion_int = long_term_trajectory_.interpolate(s, ds, dds, ddds, v_max, a_max, j_max);
+  EXPECT_NEAR(motion_int.getAngle()[0], 0.0, 1e-8);
+  EXPECT_NEAR(motion_int.getVelocity()[0], 0.0, 1e-8);
+  EXPECT_NEAR(motion_int.getAcceleration()[0], 1.0, 1e-8);
+  EXPECT_NEAR(motion_int.getJerk()[0], 0.0, 1e-5);
+}
+
+
+} // namespace safety_shield
 
 int main(int argc, char **argv) {
   testing::InitGoogleTest(&argc, argv);

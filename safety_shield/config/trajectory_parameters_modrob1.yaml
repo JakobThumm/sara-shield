@@ -15,6 +15,13 @@ nb_joints: 6
 
 alpha_i_max: 5.0
 
+# safety-rated speed specified by iso-norm
+v_safe: 0.1
+
+# APPROXIMATE == 0
+# EXACT == 1
+velocity_method: 0
+
 q1: [0.0]
 q2: [0.0]
 q3: [0.0]

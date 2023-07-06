@@ -525,7 +525,7 @@ class SafetyShield {
                const std::vector<double>& a_max_allowed, const std::vector<double>& j_max_allowed,
                const std::vector<double>& a_max_path, const std::vector<double>& j_max_path,
                const LongTermTraj& long_term_trajectory, RobotReach* robot_reach, HumanReach* human_reach,
-               Verify* verify, ShieldType shield_type);
+               Verify* verify, ShieldType shield_type = ShieldType::SSM);
 
   /**
    * @brief Construct a new Safety Shield object from config files.
@@ -545,7 +545,7 @@ class SafetyShield {
    */
   SafetyShield(double sample_time, std::string trajectory_config_file, std::string robot_config_file,
                std::string mocap_config_file, double init_x, double init_y, double init_z, double init_roll,
-               double init_pitch, double init_yaw, const std::vector<double>& init_qpos, ShieldType shield_type);
+               double init_pitch, double init_yaw, const std::vector<double>& init_qpos, ShieldType shield_type = ShieldType::SSM);
 
   /**
    * @brief A SafetyShield destructor
@@ -566,7 +566,7 @@ class SafetyShield {
    * @param shield_type What type of safety shield to use, select from `OFF`, `SSM`, or `PFL`
    */
   void reset(double init_x, double init_y, double init_z, double init_roll, double init_pitch, double init_yaw,
-             const std::vector<double>& init_qpos, double current_time, ShieldType shield_type);
+             const std::vector<double>& init_qpos, double current_time, ShieldType shield_type = ShieldType::SSM);
 
   /**
    * @brief Computes the new trajectory depending on dq and if the previous path is safe and publishes it (SEVERAL_PFL)

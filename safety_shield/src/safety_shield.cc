@@ -16,8 +16,7 @@ SafetyShield::SafetyShield(int nb_joints, double sample_time, double max_s_stop,
                            const std::vector<double>& v_max_allowed, const std::vector<double>& a_max_allowed,
                            const std::vector<double>& j_max_allowed, const std::vector<double>& a_max_path,
                            const std::vector<double>& j_max_path, const LongTermTraj& long_term_trajectory,
-                           RobotReach* robot_reach, HumanReach* human_reach, Verify* verify,
-                           ShieldType shield_type = ShieldType::SSM)
+                           RobotReach* robot_reach, HumanReach* human_reach, Verify* verify, ShieldType shield_type)
     : nb_joints_(nb_joints),
       max_s_stop_(max_s_stop),
       v_max_allowed_(v_max_allowed),
@@ -63,7 +62,7 @@ SafetyShield::SafetyShield(int nb_joints, double sample_time, double max_s_stop,
 SafetyShield::SafetyShield(double sample_time, std::string trajectory_config_file, std::string robot_config_file,
                            std::string mocap_config_file, double init_x, double init_y, double init_z, double init_roll,
                            double init_pitch, double init_yaw, const std::vector<double>& init_qpos,
-                           ShieldType shield_type = ShieldType::SSM)
+                           ShieldType shield_type)
     : sample_time_(sample_time), path_s_(0), path_s_discrete_(0), shield_type_(shield_type) {
   ///////////// Build robot reach
   YAML::Node robot_config = YAML::LoadFile(robot_config_file);
@@ -170,7 +169,7 @@ SafetyShield::SafetyShield(double sample_time, std::string trajectory_config_fil
 
 void SafetyShield::reset(double init_x, double init_y, double init_z, double init_roll, double init_pitch,
                          double init_yaw, const std::vector<double>& init_qpos, double current_time,
-                         ShieldType shield_type = ShieldType::SSM) {
+                         ShieldType shield_type) {
   shield_type_ = shield_type;
   robot_reach_->reset(init_x, init_y, init_z, init_roll, init_pitch, init_yaw);
   human_reach_->reset();
@@ -592,6 +591,11 @@ bool SafetyShield::planPFLFailsafe(double a_max_manoeuvre, double j_max_manoeuvr
   // Calculate goal
   bool is_under_iso_velocity = false;
   // v_max is maximum of LTT or STP and vel_s_dot is how much path velocity needs to be scaled to be under v_iso
+  // First, plan a failsafe path that ends in a complete stop. This is the longest failsafe path possible.
+  bool planning_success = planSafetyShield(recovery_path_.getPosition(), recovery_path_.getVelocity(), recovery_path_.getAcceleration(), 0.0, a_max_manoeuvre, j_max_manoeuvre, failsafe_path_2_);
+  if (!planning_success) {
+    return false;
+  }
   failsafe_path_2_.getFinalMotion(s_d, ds_d, dds_d);
   double v_max;
   if (!new_ltt_) {
@@ -599,21 +603,24 @@ bool SafetyShield::planPFLFailsafe(double a_max_manoeuvre, double j_max_manoeuvr
   } else {
     v_max = new_long_term_trajectory_.getMaxofMaximumCartesianVelocityWithS(s_d);
   }
+  // Check if the entire long-term trajectory is under iso-velocity
   is_under_iso_velocity = v_max <= v_safe_;
   double v_limit;
   // TODO: if the current velocity is under iso-velocity, we dont need to compute the failsafe-path of the PFL-criterion
   if (!is_under_iso_velocity) {
     v_limit = v_safe_ / v_max;
-    if (v_limit >= 1 || v_limit <= 0) {
+    if(v_limit > 1 || v_limit < 0) {
       spdlog::error("v_limit not between 0 and 1");
     }
   } else {
     v_limit = recovery_path_.getVelocity();
   }
-  bool planning_success =
-      planSafetyShield(recovery_path_.getPosition(), recovery_path_.getVelocity(), recovery_path_.getAcceleration(),
-                       v_limit, a_max_manoeuvre, j_max_manoeuvre, failsafe_path_2_);
-  if (!is_under_iso_velocity) {
+  // This is the PFL failsafe path that ends in a velocity that is under v_iso.
+  planning_success = planSafetyShield(recovery_path_.getPosition(), recovery_path_.getVelocity(), recovery_path_.getAcceleration(), v_limit, a_max_manoeuvre, j_max_manoeuvre, failsafe_path_2_);
+  // If the entire long-term trajectory is under iso-velocity, we dont need to check the velocity of the failsafe-path
+  if(!is_under_iso_velocity) {
+    // Check if the entire failsafe path is under iso-velocity
+    // The failsafe path could start at d_s < 1, so the velocity of the failsafe path could be smaller than the LTT velocity.
     double max_d_s = failsafe_path_2_.getMaxVelocity();
     is_under_v_limit_ = max_d_s < v_limit;
   } else {
