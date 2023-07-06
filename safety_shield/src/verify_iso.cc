@@ -43,7 +43,7 @@ bool VerifyISO::verify_human_reach_head(const std::vector<reach_lib::Capsule>& r
     bool acc_model = !robotHumanCollision(robot_capsules, {human_capsules_acc.at(index_head)});
     return vel_model || acc_model;
   } catch (const std::exception &exc) {
-    spdlog::error("Exception in VerifyISO::PFL_verify_human_reach: {}", exc.what());
+    spdlog::error("Exception in VerifyISO::verify_human_reach_head: {}", exc.what());
   }
 }
 
@@ -60,7 +60,7 @@ bool VerifyISO::verify_human_reach_non_head(const std::vector<reach_lib::Capsule
     bool acc_model = !robotHumanCollision(robot_capsules, human_capsules_acc);
     return vel_model || acc_model;
   } catch (const std::exception &exc) {
-    spdlog::error("Exception in VerifyISO::PFL_verify_human_reach: {}", exc.what());
+    spdlog::error("Exception in VerifyISO::verify_human_reach_non_head: {}", exc.what());
   }
 }
 
