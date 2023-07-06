@@ -77,7 +77,8 @@ PYBIND11_MODULE(safety_shield_py, handle) {
   py::enum_<safety_shield::ShieldType>(handle, "ShieldType", py::arithmetic())
         .value("OFF", safety_shield::ShieldType::OFF)
         .value("SSM", safety_shield::ShieldType::SSM)
-        .value("PFL", safety_shield::ShieldType::PFL);
+        .value("PFL", safety_shield::ShieldType::PFL)
+        .value("SEVERAL_PFL", safety_shield::ShieldType::SEVERAL_PFL);
   // Safety shield class
   py::class_<safety_shield::SafetyShield>(handle, "SafetyShield")
     .def(py::init<>())
