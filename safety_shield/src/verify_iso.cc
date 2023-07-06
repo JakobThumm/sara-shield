@@ -4,16 +4,21 @@ namespace safety_shield {
 
 bool VerifyISO::robotHumanCollision(const std::vector<reach_lib::Capsule>& robot_capsules,
                                     const std::vector<reach_lib::Capsule>& human_capsules) {
-  // Check position capsules
-  for (auto& human_capsule : human_capsules) {
-    for (auto& robot_capsule : robot_capsules) {
-      // If there is a collision, return true
-      if (capsuleCollisionCheck(robot_capsule, human_capsule)) {
-        return true;
+  try {
+    // Check position capsules
+    for (auto& human_capsule : human_capsules) {
+      for (auto& robot_capsule : robot_capsules) {
+        // If there is a collision, return true
+        if (capsuleCollisionCheck(robot_capsule, human_capsule)) {
+          return true;
+        }
       }
     }
+    return false;
+  } catch (const std::exception& exc) {
+    spdlog::error("Exception in VerifyISO::robotHumanCollision: {}", exc.what());
+    return false;
   }
-  return false;
 }
 
 bool VerifyISO::verify_human_reach(const std::vector<reach_lib::Capsule>& robot_capsules,
@@ -49,6 +54,7 @@ bool VerifyISO::verify_human_reach_head(const std::vector<reach_lib::Capsule>& r
     return vel_model || acc_model;
   } catch (const std::exception &exc) {
     spdlog::error("Exception in VerifyISO::verify_human_reach_head: {}", exc.what());
+    return false;
   }
 }
 
@@ -71,6 +77,7 @@ bool VerifyISO::verify_human_reach_non_head(const std::vector<reach_lib::Capsule
     return vel_model || acc_model;
   } catch (const std::exception &exc) {
     spdlog::error("Exception in VerifyISO::verify_human_reach_non_head: {}", exc.what());
+    return false;
   }
 }
 
