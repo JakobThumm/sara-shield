@@ -32,34 +32,36 @@ bool VerifyISO::verify_human_reach(const std::vector<reach_lib::Capsule>& robot_
   }
 }
 
-std::vector<reach_lib::Capsule> VerifyISO::PFL_robotHumanCollision(const std::vector<reach_lib::Capsule>& robot_capsules,
-                                        const std::vector<reach_lib::Capsule>& human_capsules, std::vector<reach_lib::Capsule>& collision_capsules) {
-
-  // Check position capsules
-  for (auto &human_capsule: human_capsules) {
-    for (auto &robot_capsule: robot_capsules) {
-      // If there is a collision, add to list
-      if (capsuleCollisionCheck(robot_capsule, human_capsule)) {
-        collision_capsules.push_back(human_capsule);
-      }
-    }
-  }
-  return collision_capsules;
-}
-
-// TODO: Kollisions Kapseln müssen menschliche Kapseln sein, wie unterscheide ich zwischen den 3 Menschenmodellen?
-std::vector<reach_lib::Capsule> VerifyISO::PFL_verify_human_reach(const std::vector<reach_lib::Capsule>& robot_capsules,
-                                                                  const std::vector<std::vector<reach_lib::Capsule>>& human_capsules) {
+// TODO: head_safe wenn bei mind. einem Model Kopf nicht mit dabei bei Kollisionsliste ist
+bool VerifyISO::verify_human_reach_head(const std::vector<reach_lib::Capsule>& robot_capsules,
+                             const std::vector<reach_lib::Capsule>& human_capsules_vel,
+                             const std::vector<reach_lib::Capsule>& human_capsules_acc,
+                             const std::map<std::string, reach_lib::jointPair>& body_link_joints) {
   try {
-    std::vector<reach_lib::Capsule> collision_capsules;
-    for (const auto &capsule_list: human_capsules) {
-      PFL_robotHumanCollision(robot_capsules, capsule_list, collision_capsules);
-    }
-    return collision_capsules;
+    int index_head = body_link_joints.at("head").first;
+    bool vel_model = !robotHumanCollision(robot_capsules, {human_capsules_vel.at(index_head)});
+    bool acc_model = !robotHumanCollision(robot_capsules, {human_capsules_acc.at(index_head)});
+    return vel_model || acc_model;
   } catch (const std::exception &exc) {
     spdlog::error("Exception in VerifyISO::PFL_verify_human_reach: {}", exc.what());
   }
 }
 
+// TODO: non_head_safe wenn bei mind. einem Model non-Kopf nicht mit dabei bei Kollisionsliste ist
+bool VerifyISO::verify_human_reach_non_head(const std::vector<reach_lib::Capsule>& robot_capsules,
+                                        std::vector<reach_lib::Capsule> human_capsules_vel,
+                                        std::vector<reach_lib::Capsule> human_capsules_acc,
+                                        const std::map<std::string, reach_lib::jointPair>& body_link_joints) {
+  try {
+    int index_head = body_link_joints.at("head").first;
+    human_capsules_vel.erase(human_capsules_vel.cbegin() + index_head);
+    human_capsules_acc.erase(human_capsules_acc.cbegin() + index_head);
+    bool vel_model = !robotHumanCollision(robot_capsules, human_capsules_vel);
+    bool acc_model = !robotHumanCollision(robot_capsules, human_capsules_acc);
+    return vel_model || acc_model;
+  } catch (const std::exception &exc) {
+    spdlog::error("Exception in VerifyISO::PFL_verify_human_reach: {}", exc.what());
+  }
+}
 
 }  // namespace safety_shield
