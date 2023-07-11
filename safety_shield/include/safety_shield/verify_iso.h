@@ -93,6 +93,12 @@ class VerifyISO : public Verify {
                                std::vector<reach_lib::Capsule> human_capsules_vel,
                                std::vector<reach_lib::Capsule> human_capsules_acc,
                                const std::map<std::string, reach_lib::jointPair>& body_link_joints);
+
+  /**
+   * @param body_link_joints
+   * @return index of "head" or "Head" in body_link_joints map
+   */
+  int getIndexOfHead(const std::map<std::string, reach_lib::jointPair>& body_link_joints);
 };
 }  // namespace safety_shield
 

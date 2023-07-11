@@ -37,18 +37,25 @@ bool VerifyISO::verify_human_reach(const std::vector<reach_lib::Capsule>& robot_
   }
 }
 
+// TODO: try second because mujoco_mocap has neck as proximal joint?
+int VerifyISO::getIndexOfHead(const std::map<std::string, reach_lib::jointPair>& body_link_joints) {
+  if(body_link_joints.count("head") == 1) {
+    return body_link_joints.at("head").first;
+  } else if(body_link_joints.count("Head") == 1){
+    return body_link_joints.at("Head").first;
+  } else {
+    spdlog::error("VerifyISO::getIndexOfHead: body_link_joints has no head value");
+    return 0;
+  }
+}
+
 // TODO: head_safe wenn bei mind. einem Model Kopf nicht mit dabei bei Kollisionsliste ist
 bool VerifyISO::verify_human_reach_head(const std::vector<reach_lib::Capsule>& robot_capsules,
                              const std::vector<reach_lib::Capsule>& human_capsules_vel,
                              const std::vector<reach_lib::Capsule>& human_capsules_acc,
                              const std::map<std::string, reach_lib::jointPair>& body_link_joints) {
   try {
-    int index_head;
-    if(body_link_joints.count("head") == 1) {
-      index_head = body_link_joints.at("head").first;
-    } else {
-      index_head = body_link_joints.at("Head").first;
-    }
+    int index_head = getIndexOfHead(body_link_joints);
     bool vel_model = !robotHumanCollision(robot_capsules, {human_capsules_vel.at(index_head)});
     bool acc_model = !robotHumanCollision(robot_capsules, {human_capsules_acc.at(index_head)});
     return vel_model || acc_model;
@@ -64,12 +71,7 @@ bool VerifyISO::verify_human_reach_non_head(const std::vector<reach_lib::Capsule
                                         std::vector<reach_lib::Capsule> human_capsules_acc,
                                         const std::map<std::string, reach_lib::jointPair>& body_link_joints) {
   try {
-    int index_head;
-    if(body_link_joints.count("head") == 1) {
-      index_head = body_link_joints.at("head").first;
-    } else {
-      index_head = body_link_joints.at("Head").first;
-    }
+    int index_head = getIndexOfHead(body_link_joints);
     human_capsules_vel.erase(human_capsules_vel.cbegin() + index_head);
     human_capsules_acc.erase(human_capsules_acc.cbegin() + index_head);
     bool vel_model = !robotHumanCollision(robot_capsules, human_capsules_vel);
