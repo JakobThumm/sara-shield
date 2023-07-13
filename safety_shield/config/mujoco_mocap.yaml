@@ -33,41 +33,49 @@ bodies:
     proximal: "L_ShouLder"
     distal: "L_Elbow"
     thickness: 0.1
+    maximum_collision_velocity: 0.25
 
   - name: "L_LowerArm"
     proximal: "L_Elbow"
     distal: "L_Wrist"
     thickness: 0.1
+    maximum_collision_velocity: 0.25
 
   - name: "L_Hand"
     proximal: "L_Wrist"
     distal: "L_Hand"
     thickness: 0.205
+    maximum_collision_velocity: 0.25
 
   - name: "R_UpperArm" 
     proximal: "R_ShouLder"
     distal: "R_Elbow"
     thickness: 0.1
+    maximum_collision_velocity: 0.25
 
   - name: "R_LowerArm"
     proximal: "R_Elbow"
     distal: "R_Wrist"
     thickness: 0.1
+    maximum_collision_velocity: 0.25
 
   - name: "R_Hand"
     proximal: "R_Wrist"
     distal: "R_Hand"
     thickness: 0.205
+    maximum_collision_velocity: 0.25
 
   - name: "Torso"
     proximal: "Torso"
     distal: "Neck"
     thickness: 0.2 # Lays in 97% quantiLe according to https://www.rki.de/DE/Content/Gesundheitsmonitoring/Gesundheitsberichterstattung/GBEDownLoadsB/KiGGS_ReferenzperzentiLe.pdf?__bLob=pubLicationFiLe
-  
+    maximum_collision_velocity: 0.25
+
   - name: "Head"
     proximal: "Neck"
     distal: "Head"
     thickness: 0.2
+    maximum_collision_velocity: 0.1
 
 extremities:
   - name: "L_Arm"

@@ -63,6 +63,11 @@ class HumanReach {
   std::map<std::string, reach_lib::jointPair> body_link_joints_;
 
   /**
+   * @brief Map entries of body to index (in capsule list) and maximum allowed collision velocity
+   */
+  std::map<std::string, std::pair<int, double>> body_to_index_and_velocity_;
+
+  /**
    * @brief The object for calculating the position based reachable set.
    */
   reach_lib::ArticulatedPos human_p_;
@@ -124,22 +129,60 @@ class HumanReach {
    * @param[in] extremity_end_names The end joints of extremities, e.g., right / left hand, right / left foot --> Is
    * used for thickness of extremities
    * @param[in] extremity_length The max length of the extremities (related to extremity_base_names)
-   * @param[in] extremity_thickness The thickness of the extremities (usually zero, as it is already considered in extremity_length)
+   * @param[in] extremity_thickness The thickness of the extremities (usually zero, as it is already considered in
+   * extremity_length)
    * @param[in] wrist_names The name identifiers of the two hands
-  */
+   */
   HumanReach(int n_joints_meas,
-      std::map<std::string, int> joint_names,
-      std::map<std::string, reach_lib::jointPair>& body_link_joints, 
-      const std::map<std::string, double>& thickness, 
-      std::vector<double>& max_v, 
-      std::vector<double>& max_a,
-      std::vector<std::string>& extremity_base_names, 
-      std::vector<std::string>& extremity_end_names, 
-      std::vector<double>& extremity_length, 
-      std::vector<double>& extremity_thickness,
-      double measurement_error_pos, 
-      double measurement_error_vel, 
-      double delay);
+             std::map<std::string, int> joint_names,
+             std::map<std::string, reach_lib::jointPair>& body_link_joints,
+             const std::map<std::string, double>& thickness,
+             std::vector<double>& max_v,
+             std::vector<double>& max_a,
+             std::vector<std::string>& extremity_base_names,
+             std::vector<std::string>& extremity_end_names,
+             std::vector<double>& extremity_length,
+             std::vector<double>& extremity_thickness,
+             double measurement_error_pos,
+             double measurement_error_vel,
+             double delay);
+
+  /**
+   * @brief HumanReach constructor
+   * @param[in] n_joints_meas Number of joints in the measurement
+   * @param[in] joint_names Maps the joint name to the joint index (key: Joint name, value: Joint index)
+   * @param[in] measurement_error_pos Maximal positional measurement error
+   * @param[in] measurement_error_vel Maximal velocity measurement error
+   * @param[in] delay Delay in measurement processing pipeline
+   * @param[in] joint_pair_map Maps the proximal and distal joint to a body part identified by a string (key: Name of
+   * body part, value: Proximal and distal joint index)
+   * @param[in] thickness Defines the thickness of the body parts (key: Name of body part, value: Thickness of body
+   * part)
+   * @param[in] max_v The maximum velocity of the joints
+   * @param[in] max_a The maximum acceleration of the joints
+   * @param[in] extremity_base_names The base joints of extremities, e.g., right / left shoulder, right / left hip
+   * socket
+   * @param[in] extremity_end_names The end joints of extremities, e.g., right / left hand, right / left foot --> Is
+   * used for thickness of extremities
+   * @param[in] extremity_length The max length of the extremities (related to extremity_base_names)
+   * @param[in] extremity_thickness The thickness of the extremities (usually zero, as it is already considered in
+   *extremity_length)
+   * @param[in] wrist_names The name identifiers of the two hands
+   **/
+  HumanReach(int n_joints_meas,
+             std::map<std::string, int> joint_names,
+             std::map<std::string, reach_lib::jointPair>& body_link_joints,
+             std::map<std::string, std::pair<int, double>>& body_to_index_and_velocity,
+             const std::map<std::string, double>& thickness,
+             std::vector<double>& max_v,
+             std::vector<double>& max_a,
+             std::vector<std::string>& extremity_base_names,
+             std::vector<std::string>& extremity_end_names,
+             std::vector<double>& extremity_length,
+             std::vector<double>& extremity_thickness,
+             double measurement_error_pos,
+             double measurement_error_vel,
+             double delay);
 
   /**
    * @brief Destructor
@@ -241,6 +284,15 @@ class HumanReach {
   inline std::map<std::string, reach_lib::jointPair> getBodyLinkJoints() {
     return body_link_joints_;
   }
+
+  /**
+   * @brief get the Body To Index and Velocity map
+   *
+   * @return std::map<std::string, std::pair<int, double>>
+   */
+  inline std::map<std::string, std::pair<int, double>> getBodyToIndexAndVelocity() {
+    return body_to_index_and_velocity_;
+  };
 
   /**
    * @brief Get the Measurement Error Pos object

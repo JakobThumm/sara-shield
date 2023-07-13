@@ -33,41 +33,49 @@ bodies:
     proximal: "lShldr"
     distal: "lForeArm"
     thickness: 0.108
+    maximum_collision_velocity: 0.25
 
   - name: "lLowerArm"
     proximal: "lForeArm"
     distal: "lHand"
     thickness: 0.068
+    maximum_collision_velocity: 0.25
 
   - name: "lHand"
     proximal: "lHand"
     distal: "lHand"
     thickness: 0.208
+    maximum_collision_velocity: 0.25
 
   - name: "rUpperArm" 
     proximal: "rShldr"
     distal: "rForeArm"
     thickness: 0.108
+    maximum_collision_velocity: 0.25
 
   - name: "rLowerArm"
     proximal: "rForeArm"
     distal: "rHand"
     thickness: 0.068
+    maximum_collision_velocity: 0.25
 
   - name: "rHand"
     proximal: "rHand"
     distal: "rHand"
     thickness: 0.208
+    maximum_collision_velocity: 0.25
 
   - name: "torso"
     proximal: "hip"
     distal: "neck"
     thickness: 0.193
+    maximum_collision_velocity: 0.25
   
   - name: "head"
     proximal: "head"
     distal: "head"
     thickness: 0.2
+    maximum_collision_velocity: 0.1
 
 extremities:
   - name: "lArm"

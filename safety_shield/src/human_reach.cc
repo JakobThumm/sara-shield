@@ -4,7 +4,7 @@ namespace safety_shield {
 
 HumanReach::HumanReach(int n_joints_meas,
       std::map<std::string, int> joint_names,
-      std::map<std::string, reach_lib::jointPair>& body_link_joints, 
+      std::map<std::string, reach_lib::jointPair>& body_link_joints,
       const std::map<std::string, double>& thickness, 
       std::vector<double>& max_v, 
       std::vector<double>& max_a,
@@ -40,6 +40,37 @@ HumanReach::HumanReach(int n_joints_meas,
     joint_vel_.push_back(reach_lib::Point(0.0, 0.0, 0.0));
   }
 }
+
+HumanReach::HumanReach(int n_joints_meas,
+           std::map<std::string, int> joint_names,
+           std::map<std::string, reach_lib::jointPair>& body_link_joints,
+           std::map<std::string, std::pair<int, double>>& body_to_index_and_velocity,
+           const std::map<std::string, double>& thickness,
+           std::vector<double>& max_v,
+           std::vector<double>& max_a,
+           std::vector<std::string>& extremity_base_names,
+           std::vector<std::string>& extremity_end_names,
+           std::vector<double>& extremity_length,
+           std::vector<double>& extremity_thickness,
+           double measurement_error_pos,
+           double measurement_error_vel,
+           double delay) :
+      HumanReach(n_joints_meas,
+                 joint_names,
+                 body_link_joints,
+                 thickness,
+                 max_v,
+                 max_a,
+                 extremity_base_names,
+                 extremity_end_names,
+                 extremity_length,
+                 extremity_thickness,
+                 measurement_error_pos,
+                 measurement_error_vel,
+                 delay) {
+  body_to_index_and_velocity_ = body_to_index_and_velocity;
+}
+
 
 void HumanReach::reset() {
   last_meas_timestep_ = -1;

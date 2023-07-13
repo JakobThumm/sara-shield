@@ -126,6 +126,15 @@ SafetyShield::SafetyShield(double sample_time, std::string trajectory_config_fil
         joint_names[body["proximal"].as<std::string>()], joint_names[body["distal"].as<std::string>()]);
     thickness[body["name"].as<std::string>()] = body["thickness"].as<double>();
   }
+  int count = 0;
+  std::map<std::string, std::pair<int, double>> body_to_index_and_velocity;
+  for (auto entry : body_link_joints) {
+    body_to_index_and_velocity[entry.first] = std::pair<int, double>(count++, 0.0);
+  }
+  for (YAML::const_iterator it = bodies.begin(); it != bodies.end(); ++it) {
+    const YAML::Node& body = *it;
+    body_to_index_and_velocity[body["name"].as<std::string>()].second = body["maximum_collision_velocity"].as<double>();
+  }
   // Build extremities
   const YAML::Node& extremities = human_config["extremities"];
   std::vector<std::string> extremity_base_names;
@@ -138,7 +147,7 @@ SafetyShield::SafetyShield(double sample_time, std::string trajectory_config_fil
     extremity_length.push_back(extremity["length"].as<double>());
     extremity_thickness.push_back(extremity["thickness"].as<double>());
   }
-  human_reach_ = new HumanReach(joint_names.size(), joint_names, body_link_joints, thickness, joint_v_max, joint_a_max,
+  human_reach_ = new HumanReach(joint_names.size(), joint_names, body_link_joints, body_to_index_and_velocity, thickness, joint_v_max, joint_a_max,
                                 extremity_base_names, extremity_end_names, extremity_length, extremity_thickness,
                                 measurement_error_pos, measurement_error_vel, delay);
   ///////////// Build verifier
@@ -1014,7 +1023,8 @@ Motion SafetyShield::severalPflStep(double cycle_begin_time) {
       human_capsules_ = human_reach_->getAllCapsules();
       bool is_safe_non_head = verify_->verify_human_reach_non_head(
                                   robot_capsules_, human_reach_->getArticulatedVelCapsules(),
-                                  human_reach_->getArticulatedAccelCapsules(), human_reach_->getBodyLinkJoints()) ||
+                                  human_reach_->getArticulatedAccelCapsules(), human_reach_->getBodyLinkJoints(),
+                                  human_reach_->getBodyToIndexAndVelocity()) ||
                               is_under_v_limit_non_head_;
 
       // TODO: head_path darf keine Kollision mit Kopf haben
@@ -1027,7 +1037,8 @@ Motion SafetyShield::severalPflStep(double cycle_begin_time) {
       human_capsules_ = human_reach_->getAllCapsules();
       bool is_safe_head = verify_->verify_human_reach_head(robot_capsules_, human_reach_->getArticulatedVelCapsules(),
                                                            human_reach_->getArticulatedAccelCapsules(),
-                                                           human_reach_->getBodyLinkJoints()) ||
+                                                           human_reach_->getBodyLinkJoints(),
+                                                           human_reach_->getBodyToIndexAndVelocity()) ||
                           is_under_v_limit_head_;
 
       // TODO: Verification Level bestimmen

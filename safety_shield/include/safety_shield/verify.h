@@ -69,6 +69,7 @@ class Verify {
     * @param[in] human_capsules_vel List of capsules of human velocity model
     * @param[in] human_capsules_acc List of capsules of human acceleration model
     * @param[in] body_link_joints Map the entries of body links to their proximal and distal joint.
+    * @param[in] body_to_index_and_velocity Map the entries of body to index (in capsule list) and maximum allowed collision velocity
     *
     * @returns True: if the robot capsules do not collide with human head
     *          False: Otherwise
@@ -76,7 +77,8 @@ class Verify {
   virtual bool verify_human_reach_head(const std::vector<reach_lib::Capsule>& robot_capsules,
                                const std::vector<reach_lib::Capsule>& human_capsules_vel,
                                const std::vector<reach_lib::Capsule>& human_capsules_acc,
-                               const std::map<std::string, reach_lib::jointPair>& body_link_joints) = 0;
+                               const std::map<std::string, reach_lib::jointPair>& body_link_joints,
+                               const std::map<std::string, std::pair<int, double>>& body_to_index_and_velocity) = 0;
 
   /**
     * @brief Verify the robot motion againt the reachability analysis of the human against collision to non-head
@@ -87,6 +89,7 @@ class Verify {
     * @param[in] human_capsules_vel List of capsules of human velocity model
     * @param[in] human_capsules_acc List of capsules of human acceleration model
     * @param[in] body_link_joints Map the entries of body links to their proximal and distal joint.
+    * @param[in] body_to_index_and_velocity Map the entries of body to index (in capsule list) and maximum allowed collision velocity
     *
     * @returns True: if the robot capsules do not collide with human non-head
     *          False: Otherwise
@@ -94,7 +97,8 @@ class Verify {
   virtual bool verify_human_reach_non_head(const std::vector<reach_lib::Capsule>& robot_capsules,
                                    std::vector<reach_lib::Capsule> human_capsules_vel,
                                    std::vector<reach_lib::Capsule> human_capsules_acc,
-                                   const std::map<std::string, reach_lib::jointPair>& body_link_joints) = 0;
+                                   const std::map<std::string, reach_lib::jointPair>& body_link_joints,
+                                   const std::map<std::string, std::pair<int, double>>& body_to_index_and_velocity) = 0;
 
 };
 }  // namespace safety_shield

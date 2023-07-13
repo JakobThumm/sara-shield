@@ -13,7 +13,7 @@ int main() {
   double sample_time = 0.001;
   std::string trajectory_config_file = std::string("../config/trajectory_parameters_schunk.yaml");
   std::string robot_config_file = std::string("../config/robot_parameters_schunk.yaml");
-  std::string mocap_config_file = std::string("../config/cmu_mocap_no_hand.yaml");
+  std::string mocap_config_file = std::string("../config/cmu_mocap_no_hand.yaml"); //std::string("../config/mujoco_mocap.yaml");
   double init_x = 0.0;
   double init_y = 0.0;
   double init_z = 0.0;

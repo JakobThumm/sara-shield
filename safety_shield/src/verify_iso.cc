@@ -37,14 +37,11 @@ bool VerifyISO::verify_human_reach(const std::vector<reach_lib::Capsule>& robot_
   }
 }
 
-// TODO: try second because mujoco_mocap has neck as proximal joint?
-int VerifyISO::getIndexOfHead(const std::map<std::string, reach_lib::jointPair>& body_link_joints) {
-  if(body_link_joints.count("head") == 1) {
-    return body_link_joints.at("head").first;
-  } else if(body_link_joints.count("Head") == 1) {
-    spdlog::info("index first is: {}", body_link_joints.at("Head").first);
-    spdlog::info("index second is: {}", body_link_joints.at("Head").second);
-    return body_link_joints.at("Head").first;
+int VerifyISO::getIndexOfHead(const std::map<std::string, std::pair<int, double>>& body_to_index_and_velocity) {
+  if(body_to_index_and_velocity.count("head") == 1) {
+    return body_to_index_and_velocity.at("head").first;
+  } else if(body_to_index_and_velocity.count("Head") == 1) {
+    return body_to_index_and_velocity.at("Head").first;
   } else {
     spdlog::error("VerifyISO::getIndexOfHead: body_link_joints has no head value");
     return 0;
@@ -55,12 +52,10 @@ int VerifyISO::getIndexOfHead(const std::map<std::string, reach_lib::jointPair>&
 bool VerifyISO::verify_human_reach_head(const std::vector<reach_lib::Capsule>& robot_capsules,
                              const std::vector<reach_lib::Capsule>& human_capsules_vel,
                              const std::vector<reach_lib::Capsule>& human_capsules_acc,
-                             const std::map<std::string, reach_lib::jointPair>& body_link_joints) {
+                             const std::map<std::string, reach_lib::jointPair>& body_link_joints,
+                             const std::map<std::string, std::pair<int, double>>& body_to_index_and_velocity) {
   try {
-    int index_head = getIndexOfHead(body_link_joints);
-    // TODO: human_capsules_vel or acc hat index_head nicht?
-    spdlog::info("capsules_vel length is: {}", human_capsules_vel.size());
-    spdlog::info("capsules_acc length is: {}", human_capsules_acc.size());
+    int index_head = getIndexOfHead(body_to_index_and_velocity);
     bool vel_model = !robotHumanCollision(robot_capsules, {human_capsules_vel.at(index_head)});
     bool acc_model = !robotHumanCollision(robot_capsules, {human_capsules_acc.at(index_head)});
     return vel_model || acc_model;
@@ -74,9 +69,10 @@ bool VerifyISO::verify_human_reach_head(const std::vector<reach_lib::Capsule>& r
 bool VerifyISO::verify_human_reach_non_head(const std::vector<reach_lib::Capsule>& robot_capsules,
                                         std::vector<reach_lib::Capsule> human_capsules_vel,
                                         std::vector<reach_lib::Capsule> human_capsules_acc,
-                                        const std::map<std::string, reach_lib::jointPair>& body_link_joints) {
+                                        const std::map<std::string, reach_lib::jointPair>& body_link_joints,
+                                        const std::map<std::string, std::pair<int, double>>& body_to_index_and_velocity) {
   try {
-    int index_head = getIndexOfHead(body_link_joints);
+    int index_head = getIndexOfHead(body_to_index_and_velocity);
     human_capsules_vel.erase(human_capsules_vel.cbegin() + index_head);
     human_capsules_acc.erase(human_capsules_acc.cbegin() + index_head);
     bool vel_model = !robotHumanCollision(robot_capsules, human_capsules_vel);
