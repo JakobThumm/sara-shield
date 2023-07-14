@@ -58,7 +58,7 @@ class HumanReach {
   std::vector<reach_lib::Point> joint_vel_;
 
   /**
-   * @brief Map the entries of body links to their proximal and distal joint.
+   * @brief Maps the body name to the proximal and distal joint ids (key: Body name, value: Joint pair).
    */
   std::map<std::string, reach_lib::jointPair> body_link_joints_;
 
@@ -110,11 +110,7 @@ class HumanReach {
    * @brief HumanReach constructor
    * @param[in] n_joints_meas Number of joints in the measurement
    * @param[in] joint_names Maps the joint name to the joint index (key: Joint name, value: Joint index)
-   * @param[in] measurement_error_pos Maximal positional measurement error
-   * @param[in] measurement_error_vel Maximal velocity measurement error
-   * @param[in] delay Delay in measurement processing pipeline
-   * @param[in] joint_pair_map Maps the proximal and distal joint to a body part identified by a string (key: Name of
-   * body part, value: Proximal and distal joint index)
+   * @param[in] body_link_joints Maps the body name to the proximal and distal joint ids (key: Body name, value: Joint pair)
    * @param[in] thickness Defines the thickness of the body parts (key: Name of body part, value: Thickness of body
    * part)
    * @param[in] max_v The maximum velocity of the joints
@@ -125,7 +121,9 @@ class HumanReach {
    * used for thickness of extremities
    * @param[in] extremity_length The max length of the extremities (related to extremity_base_names)
    * @param[in] extremity_thickness The thickness of the extremities (usually zero, as it is already considered in extremity_length)
-   * @param[in] wrist_names The name identifiers of the two hands
+   * @param[in] measurement_error_pos Maximal positional measurement error
+   * @param[in] measurement_error_vel Maximal velocity measurement error
+   * @param[in] delay Delay in measurement processing pipeline
   */
   HumanReach(int n_joints_meas,
       std::map<std::string, int> joint_names,
