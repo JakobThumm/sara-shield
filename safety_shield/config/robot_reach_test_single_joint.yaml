@@ -2,7 +2,7 @@ robot_name: dummy
 
 nb_joints: 1
 
-secure_radius: 0.01
+secure_radius: 0.03
 
 transformation_matrices: [
   1, 0, 0, 0, 

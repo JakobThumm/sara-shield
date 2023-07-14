@@ -55,32 +55,29 @@ void HumanReach::measurement(const std::vector<reach_lib::Point>& human_joint_po
       double dt = time - last_meas_timestep_;
       for (int i = 0; i < human_joint_pos.size(); i++) {
         // If more than 1 measurement, calculate velocity
-        joint_vel_[i] = (human_joint_pos[i] - joint_pos_[i]) * (1/dt);
-      } 
+        joint_vel_[i] = (human_joint_pos[i] - joint_pos_[i]) * (1 / dt);
+      }
       has_second_meas_ = true;
     }
     joint_pos_ = human_joint_pos;
     last_meas_timestep_ = time;
-    //ROS_INFO_STREAM("Human Mocap measurement received. Timestamp of meas was " << last_meas_timestep);
-  } catch (const std::exception &exc) {
+    // ROS_INFO_STREAM("Human Mocap measurement received. Timestamp of meas was " << last_meas_timestep);
+  } catch (const std::exception& exc) {
     spdlog::error("Exception in HumanReach::measurement: {}", exc.what());
   }
 }
 
-
 void HumanReach::humanReachabilityAnalysis(double t_command, double t_brake) {
   try {
     // Time between reach command msg and last measurement plus the t_brake time.
-    double t_reach = t_command-last_meas_timestep_ + t_brake;
+    double t_reach = t_command - last_meas_timestep_ + t_brake;
     // Calculate reachable set
     human_p_.update(0.0, t_reach, joint_pos_, joint_vel_);
     human_v_.update(0.0, t_reach, joint_pos_, joint_vel_);
     human_a_.update(0.0, t_reach, joint_pos_, joint_vel_);
-  } catch (const std::exception &exc) {
-      spdlog::error("Exception in HumanReach::humanReachabilityAnalysis: {}", exc.what());
+  } catch (const std::exception& exc) {
+    spdlog::error("Exception in HumanReach::humanReachabilityAnalysis: {}", exc.what());
   }
 }
 
-} // namespace safety_shield
-
-
+}  // namespace safety_shield
