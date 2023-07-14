@@ -460,7 +460,7 @@ bool SafetyShield::planPFLFailsafe(double a_max_manoeuvre, double j_max_manoeuvr
   double s_d, ds_d, dds_d;
   // Calculate goal
   bool is_under_iso_velocity = false;
-  // v_max is maximum of LTT or STP and vel_s_dot is how much path velocity needs to be scaled to be under v_iso
+  // v_max is maximum of LTT or STP and v_limit is how much path velocity needs to be scaled to be under v_iso
   // First, plan a failsafe path that ends in a complete stop. This is the longest failsafe path possible.
   bool planning_success = planSafetyShield(recovery_path_.getPosition(), recovery_path_.getVelocity(), recovery_path_.getAcceleration(), 0.0, a_max_manoeuvre, j_max_manoeuvre, failsafe_path_2_);
   if (!planning_success) {
