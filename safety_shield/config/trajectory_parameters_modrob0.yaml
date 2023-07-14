@@ -15,7 +15,7 @@ j_max_ltt: [15, 15, 15]
 alpha_i_max: 5.0
 
 # safety-rated speed specified by iso-norm
-v_safe: 0.1
+v_safe: 0.05
 
 # APPROXIMATE == 0
 # EXACT == 1
