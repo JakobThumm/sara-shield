@@ -879,7 +879,7 @@ Motion SafetyShield::standardStep(double cycle_begin_time) {
       if (is_plannable) {
         // Check if the starting position of the last replanning was very close to the current position
         bool last_close = true;
-        if (new_ltt_ == true) {
+        if (new_ltt_) {
           for (int i = 0; i < current_motion.getAngle().size(); i++) {
             if (std::abs(current_motion.getAngle()[i] - last_replan_start_motion_.getAngle()[i]) > 0.01) {
               last_close = false;
@@ -973,7 +973,7 @@ Motion SafetyShield::severalPflStep(double cycle_begin_time) {
       if (is_plannable) {
         // Check if the starting position of the last replanning was very close to the current position
         bool last_close = true;
-        if (new_ltt_ == true) {
+        if (new_ltt_) {
           for (int i = 0; i < current_motion.getAngle().size(); i++) {
             if (std::abs(current_motion.getAngle()[i] - last_replan_start_motion_.getAngle()[i]) > 0.01) {
               last_close = false;
@@ -1021,6 +1021,7 @@ Motion SafetyShield::severalPflStep(double cycle_begin_time) {
     // Check motion for joint limits (goal motion needed here as it is end of failsafe)
     if (!(checkMotionForJointLimits(goal_motion_head) && checkMotionForJointLimits(goal_motion_non_head))) {
       verification_level_ = Verification_level::HEAD;
+      spdlog::info("joint limits exceeded");
     } else {
       // TODO: es werden nur letzten Kapseln geplotted
 
@@ -1035,8 +1036,8 @@ Motion SafetyShield::severalPflStep(double cycle_begin_time) {
       bool is_safe_non_head = verify_->verify_human_reach_non_head(
                                   robot_capsules_, human_reach_->getArticulatedVelCapsules(),
                                   human_reach_->getArticulatedAccelCapsules(), human_reach_->getBodyLinkJoints(),
-                                  human_reach_->getBodyToIndexAndVelocity()) ||
-                              is_under_v_limit_non_head_;
+                                  human_reach_->getBodyToIndexAndVelocity());
+      is_safe_non_head = is_safe_non_head || is_under_v_limit_non_head_;
 
       // TODO: head_path darf keine Kollision mit Kopf haben
       // Compute the robot reachable set for the potential head trajectory
@@ -1049,16 +1050,31 @@ Motion SafetyShield::severalPflStep(double cycle_begin_time) {
       bool is_safe_head = verify_->verify_human_reach_head(robot_capsules_, human_reach_->getArticulatedVelCapsules(),
                                                            human_reach_->getArticulatedAccelCapsules(),
                                                            human_reach_->getBodyLinkJoints(),
-                                                           human_reach_->getBodyToIndexAndVelocity()) ||
-                          is_under_v_limit_head_;
+                                                           human_reach_->getBodyToIndexAndVelocity());
+      is_safe_head = is_safe_head || is_under_v_limit_head_;
+
+      // for debugging
+      std::cout << "----------------------" << std::endl;
+      spdlog::info("is_safe_head is: {}", is_safe_head);
+      spdlog::info("is_safe_non_head is: {}", is_safe_non_head);
+      if(recovery_path_.isCurrent()) {
+        spdlog::info("current path: recovery_path");
+      } else if(failsafe_path_non_head_.isCurrent()) {
+        spdlog::info("current path: failsafe_path_non_head");
+      } else {
+        spdlog::info("current path: failsafe_path_head");
+      }
 
       // TODO: Verification Level bestimmen
       if (is_safe_head && is_safe_non_head) {
         verification_level_ = Verification_level::SAFE;
+        spdlog::info("verification level: SAFE");
       } else if (is_safe_non_head) {
         verification_level_ = Verification_level::NON_HEAD;
+        spdlog::info("verification level: NON_HEAD");
       } else {
         verification_level_ = Verification_level::HEAD;
+        spdlog::info("verification level: HEAD");
       }
     }
     // Select the next motion based on the verified safety
