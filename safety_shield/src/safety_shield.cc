@@ -530,10 +530,20 @@ void SafetyShield::computesPotentialTrajectoryForSeveralPfl(Verification_level v
     //  if not already on the repair path, plan a repair path
     if (!recovery_path_.isCurrent()) {
       // plan repair path and replace
-      // TODO: which failsafe_path?
+      double pos, vel, acc;
+      if(failsafe_path_head_.isCurrent()) {
+        pos = failsafe_path_head_.getPosition();
+        vel = failsafe_path_head_.getVelocity();
+        acc = failsafe_path_head_.getAcceleration();
+      } else if(failsafe_path_non_head_.isCurrent()) {
+        pos = failsafe_path_non_head_.getPosition();
+        vel = failsafe_path_non_head_.getVelocity();
+        acc = failsafe_path_non_head_.getAcceleration();
+      } else {
+        spdlog::error("Error in computesPotentialTrajectoryForSeveralPfl: no failsafe-path is set when planning repair path?");
+      }
       recovery_path_correct_ =
-          planSafetyShield(failsafe_path_head_.getPosition(), failsafe_path_head_.getVelocity(), failsafe_path_head_.getAcceleration(),
-                           1, a_max_manoeuvre, j_max_manoeuvre, recovery_path_);
+          planSafetyShield(pos, vel, acc, 1, a_max_manoeuvre, j_max_manoeuvre, recovery_path_);
     }
     // Only plan new failsafe trajectory if the recovery path planning was successful.
     if (recovery_path_correct_) {
@@ -798,7 +808,6 @@ Motion SafetyShield::determineNextMotionForSeveralPfl(Verification_level verific
     safe_path_ = potential_path_non_head_;
 
   } else if (verification_level == Verification_level::NON_HEAD) {
-    // TODO: if Bedingung richtig?
     // Fill potential buffer with position and velocity from recovery path
     if (recovery_path_.getPosition() >= pos) {
       s_d = recovery_path_.getPosition();
@@ -1001,7 +1010,7 @@ Motion SafetyShield::severalPflStep(double cycle_begin_time) {
     }
     // If there is a new long term trajectory (LTT), always override is_safe with false.
     if (new_ltt_ && !new_ltt_processed_) {
-      is_safe_ = false;
+      verification_level_ = Verification_level::HEAD;
     }
     // Compute a new potential trajectory
     Motion goal_motion_head;
