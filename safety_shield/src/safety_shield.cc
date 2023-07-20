@@ -530,8 +530,9 @@ void SafetyShield::computesPotentialTrajectoryForSeveralPfl(Verification_level v
     //  if not already on the repair path, plan a repair path
     if (!recovery_path_.isCurrent()) {
       // plan repair path and replace
+      // TODO: which failsafe_path?
       recovery_path_correct_ =
-          planSafetyShield(failsafe_path_.getPosition(), failsafe_path_.getVelocity(), failsafe_path_.getAcceleration(),
+          planSafetyShield(failsafe_path_head_.getPosition(), failsafe_path_head_.getVelocity(), failsafe_path_head_.getAcceleration(),
                            1, a_max_manoeuvre, j_max_manoeuvre, recovery_path_);
     }
     // Only plan new failsafe trajectory if the recovery path planning was successful.
@@ -544,7 +545,8 @@ void SafetyShield::computesPotentialTrajectoryForSeveralPfl(Verification_level v
           planSeveralPflFailsafe(a_max_manoeuvre, j_max_manoeuvre, v_safe_non_head_);
       // Check the validity of the planned path
       if (!failsafe_head_2_planning_success || !failsafe_non_head_2_planning_success ||
-          recovery_path_.getPosition() < failsafe_path_.getPosition()) {
+          (failsafe_path_head_.isCurrent() && recovery_path_.getPosition() < failsafe_path_head_.getPosition()) ||
+          (failsafe_path_non_head_.isCurrent() && recovery_path_.getPosition() < failsafe_path_non_head_.getPosition())) {
         recovery_path_correct_ = false;
       }
     }
