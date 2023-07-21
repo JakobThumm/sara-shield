@@ -127,8 +127,9 @@ SafetyShield::SafetyShield(double sample_time, std::string trajectory_config_fil
     thickness[body["name"].as<std::string>()] = body["thickness"].as<double>();
   }
   int count = 0;
+  // create data struct which maps from body part to its index (in the capsule list) and maximum collision velocity
   std::map<std::string, std::pair<int, double>> body_to_index_and_velocity;
-  for (auto entry : body_link_joints) {
+  for (const auto& entry : body_link_joints) {
     body_to_index_and_velocity[entry.first] = std::pair<int, double>(count++, 0.0);
   }
   for (YAML::const_iterator it = bodies.begin(); it != bodies.end(); ++it) {
@@ -1057,6 +1058,7 @@ Motion SafetyShield::severalPflStep(double cycle_begin_time) {
       std::cout << "----------------------" << std::endl;
       spdlog::info("is_safe_head is: {}", is_safe_head);
       spdlog::info("is_safe_non_head is: {}", is_safe_non_head);
+      spdlog::info("recovery_path_correct is : {}", recovery_path_correct_);
       if(recovery_path_.isCurrent()) {
         spdlog::info("current path: recovery_path");
       } else if(failsafe_path_non_head_.isCurrent()) {
@@ -1069,10 +1071,14 @@ Motion SafetyShield::severalPflStep(double cycle_begin_time) {
       if (is_safe_head && is_safe_non_head) {
         verification_level_ = Verification_level::SAFE;
         spdlog::info("verification level: SAFE");
-      } else if (is_safe_non_head) {
+      } else if (!is_safe_head && is_safe_non_head) {
         verification_level_ = Verification_level::NON_HEAD;
         spdlog::info("verification level: NON_HEAD");
+      } else if(is_safe_head && !is_safe_non_head) {
+        verification_level_ = Verification_level::HEAD;
+        spdlog::info("verification level: HEAD");
       } else {
+        // !is_safe_head && !is_safe_non_head
         verification_level_ = Verification_level::HEAD;
         spdlog::info("verification level: HEAD");
       }
