@@ -126,8 +126,8 @@ SafetyShield::SafetyShield(double sample_time, std::string trajectory_config_fil
         joint_names[body["proximal"].as<std::string>()], joint_names[body["distal"].as<std::string>()]);
     thickness[body["name"].as<std::string>()] = body["thickness"].as<double>();
   }
-  int count = 0;
   // create data struct which maps from body part to its index (in the capsule list) and maximum collision velocity
+  int count = 0;
   std::map<std::string, std::pair<int, double>> body_to_index_and_velocity;
   for (const auto& entry : body_link_joints) {
     body_to_index_and_velocity[entry.first] = std::pair<int, double>(count++, 0.0);
@@ -961,7 +961,7 @@ Motion SafetyShield::severalPflStep(double cycle_begin_time) {
     std::vector<double> alpha_i;
     // If the new LTT was processed at least once and is labeled safe, replace old LTT with new one.
     if (new_ltt_ && new_ltt_processed_) {
-      if (is_safe_ || current_motion.isStopped()) {
+      if (verification_level_ == Verification_level::SAFE || current_motion.isStopped()) {
         long_term_trajectory_ = new_long_term_trajectory_;
         new_ltt_ = false;
         new_goal_ = false;
@@ -1009,7 +1009,7 @@ Motion SafetyShield::severalPflStep(double cycle_begin_time) {
     } else {
       alpha_i = long_term_trajectory_.getAlphaI();
     }
-    // If there is a new long term trajectory (LTT), always override is_safe with false.
+    // If there is a new long term trajectory (LTT), always override verification_level
     if (new_ltt_ && !new_ltt_processed_) {
       verification_level_ = Verification_level::HEAD;
     }
