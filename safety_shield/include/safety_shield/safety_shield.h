@@ -352,7 +352,7 @@ class SafetyShield {
   /**
    * @brief maximum cartesian velocity allowed at collision in m/s for head
    */
-  double v_safe_head_ = 0.10;
+  double v_safe_head_ = 0.05;
 
   /**
    * @brief maximum cartesian velocity allowed at collision in m/s for non-head
