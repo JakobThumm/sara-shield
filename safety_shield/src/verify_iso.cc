@@ -76,8 +76,8 @@ bool VerifyISO::verify_human_reach_non_head(const std::vector<reach_lib::Capsule
   try {
     int index_head = getIndexOfHead(body_to_index_and_velocity);
     // look at all capsules except head
-    human_capsules_vel.erase(human_capsules_vel.cbegin() + index_head);
-    human_capsules_acc.erase(human_capsules_acc.cbegin() + index_head);
+    human_capsules_vel.erase(human_capsules_vel.begin() + index_head);
+    human_capsules_acc.erase(human_capsules_acc.begin() + index_head);
     // safe if at least one model has no collision
     bool vel_model = !robotHumanCollision(robot_capsules, human_capsules_vel);
     bool acc_model = !robotHumanCollision(robot_capsules, human_capsules_acc);

@@ -1054,17 +1054,36 @@ Motion SafetyShield::severalPflStep(double cycle_begin_time) {
                                                            human_reach_->getBodyToIndexAndVelocity());
       is_safe_head = is_safe_head || is_under_v_limit_head_;
 
+      // for debugging
+      std::cout << "----------------------" << std::endl;
+      spdlog::info("is_safe_head is: {}", is_safe_head);
+      spdlog::info("is_safe_non_head is: {}", is_safe_non_head);
+      spdlog::info("recovery_path_correct is : {}", recovery_path_correct_);
+      if(recovery_path_.isCurrent()) {
+        spdlog::info("current path: recovery_path");
+      } else if(failsafe_path_non_head_.isCurrent()) {
+        spdlog::info("current path: failsafe_path_non_head");
+      } else {
+        spdlog::info("current path: failsafe_path_head");
+      }
+
       // TODO: Verification Level bestimmen
       if (is_safe_head && is_safe_non_head) {
         verification_level_ = Verification_level::SAFE;
+        spdlog::info("verification level: SAFE");
       } else if (!is_safe_head && is_safe_non_head) {
         verification_level_ = Verification_level::NON_HEAD;
+        spdlog::info("verification level: NON_HEAD");
       } else if(is_safe_head && !is_safe_non_head) {
         verification_level_ = Verification_level::HEAD;
+        spdlog::info("verification level: HEAD");
       } else {
         // !is_safe_head && !is_safe_non_head
         verification_level_ = Verification_level::HEAD;
+        spdlog::info("verification level: HEAD");
       }
+
+
     }
     // Select the next motion based on the verified safety
     next_motion_ = determineNextMotionForSeveralPfl(verification_level_);
