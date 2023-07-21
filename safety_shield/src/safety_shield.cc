@@ -660,6 +660,7 @@ bool SafetyShield::planPFLFailsafe(double a_max_manoeuvre, double j_max_manoeuvr
 bool SafetyShield::planSeveralPflFailsafe(double a_max_manoeuvre, double j_max_manoeuvre, double v_safe) {
   // Calculate maximal Cartesian velocity in the short-term plan
   double s_d, ds_d, dds_d;
+  double epsilon = 1e-6;
   // Calculate goal
   bool is_under_iso_velocity = false;
   // v_max is maximum of LTT or STP and vel_s_dot is how much path velocity needs to be scaled to be under v_iso
@@ -703,7 +704,7 @@ bool SafetyShield::planSeveralPflFailsafe(double a_max_manoeuvre, double j_max_m
   }
   // TODO: unschön gelöst, besser wenn eine Methode für jeweils eine pfl action?
   if (!is_under_iso_velocity) {
-    if (v_safe == v_safe_head_) {
+    if (fabs(v_safe - v_safe_head_) < epsilon) {
       double max_d_s = failsafe_path_head_2_.getMaxVelocity();
       is_under_v_limit_head_ = max_d_s < v_limit;
     } else {
@@ -712,7 +713,7 @@ bool SafetyShield::planSeveralPflFailsafe(double a_max_manoeuvre, double j_max_m
       is_under_v_limit_non_head_ = max_d_s < v_limit;
     }
   } else {
-    if (v_safe == v_safe_head_) {
+    if (fabs(v_safe - v_safe_head_) < epsilon) {
       is_under_v_limit_head_ = true;
     } else {
       // v_safe == v_safe_non_head_
