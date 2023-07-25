@@ -401,7 +401,7 @@ class SafetyShield {
   /**
    * @brief Computes the fail-safe path for SEVERAL_PFL mode.
    *
-   * @details Sets the failsafe_path_2_ variable.
+   * @details Sets the failsafe_path_head_2_ or failsafe_path_non_head_2_ variable.
    *
    * @param[in] a_max_manoeuvre Maximum path acceleration
    * @param[in] j_max_manoeuvre Maximum path jerk
