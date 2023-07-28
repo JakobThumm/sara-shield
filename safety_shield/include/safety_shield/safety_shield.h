@@ -406,11 +406,13 @@ class SafetyShield {
    * @param[in] a_max_manoeuvre Maximum path acceleration
    * @param[in] j_max_manoeuvre Maximum path jerk
    * @param[in] v_safe safe velocity
+   * @param[out] failsafe_path which path to calculate for
+   * @param[out] is_under_v_limit is_under_v_limit_head_ or is_under_v_limit_non_head
    *
    * @return true planning was successful
    * @return false planning failed
    */
-  bool planSeveralPflFailsafe(double a_max_manoeuvre, double j_max_manoeuvre, double v_safe);
+  bool planSeveralPflFailsafe(double a_max_manoeuvre, double j_max_manoeuvre, double v_safe, Path& failsafe_path, bool& is_under_v_limit);
 
   /**
    * @brief Calculate the next desired joint position based on verification of recovery path.

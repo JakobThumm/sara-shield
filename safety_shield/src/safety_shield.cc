@@ -551,9 +551,8 @@ void SafetyShield::computesPotentialTrajectoryForSeveralPfl(Verification_level v
       // advance one step on repair path
       recovery_path_.increment(sample_time_);
       // Plan new failsafe path for SEVERAL_PFL
-      bool failsafe_head_2_planning_success = planSeveralPflFailsafe(a_max_manoeuvre, j_max_manoeuvre, v_safe_head_);
-      bool failsafe_non_head_2_planning_success =
-          planSeveralPflFailsafe(a_max_manoeuvre, j_max_manoeuvre, v_safe_non_head_);
+      bool failsafe_head_2_planning_success = planSeveralPflFailsafe(a_max_manoeuvre, j_max_manoeuvre, v_safe_head_, failsafe_path_head_2_, is_under_v_limit_head_);
+      bool failsafe_non_head_2_planning_success = planSeveralPflFailsafe(a_max_manoeuvre, j_max_manoeuvre, v_safe_non_head_, failsafe_path_non_head_2_, is_under_v_limit_non_head_);
       // Check the validity of the planned path
       if (!failsafe_head_2_planning_success || !failsafe_non_head_2_planning_success ||
           (failsafe_path_head_.isCurrent() && recovery_path_.getPosition() < failsafe_path_head_.getPosition()) ||
@@ -656,8 +655,7 @@ bool SafetyShield::planPFLFailsafe(double a_max_manoeuvre, double j_max_manoeuvr
   return planning_success;
 }
 
-// TODO: callen und beide Pfade direkt ausrechnen?
-bool SafetyShield::planSeveralPflFailsafe(double a_max_manoeuvre, double j_max_manoeuvre, double v_safe) {
+bool SafetyShield::planSeveralPflFailsafe(double a_max_manoeuvre, double j_max_manoeuvre, double v_safe, Path& failsafe_path, bool& is_under_v_limit) {
   // Calculate maximal Cartesian velocity in the short-term plan
   double s_d, ds_d, dds_d;
   double epsilon = 1e-6;
@@ -665,14 +663,13 @@ bool SafetyShield::planSeveralPflFailsafe(double a_max_manoeuvre, double j_max_m
   bool is_under_iso_velocity = false;
   // v_max is maximum of LTT or STP and vel_s_dot is how much path velocity needs to be scaled to be under v_iso
   // First, plan a failsafe path that ends in a complete stop. This is the longest failsafe path possible.
-  // TODO: correct failsafe path?
   bool planning_success =
       planSafetyShield(recovery_path_.getPosition(), recovery_path_.getVelocity(), recovery_path_.getAcceleration(),
-                       0.0, a_max_manoeuvre, j_max_manoeuvre, failsafe_path_head_2_);
+                       0.0, a_max_manoeuvre, j_max_manoeuvre, failsafe_path);
   if (!planning_success) {
     return false;
   }
-  failsafe_path_head_2_.getFinalMotion(s_d, ds_d, dds_d);
+  failsafe_path.getFinalMotion(s_d, ds_d, dds_d);
   double v_max;
   if (!new_ltt_) {
     v_max = long_term_trajectory_.getMaxofMaximumCartesianVelocityWithS(s_d);
@@ -690,35 +687,16 @@ bool SafetyShield::planSeveralPflFailsafe(double a_max_manoeuvre, double j_max_m
   } else {
     v_limit = recovery_path_.getVelocity();
   }
-  if (v_safe == v_safe_head_) {
-    // This is the PFL failsafe path that ends in a velocity v_head that is under v_iso.
-    planning_success =
-        planSafetyShield(recovery_path_.getPosition(), recovery_path_.getVelocity(), recovery_path_.getAcceleration(),
-                         v_limit, a_max_manoeuvre, j_max_manoeuvre, failsafe_path_head_2_);
-  } else {
-    // v_safe == v_safe_non_head
-    // This is the PFL failsafe path that ends in a velocity v_non_head that is under v_iso.
-    planning_success =
-        planSafetyShield(recovery_path_.getPosition(), recovery_path_.getVelocity(), recovery_path_.getAcceleration(),
-                         v_limit, a_max_manoeuvre, j_max_manoeuvre, failsafe_path_non_head_2_);
-  }
+  // This is the PFL failsafe path that ends in a velocity v_head that is under v_iso.
+  planning_success =
+      planSafetyShield(recovery_path_.getPosition(), recovery_path_.getVelocity(), recovery_path_.getAcceleration(),
+                       v_limit, a_max_manoeuvre, j_max_manoeuvre, failsafe_path);
   // TODO: unschön gelöst, besser wenn eine Methode für jeweils eine pfl action?
   if (!is_under_iso_velocity) {
-    if (fabs(v_safe - v_safe_head_) < epsilon) {
-      double max_d_s = failsafe_path_head_2_.getMaxVelocity();
-      is_under_v_limit_head_ = max_d_s < v_limit;
-    } else {
-      // v_safe == v_safe_non_head_
-      double max_d_s = failsafe_path_non_head_2_.getMaxVelocity();
-      is_under_v_limit_non_head_ = max_d_s < v_limit;
-    }
+    double max_d_s = failsafe_path.getMaxVelocity();
+    is_under_v_limit = max_d_s < v_limit;
   } else {
-    if (fabs(v_safe - v_safe_head_) < epsilon) {
-      is_under_v_limit_head_ = true;
-    } else {
-      // v_safe == v_safe_non_head_
-      is_under_v_limit_non_head_ = true;
-    }
+    is_under_v_limit = true;
   }
   return planning_success;
 }
@@ -1055,36 +1033,17 @@ Motion SafetyShield::severalPflStep(double cycle_begin_time) {
                                                            human_reach_->getBodyToIndexAndVelocity());
       is_safe_head = is_safe_head || is_under_v_limit_head_;
 
-      // for debugging
-      std::cout << "----------------------" << std::endl;
-      spdlog::info("is_safe_head is: {}", is_safe_head);
-      spdlog::info("is_safe_non_head is: {}", is_safe_non_head);
-      spdlog::info("recovery_path_correct is : {}", recovery_path_correct_);
-      if(recovery_path_.isCurrent()) {
-        spdlog::info("current path: recovery_path");
-      } else if(failsafe_path_non_head_.isCurrent()) {
-        spdlog::info("current path: failsafe_path_non_head");
-      } else {
-        spdlog::info("current path: failsafe_path_head");
-      }
-
       // TODO: Verification Level bestimmen
       if (is_safe_head && is_safe_non_head) {
         verification_level_ = Verification_level::SAFE;
-        spdlog::info("verification level: SAFE");
       } else if (!is_safe_head && is_safe_non_head) {
         verification_level_ = Verification_level::NON_HEAD;
-        spdlog::info("verification level: NON_HEAD");
       } else if(is_safe_head && !is_safe_non_head) {
         verification_level_ = Verification_level::HEAD;
-        spdlog::info("verification level: HEAD");
       } else {
         // !is_safe_head && !is_safe_non_head
         verification_level_ = Verification_level::HEAD;
-        spdlog::info("verification level: HEAD");
       }
-
-
     }
     // Select the next motion based on the verified safety
     next_motion_ = determineNextMotionForSeveralPfl(verification_level_);
