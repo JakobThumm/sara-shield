@@ -9,6 +9,34 @@
 #include "safety_shield/safety_shield.h"
 #include "safety_shield/verify.h"
 
+std::vector<reach_lib::Point> human_measurement_switching_scenario() {
+  std::vector<reach_lib::Point> dummy_human_meas(23);
+  dummy_human_meas[0] = reach_lib::Point(0.9786, -0.0677, 0.6853 );
+  dummy_human_meas[1] = reach_lib::Point(0.9761, 0.0695, 0.6861);
+  dummy_human_meas[2] = reach_lib::Point(0.9985, 0.0043, 0.8856);
+  dummy_human_meas[3] = reach_lib::Point(0.96604109, -0.1252712, 0.31314464);
+  dummy_human_meas[4] = reach_lib::Point(0.97470588, 0.12881263, 0.30618893);
+  dummy_human_meas[5] = reach_lib::Point(0.99739245, -0.00121013, 1.02079953);
+  dummy_human_meas[6] = reach_lib::Point(1.02637714, -0.08770052, -0.0811226);
+  dummy_human_meas[7] = reach_lib::Point(1.02725967, 0.08968268, -0.08937198);
+  dummy_human_meas[8] = reach_lib::Point(0.97197308, -0.00261079, 1.0736902);
+  dummy_human_meas[9] = reach_lib::Point(0.90453041, -0.11566333, -0.13026062);
+  dummy_human_meas[10] = reach_lib::Point(0.90152642, 0.11804821, -0.12915271);
+  dummy_human_meas[11] = reach_lib::Point(1.01486918e+00, 1.96003328e-04, 1.28757086e+00);
+  dummy_human_meas[12] = reach_lib::Point(1.00602804, -0.08150689, 1.19547737);
+  dummy_human_meas[13] = reach_lib::Point(1.01062625, 0.07909303, 1.19257031);
+  dummy_human_meas[14] = reach_lib::Point(0.96356535, -0.00500442, 1.35256781);
+  dummy_human_meas[15] = reach_lib::Point(1.01492849, -0.17241419, 1.22595549);
+  dummy_human_meas[16] = reach_lib::Point(1.01972649, 0.17520145, 1.22504534);
+  dummy_human_meas[17] = reach_lib::Point(1.04242545, -0.43200882, 1.21304058);
+  dummy_human_meas[18] = reach_lib::Point(1.04112379, 0.42889609, 1.21163913);
+  dummy_human_meas[19] = reach_lib::Point(1.04352557, -0.68130816, 1.22205866);
+  dummy_human_meas[20] = reach_lib::Point(1.04672402, 0.68419556, 1.21945613);
+  dummy_human_meas[21] = reach_lib::Point(1.05852663, -0.76531174, 1.21389728);
+  dummy_human_meas[22] = reach_lib::Point(1.05702504, 0.76879829, 1.21329518);
+  return dummy_human_meas;
+}
+
 std::vector<reach_lib::Point> human_measurement_head_scenario() {
   std::vector<reach_lib::Point> dummy_human_meas(23);
   dummy_human_meas[0] = reach_lib::Point(1.0786, -0.0677,  0.3353);
