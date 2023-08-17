@@ -77,7 +77,29 @@ def rpy_to_rot_matrix(rpy):
     return R
 
 
-def find_trafo_and_mesh_filenames(urdf_file, joint_names_of_interest):
+def get_mesh_filename(link):
+    visual = link.find('visual')
+
+    if visual is not None:
+        geometry = visual.find('geometry')
+
+        if geometry is not None:
+            mesh = geometry.find('mesh')
+
+            if mesh is not None:
+                filepath = mesh.attrib.get('filename', '')
+                filename = os.path.basename(filepath)
+
+                if 'scale' in mesh.attrib:
+                    scale_xyz = [float(x) for x in mesh.attrib.get('scale').split()]
+                else:
+                    scale_xyz = [1.0, 1.0, 1.0]
+
+                return filename, scale_xyz
+    return None, None
+
+
+def find_trafo_and_mesh_filenames(urdf_file, relevant_joint_type, joint_names_of_interest):
     """
     Find the mesh filenames of parent and child for all relevant FIXED joint.
     Save them into list of tuple (parent, parent_filename, child, child_filename)
@@ -95,7 +117,7 @@ def find_trafo_and_mesh_filenames(urdf_file, joint_names_of_interest):
     for joint in root.iter('joint'):
         joint_type = joint.attrib.get('type', '')
 
-        if joint_type == 'fixed':
+        if joint_type == relevant_joint_type:
             parent = joint.find('parent').attrib['link']
             child = joint.find('child').attrib['link']
 
@@ -103,6 +125,8 @@ def find_trafo_and_mesh_filenames(urdf_file, joint_names_of_interest):
                 continue
             parent_filename = None
             child_filename = None
+            parent_scale = None
+            child_scale = None
 
             # for every joint, we want to find the parent and child link
             # when found the link, we save the filenames of the meshes
@@ -110,33 +134,14 @@ def find_trafo_and_mesh_filenames(urdf_file, joint_names_of_interest):
                 link_name = link.attrib.get('name', '')
 
                 if link_name == parent:
-                    parent_visual = link.find('visual')
-
-                    if parent_visual is not None:
-                        parent_geometry = parent_visual.find('geometry')
-
-                        if parent_geometry is not None:
-                            parent_mesh = parent_geometry.find('mesh')
-
-                            if parent_mesh is not None:
-                                parent_filepath = parent_mesh.attrib.get('filename', '')
-                                parent_filename = os.path.basename(parent_filepath)
+                    parent_filename, parent_scale = get_mesh_filename(link)
 
                 if link_name == child:
-                    child_visual = link.find('visual')
-
-                    if child_visual is not None:
-                        child_geometry = child_visual.find('geometry')
-
-                        if child_geometry is not None:
-                            child_mesh = child_geometry.find('mesh')
-
-                            if child_mesh is not None:
-                                child_filepath = child_mesh.attrib.get('filename', '')
-                                child_filename = os.path.basename(child_filepath)
+                    child_filename, child_scale = get_mesh_filename(link)
 
             # save the link names and filenames in fixed_joints_and_mesh_filenames
-            fixed_joints_and_mesh_filenames.append((parent, parent_filename, child, child_filename))
+            fixed_joints_and_mesh_filenames.append(
+                (parent, parent_filename, parent_scale, child, child_filename, child_scale))
 
             # get the translation and rotation between the child and parent frame
             origin = joint.find("origin")
@@ -159,7 +164,7 @@ def generate_fixed_joint_point_clouds(fixed_joints_and_mesh_filenames, transform
     Load stl files of parent and child meshes. Transform child mesh and combine point clouds.
     Then return the point clouds.
     :param fixed_joints_and_mesh_filenames: names of fixed parents and children of fixed joints,
-                                            as well as their mesh filename
+                                            as well as their mesh filenames and scales
     :param transformations: transformation between parent and child of fixed joints. Dict with child as key
     :param stl_folder: folder name that contains the stl meshes
     :return: list of point clouds. One numpy array for each joint
@@ -170,29 +175,31 @@ def generate_fixed_joint_point_clouds(fixed_joints_and_mesh_filenames, transform
     parent_meshes = {}
     child_meshes = {}
 
-    for parent, parent_filename, child, child_filename in fixed_joints_and_mesh_filenames:
+    for parent, parent_filename, parent_scale, child, child_filename, child_scale in fixed_joints_and_mesh_filenames:
         if parent_filename is not None and parent_filename not in parent_meshes:
             parent_mesh_file = os.path.join(stl_folder, parent_filename)
             if os.path.exists(parent_mesh_file):
                 print(parent_mesh_file)
                 parent_meshes[parent_filename] = trimesh.load_mesh(parent_mesh_file)
-                parent_meshes[parent_filename].apply_scale(1 / 1000)
+                parent_meshes[parent_filename].apply_scale(parent_scale)
 
         if child_filename is not None and child_filename not in child_meshes:
             child_mesh_file = os.path.join(stl_folder, child_filename)
             if os.path.exists(child_mesh_file):
                 child_meshes[child_filename] = trimesh.load_mesh(child_mesh_file)
-                child_meshes[child_filename].apply_scale(1 / 1000)
+                child_meshes[child_filename].apply_scale(child_scale)
 
     # Generate point clouds
-    for parent, parent_filename, child, child_filename in fixed_joints_and_mesh_filenames:
+    for parent, parent_filename, _, child, child_filename, _ in fixed_joints_and_mesh_filenames:
         if parent_filename is None or child_filename is None:
+            warnings.warn("No mesh file for link" + child + " or " + parent)
             continue
 
         parent_mesh = parent_meshes.get(parent_filename)
         child_mesh = child_meshes.get(child_filename)
 
         if parent_mesh is None or child_mesh is None:
+            warnings.warn("Mesh could not be loaded for: " + child + " or " + parent)
             continue
 
         if parent_mesh.vertices.shape[0] > 0 and child_mesh.vertices.shape[0] > 0:
@@ -218,6 +225,45 @@ def generate_fixed_joint_point_clouds(fixed_joints_and_mesh_filenames, transform
                     print(f"Error processing fixed joint '{parent} -> {child}': {str(e)}")
 
     plt.show()
+    return point_clouds
+
+
+def generate_joint_point_clouds(fixed_joints_and_mesh_filenames, stl_folder):
+    """
+    generate points clouds for normal robots (no fixed joints in chain)
+    :param fixed_joints_and_mesh_filenames: parent and child of each joint. Only child mesh is used
+    :param stl_folder: folder name that contains the stl meshes
+    :return: list of point clouds. One numpy array for each joint
+    """
+    point_clouds = []
+
+    # Load meshes
+    child_meshes = {}
+
+    for _, _, _, child, child_filename, child_scale in fixed_joints_and_mesh_filenames:
+        if child_filename is not None and child_filename not in child_meshes:
+            child_mesh_file = os.path.join(stl_folder, child_filename)
+            if os.path.exists(child_mesh_file):
+                child_meshes[child_filename] = trimesh.load(child_mesh_file, force='mesh')
+                child_meshes[child_filename].apply_scale(child_scale)
+
+    # Generate point clouds
+    for _, _, _, child, child_filename, _ in fixed_joints_and_mesh_filenames:
+        if child_filename is None:
+            warnings.warn("No mesh file for link" + child)
+            continue
+
+        child_mesh = child_meshes.get(child_filename)
+
+        if child_mesh is None:
+            warnings.warn("Mesh could not be loaded for: " + child)
+            continue
+
+        if child_mesh.vertices.shape[0] > 0:
+            child_points = child_mesh.vertices
+
+            point_clouds.append(child_points)
+
     return point_clouds
 
 
@@ -270,12 +316,13 @@ def capsule_from_points(points: np.ndarray):
     return p1_min, p2_min, r_min
 
 
-def parse_urdf_file_transformations(urdf_file, joint_names_of_interest):
+def parse_urdf_file_transformations(urdf_file, joint_names_of_interest, alternating_fixed_and_revolute_joints):
     """
     Get joint transformations of relevant joints from the urdf file
     and join the fixed joints with the rotating joints
     :param urdf_file: the file name
     :param joint_names_of_interest: relevant joints
+    :param alternating_fixed_and_revolute_joints: whether concert like robots are used
     :return: transformation dict
     """
     tree = ET.parse(urdf_file)
@@ -289,6 +336,7 @@ def parse_urdf_file_transformations(urdf_file, joint_names_of_interest):
 
     for joint in root.findall(".//joint"):
         name = joint.attrib['name']
+        type = joint.attrib['type']
 
         # skip irrelevant joints
         if not re.search(joint_names_of_interest, name):
@@ -313,21 +361,25 @@ def parse_urdf_file_transformations(urdf_file, joint_names_of_interest):
         T[:3, :3] = R
         T[:3, 3] = xyz
 
-        if re.search("fixed_", name):
+        if type == 'fixed':
             fixed_transformations.append(T)
         else:
             limit = joint.find('limit')
             if limit is not None:
-                limit_q_min.append(float(limit.attrib['lower']))
-                limit_q_max.append(float(limit.attrib['upper']))
-                limit_v.append(float(limit.attrib['velocity']))
+                try:
+                    limit_q_min.append(float(limit.attrib['lower']))
+                    limit_q_max.append(float(limit.attrib['upper']))
+                    limit_v.append(float(limit.attrib['velocity']))
+                except KeyError:
+                    pass
 
             transformations[name] = T
 
-    # join transformations of fixed and rotating joins together
-    for (t_name, trans), fixed_trans in zip(transformations.items(), fixed_transformations):
-        t1 = fixed_trans @ trans
-        transformations[t_name] = t1
+    # join transformations of fixed and rotating joins together (mostly for CONCERT robots)
+    if alternating_fixed_and_revolute_joints:
+        for (t_name, trans), fixed_trans in zip(transformations.items(), fixed_transformations):
+            t1 = fixed_trans @ trans
+            transformations[t_name] = t1
 
     return transformations, limit_q_min, limit_q_max, limit_v
 
@@ -342,8 +394,16 @@ def export_capsules(robot_name, secure_radius, nb_joints, capsules, transformati
     :param transformations: dict of {key: string , value: 4x4 array}
     :return: void
     """
-    if nb_joints != len(transformations.items()) or nb_joints + 1 != len(capsules):
-        warnings.warn("Warning...........The number of joints does not match the file!")
+    if nb_joints != len(transformations.items()):
+        warnings.warn("Warning...........The number of joints does not match the number of transformations!")
+
+    if nb_joints == len(capsules) - 1:  # we ignore the first capsule, since this one is the base
+        ignore_first = True
+    elif nb_joints == len(capsules):  # normal robot
+        ignore_first = False
+    else:
+        warnings.warn("Warning...........The number of number does not match the number of capsules!")
+        ignore_first = False
 
     filepath = f'robot_parameters_{robot_name}.yaml'
     with open(filepath, 'w') as f:
@@ -361,7 +421,7 @@ def export_capsules(robot_name, secure_radius, nb_joints, capsules, transformati
         f.write(']\n')
         f.write("enclosures: [\n")
         for i, (p1, p2, r) in enumerate(capsules):
-            if i == 0:
+            if i == 0 and ignore_first:
                 continue
             f.write(f"{p1[0]:.8f}, {p1[1]:.8f}, {p1[2]:.8f},\n")
             f.write(f"{p2[0]:.8f}, {p2[1]:.8f}, {p2[2]:.8f},\n")
@@ -373,16 +433,25 @@ def export_capsules(robot_name, secure_radius, nb_joints, capsules, transformati
         f.write("]")
 
 
-def create_robot_file(limit_q_min, limit_q_max, limit_v, robot_name):
+def create_robot_file(limit_q_min, limit_q_max, limit_v, nb_joints, robot_name):
     """
     create the trajectory parameters yaml file with joint limits
     :param limit_q_min: the lowest joint position
     :param limit_q_max: the highest joint position
     :param limit_v: the velocity limit
+    :param nb_joints: the specified number of joints for sanity checks
     :param robot_name: name of the robot
     :return: void
     """
-    nb_joints = len(limit_v)
+    if len(limit_v) != nb_joints:
+        warnings.warn("Not all joints have velocity limits specified, using default values")
+        limit_v = [2] * nb_joints
+
+    if len(limit_q_min) != nb_joints or len(limit_q_max) != nb_joints:
+        warnings.warn("Not all joints have min and max positions specified, using default values")
+        limit_q_min = [-3] * nb_joints
+        limit_q_max = [3] * nb_joints
+
     a_max_allowed = [10] * nb_joints
     j_max_allowed = [400] * nb_joints
     a_max_ltt = [2] * nb_joints
@@ -407,7 +476,7 @@ def create_robot_file(limit_q_min, limit_q_max, limit_v, robot_name):
 
 if __name__ == '__main__':
     '''
-    Chain:
+    CONCERT Chain:
     mobile_base - J1_E_stator - L1_E - J2_E_stator - L2_E - .....   J99_E_stator - L_99_E      -          end_effector_E
         |  fixed_J1_E  |   J1_E  |  fixed_J2_E |             ....          |  J99_E  |  end_effector_E_fixed_joint  | 
         
@@ -416,18 +485,27 @@ if __name__ == '__main__':
     '''
 
     # Things to edit
-    urdf_file = "modularbot.urdf"
-    stl_folder = "meshes/concert/simple"
-    robot_name = "concert"
-    # joint_names_of_interest = "J[0-9]_E"
-    joint_names_of_interest = "_E"  # All relevant joints contain this regex, while other joints dont
-    number_joints = 6
+    urdf_file = "panda_arm.urdf"
+    stl_folder = "meshes/visual"
+    robot_name = "panda"
+    alternating_fixed_and_revolute_joints = False  # set to True for CONCERT
+
+    # All relevant joints contain this regex, while other joints don't (e.g. "J[0-9]_E")
+    # joint_names_of_interest = "_E"   # use this for CONCERT
+    joint_names_of_interest = ""   # use this when all joints should be used
+
+    number_joints = 7
     secure_radius = 0.02
 
     # for fixed joints: combine two point-clouds: find the mesh-filenames, and the transformations
     # between them and then join them.
-    mesh_filenames, transformations = find_trafo_and_mesh_filenames(urdf_file, joint_names_of_interest)
-    pc = generate_fixed_joint_point_clouds(mesh_filenames, transformations, stl_folder)
+    if alternating_fixed_and_revolute_joints:
+        mesh_filenames, transformations = find_trafo_and_mesh_filenames(urdf_file, 'fixed', joint_names_of_interest)
+        pc = generate_fixed_joint_point_clouds(mesh_filenames, transformations, stl_folder)
+    else:
+        # for other joints, use only the child mesh of each revolute join
+        mesh_filenames, transformations = find_trafo_and_mesh_filenames(urdf_file, 'revolute', joint_names_of_interest)
+        pc = generate_joint_point_clouds(mesh_filenames, stl_folder)
 
     # generate capsules for every point cloud
     capsules = []
@@ -437,7 +515,8 @@ if __name__ == '__main__':
 
     # get the transformations between each link (fixed + rotating)
     # also get the min and max position of joints, as well as the max velocity
-    trafo, limit_q_min, limit_q_max, limit_v = parse_urdf_file_transformations(urdf_file, joint_names_of_interest)
+    trafo, limit_q_min, limit_q_max, limit_v = (
+        parse_urdf_file_transformations(urdf_file, joint_names_of_interest, alternating_fixed_and_revolute_joints))
 
     for name, T in trafo.items():
         print(f"{name} transformation matrix:")
@@ -445,4 +524,4 @@ if __name__ == '__main__':
 
     # generate output
     export_capsules(robot_name, secure_radius, number_joints, capsules, trafo)
-    create_robot_file(limit_q_min, limit_q_max, limit_v, robot_name)
+    create_robot_file(limit_q_min, limit_q_max, limit_v, number_joints, robot_name)
