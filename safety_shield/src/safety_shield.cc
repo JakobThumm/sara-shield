@@ -580,22 +580,25 @@ void SafetyShield::computesPotentialTrajectoryForSeveralPfl(Verification_level v
     // Fill potential buffer with position and velocity from last failsafe path. This value is not really used.
     double final_head_s_d, final_head_ds_d, final_head_dds_d;
     double final_non_head_s_d, final_non_head_ds_d, final_non_head_dds_d;
-    // TODO: correct failsafe path?
-    double ddds_d = failsafe_path_head_.getJerk();
+
+    // TODO: correct?
+    double head_ddds_d = failsafe_path_head_.getJerk();
+    double non_head_ddds_d = failsafe_path_non_head_.getJerk();
+
     potential_path_head_.getFinalMotion(final_head_s_d, final_head_ds_d, final_head_dds_d);
     potential_path_non_head_.getFinalMotion(final_non_head_s_d, final_non_head_ds_d, final_non_head_dds_d);
 
     if (new_ltt_) {
       *goal_motion_head = new_long_term_trajectory_.interpolate(final_head_s_d, final_head_ds_d, final_head_dds_d,
-                                                                ddds_d, v_max_allowed_, a_max_allowed_, j_max_allowed_);
+                                                                head_ddds_d, v_max_allowed_, a_max_allowed_, j_max_allowed_);
       *goal_motion_non_head =
-          new_long_term_trajectory_.interpolate(final_non_head_s_d, final_non_head_ds_d, final_non_head_dds_d, ddds_d,
+          new_long_term_trajectory_.interpolate(final_non_head_s_d, final_non_head_ds_d, final_non_head_dds_d, non_head_ddds_d,
                                                 v_max_allowed_, a_max_allowed_, j_max_allowed_);
     } else {
-      *goal_motion_head = long_term_trajectory_.interpolate(final_head_s_d, final_head_ds_d, final_head_dds_d, ddds_d,
+      *goal_motion_head = long_term_trajectory_.interpolate(final_head_s_d, final_head_ds_d, final_head_dds_d, head_ddds_d,
                                                             v_max_allowed_, a_max_allowed_, j_max_allowed_);
       *goal_motion_non_head =
-          long_term_trajectory_.interpolate(final_non_head_s_d, final_non_head_ds_d, final_non_head_dds_d, ddds_d,
+          long_term_trajectory_.interpolate(final_non_head_s_d, final_non_head_ds_d, final_non_head_dds_d, non_head_ddds_d,
                                             v_max_allowed_, a_max_allowed_, j_max_allowed_);
     }
     goal_motion_head->setTime(potential_path_head_.getPhase(3));
@@ -658,7 +661,6 @@ bool SafetyShield::planPFLFailsafe(double a_max_manoeuvre, double j_max_manoeuvr
 bool SafetyShield::planSeveralPflFailsafe(double a_max_manoeuvre, double j_max_manoeuvre, double v_safe, Path& failsafe_path, bool& is_under_v_limit) {
   // Calculate maximal Cartesian velocity in the short-term plan
   double s_d, ds_d, dds_d;
-  double epsilon = 1e-6;
   // Calculate goal
   bool is_under_iso_velocity = false;
   // v_max is maximum of LTT or STP and vel_s_dot is how much path velocity needs to be scaled to be under v_iso
@@ -691,7 +693,6 @@ bool SafetyShield::planSeveralPflFailsafe(double a_max_manoeuvre, double j_max_m
   planning_success =
       planSafetyShield(recovery_path_.getPosition(), recovery_path_.getVelocity(), recovery_path_.getAcceleration(),
                        v_limit, a_max_manoeuvre, j_max_manoeuvre, failsafe_path);
-  // TODO: unschön gelöst, besser wenn eine Methode für jeweils eine pfl action?
   if (!is_under_iso_velocity) {
     double max_d_s = failsafe_path.getMaxVelocity();
     is_under_v_limit = max_d_s < v_limit;
