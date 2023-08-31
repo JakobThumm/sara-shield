@@ -497,7 +497,7 @@ void SafetyShield::computesPotentialTrajectoryForSeveralPfl(Verification_level v
       }
       path_s_discrete_++;
     }
-    // If verified safe, take the recovery path, otherwise, take the failsafe path
+    // If verified safe, take the recovery path, otherwise, take one of the failsafe paths
     if (v == Verification_level::SAFE && recovery_path_correct_) {
       recovery_path_.setCurrent(true);
       // discard old FailsafePath and replace with new one
@@ -922,6 +922,9 @@ Motion SafetyShield::standardStep(double cycle_begin_time) {
     } else {
       is_safe_ = true;
     }
+
+    //print_debug_standard(is_safe_, is_under_v_limit_);
+
     // Select the next motion based on the verified safety
     next_motion_ = determineNextMotion(is_safe_);
     next_motion_.setTime(cycle_begin_time);
@@ -1045,7 +1048,9 @@ Motion SafetyShield::severalPflStep(double cycle_begin_time) {
         // !is_safe_head && !is_safe_non_head
         verification_level_ = Verification_level::HEAD;
       }
+      //print_debug_several_pfl(verification_level_, is_safe_head, is_safe_non_head, is_under_v_limit_head_, is_under_v_limit_non_head_);
     }
+
     // Select the next motion based on the verified safety
     next_motion_ = determineNextMotionForSeveralPfl(verification_level_);
     next_motion_.setTime(cycle_begin_time);

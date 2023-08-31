@@ -700,6 +700,33 @@ class SafetyShield {
   inline ShieldType getShieldType() {
     return shield_type_;
   }
+
+  inline void print_debug_several_pfl(Verification_level verification_level, bool is_safe_head,
+                                      bool is_safe_non_head, bool is_under_v_limit_head, bool is_under_v_limit_non_head) {
+    std::cout << "-----------------------------------------------------" << std::endl;
+    if(verification_level == Verification_level::HEAD) {
+      std::cout << "Verification_level = " << "HEAD" << std::endl;
+    } else if(verification_level == Verification_level::NON_HEAD) {
+      std::cout << "Verification_level = " << "NON_HEAD" << std::endl;
+    } else {
+      std::cout << "Verification_level = " << "SAFE" << std::endl;
+    }
+    std::cout << "is_safe_head = " << is_safe_head << std::endl;
+    std::cout << "is_safe_non_head = " << is_safe_non_head << std::endl;
+    std::cout << "is_under_v_limit_head = " << is_under_v_limit_head << std::endl;
+    std::cout << "is_under_v_limit_non_head = " << is_under_v_limit_non_head << std::endl;
+    std::cout << "recovery_path_.isCurrent() = " << recovery_path_.isCurrent() << std::endl;
+    std::cout << "failsafe_path_head_.isCurrent() = " << failsafe_path_head_.isCurrent() << std::endl;
+    std::cout << "failsafe_path_non_head_.isCurrent() = " << failsafe_path_non_head_.isCurrent() << std::endl;
+  }
+
+  inline void print_debug_standard(bool is_safe, bool is_under_v_limit) {
+    std::cout << "-----------------------------------------------------" << std::endl;
+    std::cout << "is_safe = " << is_safe << std::endl;
+    std::cout << "is_under_v_limit = " << is_under_v_limit << std::endl;
+    std::cout << "recovery_path_.isCurrent() = " << recovery_path_.isCurrent() << std::endl;
+    std::cout << "failsafe_path_.isCurrent() = " << failsafe_path_.isCurrent() << std::endl;
+  }
 };
 }  // namespace safety_shield
 
