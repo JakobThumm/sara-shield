@@ -732,17 +732,17 @@ int main() {
 
   //std::cout << "size = " << qpos_vec.size();
 
-  // TODO: how to correctly increment t
-  // n = shield_frequency / RL_frequency
+  // TODO: increment of time correct?
+  // n = shield_frequency / RL_frequency = 5 / 250 = 1 / 50
   spdlog::info("Debug started.");
   double t = 0.0;
   for (int ep = 0; ep < 1; ep++) {
-    for (int i = 0; i < 800; i++) {
+    for (int i = 0; i < qpos_vec.size() * 50; i++) {
       t += 0.001;
       shield.humanMeasurement(human_measurement, t);
       t += 0.003;
-      if (i % 4 == 0) {
-        shield.newLongTermTrajectory(qpos_vec[i / 4], {0.0, 0.0, 0.0, 0.0, 0.0, 0.0});
+      if (i % 50 == 0) {
+        shield.newLongTermTrajectory(qpos_vec[i / 50], {0.0, 0.0, 0.0, 0.0, 0.0, 0.0});
       }
       safety_shield::Motion next_motion = shield.step(t);
     }
