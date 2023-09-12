@@ -581,7 +581,7 @@ void SafetyShield::computesPotentialTrajectoryForSeveralPfl(Verification_level v
     double final_head_s_d, final_head_ds_d, final_head_dds_d;
     double final_non_head_s_d, final_non_head_ds_d, final_non_head_dds_d;
 
-    // TODO: correct?
+    // TODO: we need to know which was the last failsafe path used
     double head_ddds_d = failsafe_path_head_.getJerk();
     double non_head_ddds_d = failsafe_path_non_head_.getJerk();
 
@@ -758,7 +758,7 @@ Motion SafetyShield::determineNextMotion(bool is_safe) {
 Motion SafetyShield::determineNextMotionForSeveralPfl(Verification_level verification_level) {
   Motion next_motion;
   double s_d, ds_d, dds_d, ddds_d;
-  // TODO: pos wrong?
+  // TODO: pos of failsafe_path_head and non_head should be the same
   double pos = failsafe_path_head_.getPosition();
   if (verification_level == Verification_level::SAFE) {
     // Fill potential buffer with position and velocity from recovery path
@@ -785,6 +785,7 @@ Motion SafetyShield::determineNextMotionForSeveralPfl(Verification_level verific
       next_motion =
           long_term_trajectory_.interpolate(s_d, ds_d, dds_d, ddds_d, v_max_allowed_, a_max_allowed_, j_max_allowed_);
     }
+    // TODO: Problem: wir wissen nicht welche potential path verwendet wird
     // Set potential path as new verified safe path
     safe_path_ = potential_path_non_head_;
 
@@ -813,6 +814,7 @@ Motion SafetyShield::determineNextMotionForSeveralPfl(Verification_level verific
       next_motion =
           long_term_trajectory_.interpolate(s_d, ds_d, dds_d, ddds_d, v_max_allowed_, a_max_allowed_, j_max_allowed_);
     }
+    // TODO: Problem: wir wissen nicht welche potential path verwendet wird
     // Set potential path as new verified safe path
     safe_path_ = potential_path_head_;
   } else {
@@ -1007,9 +1009,8 @@ Motion SafetyShield::severalPflStep(double cycle_begin_time) {
       verification_level_ = Verification_level::HEAD;
       spdlog::info("joint limits exceeded");
     } else {
-      // TODO: es werden nur letzten Kapseln geplotted
-
-      // TODO: non_head_path darf keine Kollision mit non-Kopf haben
+      // es werden nur letzte Kapseln geplotted
+      // non_head_path darf keine Kollision mit non-Kopf haben
       // Compute the robot reachable set for the potential non-head trajectory
       robot_capsules_ = robot_reach_->reach(current_motion, goal_motion_non_head,
                                             (goal_motion_non_head.getS() - current_motion.getS()), alpha_i);
@@ -1023,7 +1024,7 @@ Motion SafetyShield::severalPflStep(double cycle_begin_time) {
                                   human_reach_->getBodyToIndexAndVelocity());
       is_safe_non_head = is_safe_non_head || is_under_v_limit_non_head_;
 
-      // TODO: head_path darf keine Kollision mit Kopf haben
+      // head_path darf keine Kollision mit Kopf haben
       // Compute the robot reachable set for the potential head trajectory
       robot_capsules_ = robot_reach_->reach(current_motion, goal_motion_head,
                                             (goal_motion_head.getS() - current_motion.getS()), alpha_i);
@@ -1037,7 +1038,7 @@ Motion SafetyShield::severalPflStep(double cycle_begin_time) {
                                                            human_reach_->getBodyToIndexAndVelocity());
       is_safe_head = is_safe_head || is_under_v_limit_head_;
 
-      // TODO: Verification Level bestimmen
+      // Verification Level bestimmen
       if (is_safe_head && is_safe_non_head) {
         verification_level_ = Verification_level::SAFE;
       } else if (!is_safe_head && is_safe_non_head) {

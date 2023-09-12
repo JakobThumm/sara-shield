@@ -48,7 +48,7 @@ int VerifyISO::getIndexOfHead(const std::map<std::string, std::pair<int, double>
   }
 }
 
-// TODO: head_safe wenn bei mind. einem Model Kopf nicht mit dabei bei Kollisionsliste ist
+// head_safe wenn bei mind. einem Model Kopf-Kapsel nicht mit dabei bei Kollisionsliste ist
 bool VerifyISO::verify_human_reach_head(const std::vector<reach_lib::Capsule>& robot_capsules,
                              const std::vector<reach_lib::Capsule>& human_capsules_vel,
                              const std::vector<reach_lib::Capsule>& human_capsules_acc,
@@ -67,7 +67,7 @@ bool VerifyISO::verify_human_reach_head(const std::vector<reach_lib::Capsule>& r
   }
 }
 
-// TODO: non_head_safe wenn bei mind. einem Model non-Kopf nicht mit dabei bei Kollisionsliste ist
+// non_head_safe wenn bei mind. einem Model non-Kopf-Kapseln nicht mit dabei bei Kollisionsliste ist
 bool VerifyISO::verify_human_reach_non_head(const std::vector<reach_lib::Capsule>& robot_capsules,
                                         std::vector<reach_lib::Capsule> human_capsules_vel,
                                         std::vector<reach_lib::Capsule> human_capsules_acc,
