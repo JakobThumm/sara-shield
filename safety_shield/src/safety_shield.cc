@@ -1013,9 +1013,9 @@ Motion SafetyShield::severalPflStep(double cycle_begin_time) {
       // Compute the robot reachable set for the potential non-head trajectory
       robot_capsules_ = robot_reach_->reach(current_motion, goal_motion_non_head,
                                             (goal_motion_non_head.getS() - current_motion.getS()), alpha_i);
-      // Compute the human reachable sets for the potential head trajectory
+      // Compute the human reachable sets for the potential non-head trajectory
       human_reach_->humanReachabilityAnalysis(cycle_begin_time_, goal_motion_non_head.getTime());
-      // Verify if the robot and human reachable sets are collision free for head trajectory
+      // Verify if the robot and human reachable sets are collision free for non-head trajectory
       human_capsules_ = human_reach_->getAllCapsules();
       bool is_safe_non_head = verify_->verify_human_reach_non_head(
                                   robot_capsules_, human_reach_->getArticulatedVelCapsules(),
@@ -1041,9 +1041,9 @@ Motion SafetyShield::severalPflStep(double cycle_begin_time) {
       if (is_safe_head && is_safe_non_head) {
         verification_level_ = Verification_level::SAFE;
       } else if (!is_safe_head && is_safe_non_head) {
-        verification_level_ = Verification_level::NON_HEAD;
-      } else if(is_safe_head && !is_safe_non_head) {
         verification_level_ = Verification_level::HEAD;
+      } else if(is_safe_head && !is_safe_non_head) {
+        verification_level_ = Verification_level::NON_HEAD;
       } else {
         // !is_safe_head && !is_safe_non_head
         verification_level_ = Verification_level::HEAD;
