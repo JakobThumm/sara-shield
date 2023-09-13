@@ -581,7 +581,7 @@ void SafetyShield::computesPotentialTrajectoryForSeveralPfl(Verification_level v
     double final_head_s_d, final_head_ds_d, final_head_dds_d;
     double final_non_head_s_d, final_non_head_ds_d, final_non_head_dds_d;
 
-    // TODO: we need to know which was the last failsafe path used
+    // jerk is needed for both goal motions of the two failsafe paths
     double head_ddds_d = failsafe_path_head_.getJerk();
     double non_head_ddds_d = failsafe_path_non_head_.getJerk();
 
