@@ -137,6 +137,16 @@ class SafetyShield {
   Path safe_path_;
 
   /**
+   * @brief verified safe path with head trajectory
+   */
+  Path safe_path_head_;
+
+  /**
+   * @brief verified safe path with non-head trajectory
+   */
+  Path safe_path_non_head_;
+
+  /**
    * @brief the constructed intended step + failsafe path
    */
   Path potential_path_;

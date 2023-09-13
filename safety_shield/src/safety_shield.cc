@@ -198,6 +198,8 @@ void SafetyShield::reset(double init_x, double init_y, double init_z, double ini
   failsafe_path_ = Path();
   failsafe_path_2_ = Path();
   safe_path_ = Path();
+  safe_path_head_ = Path();
+  safe_path_non_head_ = Path();
   failsafe_path_head_ = Path();
   failsafe_path_head_2_ = Path();
   failsafe_path_non_head_ = Path();
@@ -755,6 +757,7 @@ Motion SafetyShield::determineNextMotion(bool is_safe) {
   return next_motion;
 }
 
+// TODO: does new version work?
 Motion SafetyShield::determineNextMotionForSeveralPfl(Verification_level verification_level) {
   Motion next_motion;
   double s_d, ds_d, dds_d, ddds_d;
@@ -776,7 +779,6 @@ Motion SafetyShield::determineNextMotionForSeveralPfl(Verification_level verific
       dds_d = potential_path_non_head_.getAcceleration();
       ddds_d = potential_path_non_head_.getJerk();
     }
-
     // Interpolate from new long term buffer
     if (new_ltt_) {
       next_motion = new_long_term_trajectory_.interpolate(s_d, ds_d, dds_d, ddds_d, v_max_allowed_, a_max_allowed_,
@@ -785,45 +787,26 @@ Motion SafetyShield::determineNextMotionForSeveralPfl(Verification_level verific
       next_motion =
           long_term_trajectory_.interpolate(s_d, ds_d, dds_d, ddds_d, v_max_allowed_, a_max_allowed_, j_max_allowed_);
     }
-    // TODO: Problem: wir wissen nicht welche potential path verwendet wird
-    // Set potential path as new verified safe path
-    safe_path_ = potential_path_non_head_;
-
+    // Set potential paths as new verified safe paths
+    safe_path_non_head_ = potential_path_non_head_;
+    safe_path_head_ = potential_path_head_;
   } else if (verification_level == Verification_level::NON_HEAD) {
-    // Fill potential buffer with position and velocity from recovery path
-    if (recovery_path_.getPosition() >= pos) {
-      s_d = recovery_path_.getPosition();
-      ds_d = recovery_path_.getVelocity();
-      dds_d = recovery_path_.getAcceleration();
-      ddds_d = recovery_path_.getJerk();
-    } else {
-      // TODO: Problem: wir wissen nicht welche potential path verwendet wird
-      potential_path_head_.increment(sample_time_);
-      potential_path_non_head_.increment(sample_time_);
-      s_d = potential_path_head_.getPosition();
-      ds_d = potential_path_head_.getVelocity();
-      dds_d = potential_path_head_.getAcceleration();
-      ddds_d = potential_path_head_.getJerk();
-    }
-
-    // Interpolate from new long term buffer
-    if (new_ltt_) {
-      next_motion = new_long_term_trajectory_.interpolate(s_d, ds_d, dds_d, ddds_d, v_max_allowed_, a_max_allowed_,
-                                                          j_max_allowed_);
-    } else {
-      next_motion =
-          long_term_trajectory_.interpolate(s_d, ds_d, dds_d, ddds_d, v_max_allowed_, a_max_allowed_, j_max_allowed_);
-    }
-    // TODO: Problem: wir wissen nicht welche potential path verwendet wird
-    // Set potential path as new verified safe path
-    safe_path_ = potential_path_head_;
+    // interpolate from old safe path with non_head trajectory
+    safe_path_non_head_.increment(sample_time_);
+    s_d = safe_path_non_head_.getPosition();
+    ds_d = safe_path_non_head_.getVelocity();
+    dds_d = safe_path_non_head_.getAcceleration();
+    ddds_d = safe_path_non_head_.getJerk();
+    next_motion =
+        long_term_trajectory_.interpolate(s_d, ds_d, dds_d, ddds_d, v_max_allowed_, a_max_allowed_, j_max_allowed_);
   } else {
-    // interpolate from old safe path
-    safe_path_.increment(sample_time_);
-    s_d = safe_path_.getPosition();
-    ds_d = safe_path_.getVelocity();
-    dds_d = safe_path_.getAcceleration();
-    ddds_d = safe_path_.getJerk();
+    // verification_level == Verification_level::HEAD
+    // interpolate from old safe path with head trajectory
+    safe_path_head_.increment(sample_time_);
+    s_d = safe_path_head_.getPosition();
+    ds_d = safe_path_head_.getVelocity();
+    dds_d = safe_path_head_.getAcceleration();
+    ddds_d = safe_path_head_.getJerk();
     next_motion =
         long_term_trajectory_.interpolate(s_d, ds_d, dds_d, ddds_d, v_max_allowed_, a_max_allowed_, j_max_allowed_);
   }
