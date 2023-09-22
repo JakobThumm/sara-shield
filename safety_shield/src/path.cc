@@ -74,4 +74,69 @@ double Path::getMaxVelocity() {
   }
   return max_vel;
 }
+
+// TODO: is it correct?
+void Path::getMotionUnderVel(double v_limit, double& time, double& pos, double& vel, double& acc, double& jerk) {
+  if(vel_ < v_limit) {
+    time = phases_[0];
+    pos = pos_;
+    vel = vel_;
+    acc = acc_;
+    jerk = jerk_;
+    return;
+  }
+  double prev_pos, next_pos = pos_;
+  double prev_vel, next_vel = vel_;
+  double prev_acc, next_acc = acc_;
+  double l_time = 0;
+  for(int i = 0; i < 3; i++) {
+    // we need to save previous and next values
+    prev_pos = next_pos;
+    prev_vel = next_vel;
+    prev_acc = next_acc;
+
+    // compute like in getFinalMotion()
+    double dt = (phases_[i]-l_time);
+    next_pos += next_vel*dt + next_acc*dt*dt/2 + phases_[i+3]*dt*dt*dt/6;
+    next_vel += next_acc*dt + phases_[i+3]*dt*dt/2;
+    next_acc += phases_[i+3]*dt;
+    l_time = phases_[i];
+
+    // if in this phase, next_vel falls below vel, recompute values but with correct time via formula
+    double epsilon = 1e-6;
+    if(next_vel < v_limit + epsilon) {
+      jerk = phases_[i+3];
+      double square = std::sqrt(prev_acc*prev_acc - 2*jerk*(prev_vel - v_limit));
+      double left = (-prev_acc - square) / jerk;
+      double right = (-prev_acc + square) / jerk;
+      if(left > 0 && right > 0) {
+        dt = std::min(left, right);
+      } else if (left > 0) {
+        dt = left;
+      } else if (right > 0) {
+        dt = right;
+      } else {
+        // already under v_iso
+        time = -10;
+        if(std::isnan(square)) {
+          spdlog::error("Error in Path::getMotionUnderVel: square is NaN");
+          return;
+        } else {
+          spdlog::error("Error in Path::getMotionUnderVel: Quadratic-Function only has negative zero-values");
+          return;
+        }
+      }
+      time = phases_[i] + dt;
+      pos = prev_vel*dt + prev_acc*dt*dt/2 + jerk*dt*dt*dt/6 + prev_pos;
+      acc = jerk*dt + prev_acc;
+      vel = prev_acc*dt + 0.5*jerk*dt*dt + prev_vel;
+      return;
+    }
+
+  }
+  // if it is not in any phase, it can't be a failsafe-path
+  time = -1;
+  spdlog::error("Error in Path::getMotionUnderVel: it is not in any phase");
+}
+
 }  // namespace safety_shield

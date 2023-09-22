@@ -51,7 +51,7 @@ namespace safety_shield {
  *  OFF: No shield is used.
  *  SSM: Speed and Separation Monitoring: The robot stops for the human.
  *  PFL: Power and Force Limiting: The robot slows down to a safe contact speed for the human.
- *  SEVERAL_PFL: Power and Force Limiting with different velocities for head and non-head
+ *  SEVERAL_PFL: Power and Force Limiting with different velocities for head and non-head.
  */
 enum class ShieldType { OFF, SSM, PFL, SEVERAL_PFL };
 
@@ -67,6 +67,7 @@ class SafetyShield {
    *  OFF: No shield is used.
    *  SSM: Speed and Separation Monitoring: The robot stops for the human.
    *  PFL: Power and Force Limiting: The robot slows down to a safe contact speed for the human.
+   *  SEVERAL_PFL: Power and Force Limiting with different velocities for head and non-head
    */
   ShieldType shield_type_;
 
@@ -107,29 +108,9 @@ class SafetyShield {
   Path failsafe_path_;
 
   /**
-   * @brief head fail-safe path of the current path
-   */
-  Path failsafe_path_head_;
-
-  /**
-   * @brief non-head fail-safe path of the current path
-   */
-  Path failsafe_path_non_head_;
-
-  /**
    * @brief fail-safe path of the repair path
    */
   Path failsafe_path_2_;
-
-  /**
-   * @brief head fail-safe path of the repair path
-   */
-  Path failsafe_path_head_2_;
-
-  /**
-   * @brief non-head fail-safe path of the repair path
-   */
-  Path failsafe_path_non_head_2_;
 
   /**
    * @brief verified safe path
@@ -137,29 +118,9 @@ class SafetyShield {
   Path safe_path_;
 
   /**
-   * @brief verified safe path with head trajectory
-   */
-  Path safe_path_head_;
-
-  /**
-   * @brief verified safe path with non-head trajectory
-   */
-  Path safe_path_non_head_;
-
-  /**
    * @brief the constructed intended step + failsafe path
    */
   Path potential_path_;
-
-  /**
-   * @brief the constructed intended step + head failsafe path
-   */
-  Path potential_path_head_;
-
-  /**
-   * @brief the constructed intended step + non-headfailsafe path
-   */
-  Path potential_path_non_head_;
 
   /**
    * @brief Number of joints of the robot
@@ -180,20 +141,6 @@ class SafetyShield {
    * @brief Time since start
    */
   double path_s_;
-
-  /**
-   * @brief enum for saving which action needs to be taken
-   */
-  enum Verification_level {
-    SAFE,
-    HEAD,
-    NON_HEAD
-  };
-
-  /**
-   * @brief which action needs to be taken in next step
-   */
-  Verification_level verification_level_;
 
   /**
    * @brief Was the last timestep safe
@@ -409,20 +356,12 @@ class SafetyShield {
   bool planPFLFailsafe(double a_max_manoeuvre, double j_max_manoeuvre);
 
   /**
-   * @brief Computes the fail-safe path for SEVERAL_PFL mode.
-   *
-   * @details Sets the failsafe_path_head_2_ or failsafe_path_non_head_2_ variable.
-   *
-   * @param[in] a_max_manoeuvre Maximum path acceleration
-   * @param[in] j_max_manoeuvre Maximum path jerk
-   * @param[in] v_safe safe velocity
-   * @param[out] failsafe_path which path to calculate for
-   * @param[out] is_under_v_limit is_under_v_limit_head_ or is_under_v_limit_non_head
-   *
-   * @return true planning was successful
-   * @return false planning failed
+   * @brief Computes what ds_d needs to be such that it is equal to v_safe
+   * @param v_safe
+   * @param is_under_v_limit
+   * @return ds_d
    */
-  bool planSeveralPflFailsafe(double a_max_manoeuvre, double j_max_manoeuvre, double v_safe, Path& failsafe_path, bool& is_under_v_limit);
+  double calculate_s_limit(double v_safe, bool& is_under_v_limit);
 
   /**
    * @brief Calculate the next desired joint position based on verification of recovery path.
@@ -430,13 +369,6 @@ class SafetyShield {
    * @return next motion
    */
   Motion determineNextMotion(bool is_safe);
-
-  /**
-   * @brief Calculate the next desired joint position based on verification of recovery path for SEVERAL_PFL mode
-   * @param verification_level Last recovery path + potential path have which verification_level
-   * @return next motion
-   */
-  Motion determineNextMotionForSeveralPfl(Verification_level verification_level);
 
   /**
    * @brief Check a given motion if it exceeds the joint limits.
@@ -460,11 +392,6 @@ class SafetyShield {
    * @brief Calculates and returns the current motion
    */
   Motion getCurrentMotion();
-
-  /**
-   * @brief Calculates and returns the current motion for SEVERAL_PFL mode
-   */
-  Motion getCurrentMotionForSeveralPfl();
 
   /**
    * @brief Determines if the current motion is in the acceleration bounds for replanning
@@ -590,12 +517,12 @@ class SafetyShield {
 
   /**
    * @brief Computes the new trajectory depending on dq and if the previous path is safe and publishes it
-   * @param[in] v which verification level the previous path has
+   * @param[in] v is the previous path safe
    * @param[in] prev_speed the velocity of the previous point
-   * @param[out] goal_motion_head: goal position, velocity, acceleration and time of the computed head trajectory to execute.
-   * @param[out] goal_motion_non_head: goal position, velocity, acceleration and time of the computed non-head trajectory to execute.
+   * @param[out] goal_motion_head: goal position, velocity, acceleration and time of when failsafe path is below head velocity
+   * @param[out] goal_motion_non_head: goal position, velocity, acceleration and time of when failsafe path is below non-head velocity
    */
-  void computesPotentialTrajectoryForSeveralPfl(Verification_level v, const std::vector<double>& prev_speed, Motion* goal_motion_head, Motion* goal_motion_non_head);
+  void computesPotentialTrajectoryForSeveralPfl(bool v, const std::vector<double>& prev_speed, Motion* goal_motion_head, Motion* goal_motion_non_head);
 
   /**
    * @brief Gets the information that the next simulation cycle (sample time) has started
@@ -604,22 +531,6 @@ class SafetyShield {
    * @return next motion to be executed
    */
   Motion step(double cycle_begin_time);
-
-  /**
-   * @brief Gets the information that the next simulation cycle (sample time) has started (SSM, OFF, PFL)
-   * @param cycle_begin_time timestep of begin of current cycle in seconds.
-   *
-   * @return next motion to be executed
-   */
-  Motion standardStep(double cycle_begin_time);
-
-  /**
-   * @brief Gets the information that the next simulation cycle (sample time) has started (SEVERAL_PFL)
-   * @param cycle_begin_time timestep of begin of current cycle in seconds.
-   *
-   * @return next motion to be executed
-   */
-  Motion severalPflStep(double cycle_begin_time);
 
   /**
    * @brief Calculates a new trajectory from current joint state to desired goal state.
@@ -709,33 +620,6 @@ class SafetyShield {
 
   inline ShieldType getShieldType() {
     return shield_type_;
-  }
-
-  inline void print_debug_several_pfl(Verification_level verification_level, bool is_safe_head,
-                                      bool is_safe_non_head, bool is_under_v_limit_head, bool is_under_v_limit_non_head) {
-    std::cout << "-----------------------------------------------------" << std::endl;
-    if(verification_level == Verification_level::HEAD) {
-      std::cout << "Verification_level = " << "HEAD" << std::endl;
-    } else if(verification_level == Verification_level::NON_HEAD) {
-      std::cout << "Verification_level = " << "NON_HEAD" << std::endl;
-    } else {
-      std::cout << "Verification_level = " << "SAFE" << std::endl;
-    }
-    std::cout << "is_safe_head = " << is_safe_head << std::endl;
-    std::cout << "is_safe_non_head = " << is_safe_non_head << std::endl;
-    std::cout << "is_under_v_limit_head = " << is_under_v_limit_head << std::endl;
-    std::cout << "is_under_v_limit_non_head = " << is_under_v_limit_non_head << std::endl;
-    std::cout << "recovery_path_.isCurrent() = " << recovery_path_.isCurrent() << std::endl;
-    std::cout << "failsafe_path_head_.isCurrent() = " << failsafe_path_head_.isCurrent() << std::endl;
-    std::cout << "failsafe_path_non_head_.isCurrent() = " << failsafe_path_non_head_.isCurrent() << std::endl;
-  }
-
-  inline void print_debug_standard(bool is_safe, bool is_under_v_limit) {
-    std::cout << "-----------------------------------------------------" << std::endl;
-    std::cout << "is_safe = " << is_safe << std::endl;
-    std::cout << "is_under_v_limit = " << is_under_v_limit << std::endl;
-    std::cout << "recovery_path_.isCurrent() = " << recovery_path_.isCurrent() << std::endl;
-    std::cout << "failsafe_path_.isCurrent() = " << failsafe_path_.isCurrent() << std::endl;
   }
 };
 }  // namespace safety_shield
