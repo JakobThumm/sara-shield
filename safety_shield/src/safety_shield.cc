@@ -554,14 +554,36 @@ void SafetyShield::computesPotentialTrajectoryForSeveralPfl(bool v, const std::v
     }
 
     //// Calculate start and goal pos of intended motion
-    // TODO: determine time step when failsafe path is below v_limit
-    double s_limit_head = calculate_s_limit(v_safe_head_, is_under_v_limit_head_);
-    double s_limit_non_head = calculate_s_limit(v_safe_non_head_, is_under_v_limit_non_head_);
+    double v_limit_head = calculate_v_limit(v_safe_head_, is_under_v_limit_head_);
+    double v_limit_non_head = calculate_v_limit(v_safe_non_head_, is_under_v_limit_non_head_);
     double head_time, head_s_d, head_ds_d, head_dds_d, head_ddds_d;
     double non_head_time, non_head_s_d, non_head_ds_d, non_head_dds_d, non_head_ddds_d;
-    potential_path_.getMotionUnderVel(s_limit_head, head_time, head_s_d, head_ds_d, head_dds_d, head_ddds_d);
-    potential_path_.getMotionUnderVel(s_limit_non_head, non_head_time, non_head_s_d, non_head_ds_d, non_head_dds_d, non_head_ddds_d);
-
+    /// if already under v_limit, we use end of path for reachability analysis (criterion is safe either way), else we calculate when failsafe path is below v_limit
+    if(is_under_v_limit_head_) {
+      // use end of path
+      potential_path_.getFinalMotion(head_s_d, head_ds_d, head_dds_d);
+      head_ddds_d = 0;
+      head_time = potential_path_.getPhase(3);
+    } else {
+      // determine time step when failsafe path is below v_limit_head
+      potential_path_.getMotionUnderVel(v_limit_head, head_time, head_s_d, head_ds_d, head_dds_d, head_ddds_d);
+      // round to discrete time step
+      head_time = roundToTimestep(head_time);
+    }
+    if(is_under_v_limit_non_head_) {
+      // use end of path
+      potential_path_.getFinalMotion(non_head_s_d, non_head_ds_d, non_head_dds_d);
+      non_head_ddds_d = 0;
+      non_head_time = potential_path_.getPhase(3);
+    } else {
+      // determine time step when failsafe path is below v_limit_non_head
+      potential_path_.getMotionUnderVel(v_limit_non_head, non_head_time, non_head_s_d, non_head_ds_d, non_head_dds_d, non_head_ddds_d);
+      // round to discrete time step
+      non_head_time = roundToTimestep(non_head_time);
+    }
+    if (head_time < non_head_time) {
+      spdlog::error("head time is lower than non-head time");
+    }
     if (new_ltt_) {
       *goal_motion_head = new_long_term_trajectory_.interpolate(head_s_d, head_ds_d, head_dds_d,
                                                                 head_ddds_d, v_max_allowed_, a_max_allowed_, j_max_allowed_);
@@ -632,8 +654,8 @@ bool SafetyShield::planPFLFailsafe(double a_max_manoeuvre, double j_max_manoeuvr
   return planning_success;
 }
 
-// TODO: does this work?
-double SafetyShield::calculate_s_limit(double v_safe, bool& is_under_v_limit) {
+// TODO: beide s-limits gleichzeitig berechnen?
+double SafetyShield::calculate_v_limit(double v_safe, bool& is_under_v_limit) {
   // Calculate maximal Cartesian velocity in the short-term plan
   double s_d, ds_d, dds_d;
   // Calculate goal
@@ -647,14 +669,14 @@ double SafetyShield::calculate_s_limit(double v_safe, bool& is_under_v_limit) {
   }
   // Check if the entire long-term trajectory is under iso-velocity
   is_under_iso_velocity = v_max <= v_safe;
-  double s_limit;
+  double v_limit;
   if (!is_under_iso_velocity) {
-    s_limit = v_safe / v_max;
-    if (s_limit > 1 || s_limit < 0) {
+    v_limit = v_safe / v_max;
+    if (v_limit > 1 || v_limit < 0) {
       spdlog::error("s_limit not between 0 and 1");
     }
   } else {
-    s_limit = recovery_path_.getVelocity();
+    v_limit = recovery_path_.getVelocity();
   }
   // If the entire long-term trajectory is under iso-velocity, we dont need to check the velocity of the failsafe-path
   if (!is_under_iso_velocity) {
@@ -662,11 +684,11 @@ double SafetyShield::calculate_s_limit(double v_safe, bool& is_under_v_limit) {
     // The failsafe path could start at d_s < 1, so the velocity of the failsafe path could be smaller than the LTT
     // velocity.
     double max_d_s = potential_path_.getMaxVelocity();
-    is_under_v_limit = max_d_s < s_limit;
+    is_under_v_limit = max_d_s < v_limit;
   } else {
     is_under_v_limit = true;
   }
-  return s_limit;
+  return v_limit;
 }
 
 bool SafetyShield::checkMotionForJointLimits(Motion& motion) {
@@ -815,6 +837,7 @@ Motion SafetyShield::step(double cycle_begin_time) {
       computesPotentialTrajectoryForSeveralPfl(is_safe_, next_motion_.getVelocity(), &goal_motion_head,
                                                &goal_motion_non_head);
 
+      // TODO: use end of trajectory?
       // Check motion for joint limits (goal motion needed here as it is end of failsafe)
       if (!(checkMotionForJointLimits(goal_motion_head) && checkMotionForJointLimits(goal_motion_non_head))) {
         is_safe_ = false;

@@ -361,7 +361,7 @@ class SafetyShield {
    * @param is_under_v_limit
    * @return ds_d
    */
-  double calculate_s_limit(double v_safe, bool& is_under_v_limit);
+  double calculate_v_limit(double v_safe, bool& is_under_v_limit);
 
   /**
    * @brief Calculate the next desired joint position based on verification of recovery path.

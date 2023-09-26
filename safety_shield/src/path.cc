@@ -75,7 +75,7 @@ double Path::getMaxVelocity() {
   return max_vel;
 }
 
-// TODO: is it correct?
+// TODO: only has negative Nullstellen --> schon von Anfang an unter der Geschwindigkeit?
 void Path::getMotionUnderVel(double v_limit, double& time, double& pos, double& vel, double& acc, double& jerk) {
   if(vel_ < v_limit) {
     time = phases_[0];
