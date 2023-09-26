@@ -181,6 +181,15 @@ class RobotReach {
                                         std::vector<double> alpha_i);
 
   /**
+   * @brief calculates reachability sets for each time step
+   * @param motions list of motions
+   * @param alpha_i
+   * @return list of reachability sets The maximum acceleration of each capsule point with resprect to the time parameter s for the
+   * given path
+   */
+  std::vector<std::vector<reach_lib::Capsule>> improvedReach(std::vector<Motion> motions, std::vector<double> alpha_i);
+
+  /**
    * @brief sets velocity_method
    */
   inline void setVelocityMethod(Velocity_method velocity_method) {

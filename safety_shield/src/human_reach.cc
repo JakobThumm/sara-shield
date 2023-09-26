@@ -86,4 +86,23 @@ void HumanReach::humanReachabilityAnalysis(double t_command, double t_brake) {
   }
 }
 
+std::vector<std::vector<std::vector<reach_lib::Capsule>>> HumanReach::improvedHumanReachabilityAnalysis(double t_command, double t_brake, double sample_time) {
+  // Time between reach command msg and last measurement plus the t_brake time.
+  std::vector<std::vector<std::vector<reach_lib::Capsule>>> list;
+  double t_reach = t_command - last_meas_timestep_ + t_brake;
+  int time_steps = ceil(t_reach / sample_time);
+  double begin = 0;
+  double end = sample_time;
+  for(int i = 0; i <= time_steps; i++) {
+    // TODO: funktioniert das so mit dem updaten der Modelle, bezogen auf begin und end?
+    human_p_.update(begin, end, joint_pos_, joint_vel_);
+    human_v_.update(begin, end, joint_pos_, joint_vel_);
+    human_a_.update(begin, end, joint_pos_, joint_vel_);
+    list.push_back(getAllCapsules());
+    begin += sample_time;
+    end += sample_time;
+  }
+  return list;
+}
+
 }  // namespace safety_shield

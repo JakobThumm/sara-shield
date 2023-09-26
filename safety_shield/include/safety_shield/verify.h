@@ -59,6 +59,9 @@ class Verify {
    */
   virtual bool verify_human_reach(const std::vector<reach_lib::Capsule>& robot_capsules,
                                   std::vector<std::vector<reach_lib::Capsule>> human_capsules) = 0;
+
+  virtual bool improved_verify_human_reach(const std::vector<std::vector<reach_lib::Capsule>>& robot_reachable_sets,
+                                           std::vector<std::vector<std::vector<reach_lib::Capsule>>> human_reachable_sets) = 0;
 };
 }  // namespace safety_shield
 

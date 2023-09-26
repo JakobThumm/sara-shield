@@ -272,14 +272,24 @@ class SafetyShield {
 
   //////// Reachable sets of human and robot //////
   /**
-   * @brief Vector of robot reachable set capsules (get updated in every step()).
+   * @brief Vector of robot reachable set capsules (gets updated in every step()).
    */
   std::vector<reach_lib::Capsule> robot_capsules_;
 
   /**
-   * @brief Vector of human reachable set capsules (get updated in every step()).
+   * @brief robot reachable sets of each time step
+   */
+  std::vector<std::vector<reach_lib::Capsule>> improved_robot_capsules_;
+
+  /**
+   * @brief Vector of human reachable set capsules (gets updated in every step()).
    */
   std::vector<std::vector<reach_lib::Capsule>> human_capsules_;
+
+  /**
+   * @brief human reachable sets of each time step
+   */
+  std::vector<std::vector<std::vector<reach_lib::Capsule>>> improved_human_capsules_;
 
   //////// For replanning new trajectory //////
   /**
@@ -512,6 +522,14 @@ class SafetyShield {
    * @throws TrajectoryException Incorrect LTT
    */
   void setLongTermTrajectory(LongTermTraj& traj);
+
+  /**
+   * calculates list of motions of all (discrete) time steps
+   * @param start_config
+   * @param end_config
+   * @return list of motions
+   */
+  std::vector<Motion> getMotionsOfAllTimeSteps(Motion start_config, Motion end_config);
 
   /**
    * @brief Receive a new human measurement

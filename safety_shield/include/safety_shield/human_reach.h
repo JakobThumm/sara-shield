@@ -169,6 +169,17 @@ class HumanReach {
   void humanReachabilityAnalysis(double t_command, double t_brake);
 
   /**
+   * @brief calculates reachable sets for each time step
+   * @param t_command Current time
+   * @param t_brake Time horizon of reachability analysis
+   * @return list of reachable sets in all time steps
+   * first index is time step
+   * second index is which model (pos, vel, acc)
+   * third index is capsule
+   */
+  std::vector<std::vector<std::vector<reach_lib::Capsule>>> improvedHumanReachabilityAnalysis(double t_command, double t_brake, double sample_time);
+
+  /**
    * @brief Get the Articulated Pos capsules
    *
    * @return reach_lib::ArticulatedPos capsules

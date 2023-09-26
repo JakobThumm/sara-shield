@@ -620,14 +620,19 @@ Motion SafetyShield::step(double cycle_begin_time) {
         is_safe_ = false;
       } else {
         // Compute the robot reachable set for the potential trajectory
-        robot_capsules_ =
-            robot_reach_->reach(current_motion, goal_motion, (goal_motion.getS() - current_motion.getS()), alpha_i);
+        // TODO: Liste von einzelnen Zeitschritten
+        improved_robot_capsules_ =
+            robot_reach_->improvedReach(getMotionsOfAllTimeSteps(current_motion, goal_motion), alpha_i);
         // Compute the human reachable sets for the potential trajectory
         // humanReachabilityAnalysis(t_command, t_brake)
-        human_reach_->humanReachabilityAnalysis(cycle_begin_time_, goal_motion.getTime());
-        human_capsules_ = human_reach_->getAllCapsules();
+        // TODO: Liste von einzelnen Zeitschritten
+        improved_human_capsules_ = human_reach_->improvedHumanReachabilityAnalysis(cycle_begin_time_, goal_motion.getTime(), sample_time_);
         // Verify if the robot and human reachable sets are collision free
-        is_safe_ = verify_->verify_human_reach(robot_capsules_, human_capsules_); 
+        // TODO: checked auf intersection iterativ für alle Zeitschritte
+        is_safe_ = verify_->improved_verify_human_reach(improved_robot_capsules_, improved_human_capsules_);
+        // TODO: zum visualisieren werden reachability sets vom ersten Zeitschritt verwendet
+        robot_capsules_ = improved_robot_capsules_[0];
+        human_capsules_ = improved_human_capsules_[0];
         if (shield_type_ == ShieldType::PFL) {
           is_safe_ = is_safe_ || is_under_v_limit_;
         }
@@ -757,6 +762,25 @@ bool SafetyShield::calculateLongTermTrajectory(const std::vector<double>& start_
     ltt = LongTermTraj(new_traj, sample_time_, *robot_reach_, path_s_discrete_, sliding_window_k_);
   }
   return true;
+}
+
+std::vector<Motion> SafetyShield::getMotionsOfAllTimeSteps(Motion start_config, Motion end_config) {
+  std::vector<Motion> list;
+  double time = end_config.getTime() - start_config.getTime();
+  int time_steps = ceil(time / sample_time_);
+  Path path = potential_path_;
+  LongTermTraj& ltt = long_term_trajectory_;
+  if(new_ltt_) {
+    ltt = new_long_term_trajectory_;
+  }
+  list.push_back(start_config);
+  for(int i = 0; i < time_steps; i++) {
+    path.increment(sample_time_);
+    Motion temp = ltt.interpolate(path.getPosition(), path.getVelocity(), path.getAcceleration(), path.getJerk(), v_max_allowed_,
+                                  a_max_allowed_, j_max_allowed_);
+    list.push_back(temp);
+  }
+  return list;
 }
 
 }  // namespace safety_shield

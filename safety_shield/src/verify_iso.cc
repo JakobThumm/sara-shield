@@ -31,4 +31,22 @@ bool VerifyISO::verify_human_reach(const std::vector<reach_lib::Capsule>& robot_
     return false;
   }
 }
+
+bool VerifyISO::improved_verify_human_reach(const std::vector<std::vector<reach_lib::Capsule>>& robot_reachable_sets,
+                                 std::vector<std::vector<std::vector<reach_lib::Capsule>>> human_reachable_sets) {
+  try {
+    assert(robot_reachable_sets.size() == human_reachable_sets.size());
+    std::vector<bool> bitset;
+    for(int i = 0; i < robot_reachable_sets.size(); i++) {
+      bool temp = verify_human_reach(robot_reachable_sets[i], human_reachable_sets[i]);
+      bitset.push_back(temp);
+    }
+    // returns true if it was safe in all time steps
+    return std::all_of(bitset.begin(), bitset.end(), [](bool v) { return v; });
+  } catch (const std::exception& exc) {
+    spdlog::error("Exception in VerifyISO::improved_verify_human_reach: {}", exc.what());
+    return false;
+  }
+}
+
 }  // namespace safety_shield

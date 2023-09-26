@@ -219,17 +219,6 @@ class Path {
   void getFinalMotion(double& final_pos, double& final_vel, double& final_acc);
 
   /**
-   * @brief computes s-values when Path falls under v_limit
-   * @param[in] v_limit
-   * @param[out] time
-   * @param[out] position
-   * @param[out] vel
-   * @param[out] acc
-   * @param[out] jerk
-   */
-  void getMotionUnderVel(double v_limit, double& time, double& position, double& vel, double& acc, double& jerk);
-
-  /**
    * @brief Get the maximum velocity of the path.
    * 
    * @return double: maximium velocity

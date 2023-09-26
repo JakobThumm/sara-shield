@@ -60,6 +60,9 @@ class VerifyISO : public Verify {
    */
   bool verify_human_reach(const std::vector<reach_lib::Capsule>& robot_capsules,
                           std::vector<std::vector<reach_lib::Capsule>> human_capsules);
+
+  bool improved_verify_human_reach(const std::vector<std::vector<reach_lib::Capsule>>& robot_reachable_sets,
+                                           std::vector<std::vector<std::vector<reach_lib::Capsule>>> human_reachable_sets);
 };
 }  // namespace safety_shield
 
