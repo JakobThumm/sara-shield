@@ -581,7 +581,7 @@ void SafetyShield::computesPotentialTrajectoryForSeveralPfl(bool v, const std::v
       // round to discrete time step
       non_head_time = roundToTimestep(non_head_time);
     }
-    if (head_time < non_head_time) {
+    if (head_time < non_head_time && !is_under_v_limit_non_head_ && !is_under_v_limit_head_) {
       // TODO: wenn unter v_limit_non_head, aber über v_limit_head, ist okay, weil non_head auf end of path gesetzt wird
       // TODO: wenn beides über v_limit, nicht okay, dann muss non-head time < head time
       //std::cout << "is_under_v_limit_head_: " << is_under_v_limit_head_ << ", is_under_v_limit_non_head: " << is_under_v_limit_non_head_ << std::endl;

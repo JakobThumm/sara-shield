@@ -114,6 +114,7 @@ void Path::getMotionUnderVel(double v_limit, double& time, double& pos, double& 
         double discriminant = std::sqrt(prev_acc*prev_acc - 2*jerk*(prev_vel - v_limit));
         double minus = (-prev_acc - discriminant) / jerk;
         double plus = (-prev_acc + discriminant) / jerk;
+        // TODO: machen die drei Fälle so Sinn?
         if(minus > 0 && plus > 0) {
           dt = std::min(minus, plus);
         } else if (minus > 0) {
