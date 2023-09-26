@@ -582,7 +582,9 @@ void SafetyShield::computesPotentialTrajectoryForSeveralPfl(bool v, const std::v
       non_head_time = roundToTimestep(non_head_time);
     }
     if (head_time < non_head_time) {
-      spdlog::error("head time is lower than non-head time");
+      // TODO: wenn unter v_limit_non_head, aber über v_limit_head, ist okay, weil non_head auf end of path gesetzt wird
+      // TODO: wenn beides über v_limit, nicht okay, dann muss non-head time < head time
+      //std::cout << "is_under_v_limit_head_: " << is_under_v_limit_head_ << ", is_under_v_limit_non_head: " << is_under_v_limit_non_head_ << std::endl;
     }
     if (new_ltt_) {
       *goal_motion_head = new_long_term_trajectory_.interpolate(head_s_d, head_ds_d, head_dds_d,
@@ -654,7 +656,6 @@ bool SafetyShield::planPFLFailsafe(double a_max_manoeuvre, double j_max_manoeuvr
   return planning_success;
 }
 
-// TODO: beide s-limits gleichzeitig berechnen?
 double SafetyShield::calculate_v_limit(double v_safe, bool& is_under_v_limit) {
   // Calculate maximal Cartesian velocity in the short-term plan
   double s_d, ds_d, dds_d;

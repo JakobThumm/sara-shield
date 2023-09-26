@@ -75,9 +75,9 @@ double Path::getMaxVelocity() {
   return max_vel;
 }
 
-// TODO: only has negative Nullstellen --> schon von Anfang an unter der Geschwindigkeit?
 void Path::getMotionUnderVel(double v_limit, double& time, double& pos, double& vel, double& acc, double& jerk) {
   if(vel_ < v_limit) {
+    spdlog::error("is already under v_limit?");
     time = phases_[0];
     pos = pos_;
     vel = vel_;
@@ -106,23 +106,23 @@ void Path::getMotionUnderVel(double v_limit, double& time, double& pos, double& 
     double epsilon = 1e-6;
     if(next_vel < v_limit + epsilon) {
       jerk = phases_[i+3];
-      double square = std::sqrt(prev_acc*prev_acc - 2*jerk*(prev_vel - v_limit));
-      double left = (-prev_acc - square) / jerk;
-      double right = (-prev_acc + square) / jerk;
-      if(left > 0 && right > 0) {
-        dt = std::min(left, right);
-      } else if (left > 0) {
-        dt = left;
-      } else if (right > 0) {
-        dt = right;
+      if(fabs(jerk) < epsilon) {
+        // jerk is zero
+        dt = (-prev_vel + v_limit) / prev_acc;
       } else {
-        // already under v_iso
-        time = -10;
-        if(std::isnan(square)) {
-          spdlog::error("Error in Path::getMotionUnderVel: square is NaN");
-          return;
+        // jerk is non-zero
+        double discriminant = std::sqrt(prev_acc*prev_acc - 2*jerk*(prev_vel - v_limit));
+        double minus = (-prev_acc - discriminant) / jerk;
+        double plus = (-prev_acc + discriminant) / jerk;
+        if(minus > 0 && plus > 0) {
+          dt = std::min(minus, plus);
+        } else if (minus > 0) {
+          dt = minus;
+        } else if (plus > 0) {
+          dt = plus;
         } else {
-          spdlog::error("Error in Path::getMotionUnderVel: Quadratic-Function only has negative zero-values");
+          time = -10;
+          spdlog::error("Error in Path::getMotionUnderVel: Quadratic-Function only has negative zero-values or imaginary zero-values");
           return;
         }
       }
@@ -130,6 +130,7 @@ void Path::getMotionUnderVel(double v_limit, double& time, double& pos, double& 
       pos = prev_vel*dt + prev_acc*dt*dt/2 + jerk*dt*dt*dt/6 + prev_pos;
       acc = jerk*dt + prev_acc;
       vel = prev_acc*dt + 0.5*jerk*dt*dt + prev_vel;
+      //std::cout << "desired vel: " << v_limit << ", calculated vel: " << vel << ", pos: " << pos << ", acc: " << acc << ", jerk: " << jerk << std::endl;
       return;
     }
 
