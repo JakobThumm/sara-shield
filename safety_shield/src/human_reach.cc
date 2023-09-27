@@ -86,14 +86,17 @@ void HumanReach::humanReachabilityAnalysis(double t_command, double t_brake) {
   }
 }
 
-std::vector<std::vector<std::vector<reach_lib::Capsule>>> HumanReach::improvedHumanReachabilityAnalysis(double t_command, double t_brake, double sample_time) {
-  // Time between reach command msg and last measurement plus the t_brake time.
+std::vector<std::vector<std::vector<reach_lib::Capsule>>> HumanReach::improvedHumanReachabilityAnalysis(double t_command, double current_motion_time, double goal_motion_time, double sample_time) {
   std::vector<std::vector<std::vector<reach_lib::Capsule>>> list;
-  double t_reach = t_command - last_meas_timestep_ + t_brake;
+  // Time between reach command msg and last measurement plus the t_brake time.
+  // TODO: t_reach und time_steps richtig berechnen
+  //double t_reach = t_command - last_meas_timestep_ + t_brake;
+  double t_reach = goal_motion_time - current_motion_time;
+  //int time_steps = ceil(t_reach / sample_time);
   int time_steps = ceil(t_reach / sample_time);
   double begin = 0;
   double end = sample_time;
-  for(int i = 0; i <= time_steps; i++) {
+  for(int i = 0; i < time_steps; i++) {
     // TODO: funktioniert das so mit dem updaten der Modelle, bezogen auf begin und end?
     human_p_.update(begin, end, joint_pos_, joint_vel_);
     human_v_.update(begin, end, joint_pos_, joint_vel_);

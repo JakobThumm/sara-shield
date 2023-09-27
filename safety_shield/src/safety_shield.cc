@@ -626,7 +626,7 @@ Motion SafetyShield::step(double cycle_begin_time) {
         // Compute the human reachable sets for the potential trajectory
         // humanReachabilityAnalysis(t_command, t_brake)
         // TODO: Liste von einzelnen Zeitschritten
-        improved_human_capsules_ = human_reach_->improvedHumanReachabilityAnalysis(cycle_begin_time_, goal_motion.getTime(), sample_time_);
+        improved_human_capsules_ = human_reach_->improvedHumanReachabilityAnalysis(cycle_begin_time_, current_motion.getTime(), goal_motion.getTime(), sample_time_);
         // Verify if the robot and human reachable sets are collision free
         // TODO: checked auf intersection iterativ für alle Zeitschritte
         is_safe_ = verify_->improved_verify_human_reach(improved_robot_capsules_, improved_human_capsules_);
@@ -766,8 +766,8 @@ bool SafetyShield::calculateLongTermTrajectory(const std::vector<double>& start_
 
 std::vector<Motion> SafetyShield::getMotionsOfAllTimeSteps(Motion start_config, Motion end_config) {
   std::vector<Motion> list;
-  double time = end_config.getTime() - start_config.getTime();
-  int time_steps = ceil(time / sample_time_);
+  double t_reach = end_config.getTime() - start_config.getTime();
+  int time_steps = ceil(t_reach / sample_time_);
   Path path = potential_path_;
   LongTermTraj& ltt = long_term_trajectory_;
   if(new_ltt_) {
