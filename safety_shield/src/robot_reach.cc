@@ -97,6 +97,7 @@ std::vector<reach_lib::Capsule> RobotReach::reach(Motion& start_config, Motion& 
   }
 }
 
+/// get for each robot motion the corresponding reachable set and collect in list
 std::vector<std::vector<reach_lib::Capsule>> RobotReach::improvedReach(std::vector<Motion> motions, std::vector<double> alpha_i) {
   std::vector<std::vector<reach_lib::Capsule>> list;
   for(int i = 0; i < motions.size() - 1; i++) {

@@ -764,6 +764,7 @@ bool SafetyShield::calculateLongTermTrajectory(const std::vector<double>& start_
   return true;
 }
 
+/// interpolate all robot configurations for each time step and collect in list
 std::vector<Motion> SafetyShield::getMotionsOfAllTimeSteps(Motion start_config, Motion end_config) {
   std::vector<Motion> list;
   double t_reach = end_config.getTime() - start_config.getTime();
@@ -775,6 +776,7 @@ std::vector<Motion> SafetyShield::getMotionsOfAllTimeSteps(Motion start_config, 
   }
   list.push_back(start_config);
   for(int i = 0; i < time_steps; i++) {
+    // TODO: statt sample_time, roundToTimestep() verwenden?
     path.increment(sample_time_);
     Motion temp = ltt.interpolate(path.getPosition(), path.getVelocity(), path.getAcceleration(), path.getJerk(), v_max_allowed_,
                                   a_max_allowed_, j_max_allowed_);

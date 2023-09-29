@@ -32,6 +32,7 @@ bool VerifyISO::verify_human_reach(const std::vector<reach_lib::Capsule>& robot_
   }
 }
 
+/// checks safety for each time step
 bool VerifyISO::improved_verify_human_reach(const std::vector<std::vector<reach_lib::Capsule>>& robot_reachable_sets,
                                  std::vector<std::vector<std::vector<reach_lib::Capsule>>> human_reachable_sets) {
   try {

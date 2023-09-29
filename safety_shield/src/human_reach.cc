@@ -86,6 +86,7 @@ void HumanReach::humanReachabilityAnalysis(double t_command, double t_brake) {
   }
 }
 
+/// update human model for each time step and collect capsules in a list
 std::vector<std::vector<std::vector<reach_lib::Capsule>>> HumanReach::improvedHumanReachabilityAnalysis(double t_command, double current_motion_time, double goal_motion_time, double sample_time) {
   std::vector<std::vector<std::vector<reach_lib::Capsule>>> list;
   // Time between reach command msg and last measurement plus the t_brake time.
