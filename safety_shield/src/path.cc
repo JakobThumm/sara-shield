@@ -77,6 +77,7 @@ double Path::getMaxVelocity() {
 
 void Path::getMotionUnderVel(double v_limit, double& time, double& pos, double& vel, double& acc, double& jerk) {
   if(vel_ < v_limit) {
+    // TODO: dieser Fall darf eigentlich nie auftreten?
     spdlog::error("is already under v_limit?");
     time = phases_[0];
     pos = pos_;
@@ -122,6 +123,7 @@ void Path::getMotionUnderVel(double v_limit, double& time, double& pos, double& 
         } else if (plus > 0) {
           dt = plus;
         } else {
+          // TODO: dieser Fall darf nie auftreten
           time = -10;
           spdlog::error("Error in Path::getMotionUnderVel: Quadratic-Function only has negative zero-values or imaginary zero-values");
           return;
