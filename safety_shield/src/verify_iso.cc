@@ -37,13 +37,15 @@ bool VerifyISO::improved_verify_human_reach(const std::vector<std::vector<reach_
                                  std::vector<std::vector<std::vector<reach_lib::Capsule>>> human_reachable_sets) {
   try {
     assert(robot_reachable_sets.size() == human_reachable_sets.size());
-    std::vector<bool> bitset;
     for(int i = 0; i < robot_reachable_sets.size(); i++) {
       bool temp = verify_human_reach(robot_reachable_sets[i], human_reachable_sets[i]);
-      bitset.push_back(temp);
+      if(!temp) {
+        // returns false if at least in one time step, there is a collision
+        return false;
+      }
     }
     // returns true if it was safe in all time steps
-    return std::all_of(bitset.begin(), bitset.end(), [](bool v) { return v; });
+    return true;
   } catch (const std::exception& exc) {
     spdlog::error("Exception in VerifyISO::improved_verify_human_reach: {}", exc.what());
     return false;
