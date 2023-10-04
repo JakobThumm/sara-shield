@@ -630,9 +630,9 @@ Motion SafetyShield::step(double cycle_begin_time) {
         // Verify if the robot and human reachable sets are collision free
         // TODO: checked auf intersection iterativ für alle Zeitschritte
         is_safe_ = verify_->improved_verify_human_reach(improved_robot_capsules_, improved_human_capsules_);
-        // TODO: zum visualisieren werden reachability sets vom ersten Zeitschritt verwendet
-        robot_capsules_ = improved_robot_capsules_[0];
-        human_capsules_ = improved_human_capsules_[0];
+        // TODO: zum visualisieren werden reachability sets vom letzten Zeitschritt verwendet
+        robot_capsules_ = improved_robot_capsules_[improved_robot_capsules_.size()-1];
+        human_capsules_ = improved_human_capsules_[improved_human_capsules_.size()-1];
         if (shield_type_ == ShieldType::PFL) {
           is_safe_ = is_safe_ || is_under_v_limit_;
         }

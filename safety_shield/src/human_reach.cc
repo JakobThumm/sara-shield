@@ -91,20 +91,20 @@ std::vector<std::vector<std::vector<reach_lib::Capsule>>> HumanReach::improvedHu
   std::vector<std::vector<std::vector<reach_lib::Capsule>>> list;
   // Time between reach command msg and last measurement plus the t_brake time.
   // TODO: t_reach und time_steps richtig berechnen
-  //double t_reach = t_command - last_meas_timestep_ + t_brake;
-  double t_reach = goal_motion_time - current_motion_time;
-  //int time_steps = ceil(t_reach / sample_time);
-  int time_steps = ceil(t_reach / sample_time);
+  double t_reach_human = t_command - last_meas_timestep_ + goal_motion_time;
+  double t_reach_robot = goal_motion_time - current_motion_time;
+  int time_steps = ceil(t_reach_robot / sample_time);
+  double increment = t_reach_human / time_steps;
   double begin = 0;
-  double end = sample_time;
+  double end = increment;
   for(int i = 0; i < time_steps; i++) {
     // TODO: funktioniert das so mit dem updaten der Modelle, bezogen auf begin und end?
     human_p_.update(begin, end, joint_pos_, joint_vel_);
     human_v_.update(begin, end, joint_pos_, joint_vel_);
     human_a_.update(begin, end, joint_pos_, joint_vel_);
     list.push_back(getAllCapsules());
-    begin += sample_time;
-    end += sample_time;
+    begin += increment;
+    end += increment;
   }
   return list;
 }
