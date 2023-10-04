@@ -61,6 +61,18 @@ class VerifyISO : public Verify {
   bool verify_human_reach(const std::vector<reach_lib::Capsule>& robot_capsules,
                           std::vector<std::vector<reach_lib::Capsule>> human_capsules);
 
+  /**
+   * @brief Verify the robot motion against the reachable occupancy of the human for each separate time step
+   *
+   * @param[in] robot_reachable_sets Reachable sets of the robot (first index is which timestep
+   * and second index is which capsule).
+   * @param[in] human_reachable_sets Reachable sets of the human (first index is which timestep,
+   * second index is which model, and third index is which capsule).
+   *
+   *
+   * @returns True: if the robot capsules do not collide with one set of the human capsules in each time step, i.e., the motion is safe.
+   *          False: Otherwise
+   */
   bool improved_verify_human_reach(const std::vector<std::vector<reach_lib::Capsule>>& robot_reachable_sets,
                                            std::vector<std::vector<std::vector<reach_lib::Capsule>>> human_reachable_sets);
 };

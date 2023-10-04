@@ -60,6 +60,19 @@ class Verify {
   virtual bool verify_human_reach(const std::vector<reach_lib::Capsule>& robot_capsules,
                                   std::vector<std::vector<reach_lib::Capsule>> human_capsules) = 0;
 
+  /**
+   * @brief Verify the robot motion against the reachable occupancy of the human for each separate time step
+   *
+   * Pure virtual function.
+   *
+   * @param[in] robot_reachable_sets Reachable sets of the robot (first index is which timestep
+   * and second index is which capsule).
+   * @param[in] human_reachable_sets Reachable sets of the human (first index is which timestep,
+   * second index is which model, and third index is which capsule).
+   *
+   *
+   * @returns Whether the robot movement is unsafe for the human
+   */
   virtual bool improved_verify_human_reach(const std::vector<std::vector<reach_lib::Capsule>>& robot_reachable_sets,
                                            std::vector<std::vector<std::vector<reach_lib::Capsule>>> human_reachable_sets) = 0;
 };

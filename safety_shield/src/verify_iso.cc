@@ -38,8 +38,7 @@ bool VerifyISO::improved_verify_human_reach(const std::vector<std::vector<reach_
   try {
     assert(robot_reachable_sets.size() == human_reachable_sets.size());
     for(int i = 0; i < robot_reachable_sets.size(); i++) {
-      bool temp = verify_human_reach(robot_reachable_sets[i], human_reachable_sets[i]);
-      if(!temp) {
+      if(!verify_human_reach(robot_reachable_sets[i], human_reachable_sets[i])) {
         // returns false if at least in one time step, there is a collision
         return false;
       }
