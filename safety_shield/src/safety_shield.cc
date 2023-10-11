@@ -656,6 +656,7 @@ bool SafetyShield::planPFLFailsafe(double a_max_manoeuvre, double j_max_manoeuvr
   return planning_success;
 }
 
+// TODO: sometimes sets is_under_v_limit to false, when path-variable is already under v-limit?
 double SafetyShield::calculate_v_limit(double v_safe, bool& is_under_v_limit) {
   // Calculate maximal Cartesian velocity in the short-term plan
   double s_d, ds_d, dds_d;
