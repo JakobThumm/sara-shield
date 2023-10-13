@@ -566,7 +566,10 @@ void SafetyShield::computesPotentialTrajectoryForSeveralPfl(bool v, const std::v
       head_time = potential_path_.getPhase(3);
     } else {
       // determine time step when failsafe path is below v_limit_head
-      potential_path_.getMotionUnderVel(v_limit_head, head_time, head_s_d, head_ds_d, head_dds_d, head_ddds_d);
+      // remove recovery step from path
+      Path temp = potential_path_;
+      temp.increment(sample_time_);
+      temp.getMotionUnderVel(v_limit_head, head_time, head_s_d, head_ds_d, head_dds_d, head_ddds_d);
       // round to discrete time step
       head_time = roundToTimestep(head_time);
     }
@@ -577,14 +580,16 @@ void SafetyShield::computesPotentialTrajectoryForSeveralPfl(bool v, const std::v
       non_head_time = potential_path_.getPhase(3);
     } else {
       // determine time step when failsafe path is below v_limit_non_head
-      potential_path_.getMotionUnderVel(v_limit_non_head, non_head_time, non_head_s_d, non_head_ds_d, non_head_dds_d, non_head_ddds_d);
+      // remove recovery step from path
+      Path temp = potential_path_;
+      temp.getMotionUnderVel(v_limit_non_head, non_head_time, non_head_s_d, non_head_ds_d, non_head_dds_d, non_head_ddds_d);
       // round to discrete time step
       non_head_time = roundToTimestep(non_head_time);
     }
     if (head_time < non_head_time && !is_under_v_limit_non_head_ && !is_under_v_limit_head_) {
       // TODO: wenn unter v_limit_non_head, aber über v_limit_head, ist okay, weil non_head auf end of path gesetzt wird
       // TODO: wenn beides über v_limit, nicht okay, dann muss non-head time < head time
-      //std::cout << "is_under_v_limit_head_: " << is_under_v_limit_head_ << ", is_under_v_limit_non_head: " << is_under_v_limit_non_head_ << std::endl;
+      spdlog::error("head_time shouldn't be smaller than non_head_time");
     }
     if (new_ltt_) {
       *goal_motion_head = new_long_term_trajectory_.interpolate(head_s_d, head_ds_d, head_dds_d,

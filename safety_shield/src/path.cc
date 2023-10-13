@@ -116,27 +116,26 @@ void Path::getMotionUnderVel(double v_limit, double& time, double& pos, double& 
         double discriminant = std::sqrt(prev_acc*prev_acc - 2*jerk*(prev_vel - v_limit));
         double minus = (-prev_acc - discriminant) / jerk;
         double plus = (-prev_acc + discriminant) / jerk;
-        // TODO: Fallunterscheidung stimmt nicht?
-        if(minus > 0 && plus > 0) {
-          // spdlog::info("both positive");
-          dt = std::min(minus, plus);
-        } else if (minus > 0) {
+        if (minus > 0) {
           dt = minus;
           // spdlog::info("minus is positive");
         } else if (plus > 0) {
           dt = plus;
           // spdlog::info("plus is positive");
+        } else if(minus > 0 && plus > 0) {
+          spdlog::error("Error in Path::getMotionUnderVel: both zero-values are positive");
+          dt = std::min(minus, plus);
         } else if (minus <= 0 && plus <= 0){
           time = -10;
-          // spdlog::error("Error in Path::getMotionUnderVel: Quadratic-Function only has negative zero-values");
+          spdlog::error("Error in Path::getMotionUnderVel: Quadratic-Function only has negative zero-values");
           return;
         } else if(std::isnan(discriminant)) {
           time = -10;
-          // spdlog::error("Error in Path::getMotionUnderVel: Quadratic-Function only has imaginary zero-values");
+          spdlog::error("Error in Path::getMotionUnderVel: Quadratic-Function only has imaginary zero-values");
           return;
         } else {
           time = -10;
-          // spdlog::error("Error in Path::getMotionUnderVel: special error?");
+          spdlog::error("Error in Path::getMotionUnderVel: special error?");
           return;
         }
       }
