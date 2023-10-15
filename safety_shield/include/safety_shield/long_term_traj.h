@@ -23,6 +23,7 @@
 
 #include "safety_shield/motion.h"
 #include "safety_shield/robot_reach.h"
+#include "reach_lib.hpp"
 #include "spdlog/spdlog.h"  // https://github.com/gabime/spdlog
 
 #ifndef LONG_TERM_TRAJ_H
@@ -51,6 +52,11 @@ class LongTermTraj {
    * @brief The long term trajectory.
    */
   std::vector<Motion> long_term_traj_;
+
+  /**
+   * @brief robot reachability sets between motions of long term trajectory
+   */
+  std::vector<std::vector<reach_lib::Capsule>> reachability_sets_;
 
   /**
    * @brief Maximum joint acceleration for next k steps.

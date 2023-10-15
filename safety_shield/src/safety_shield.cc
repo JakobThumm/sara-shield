@@ -573,7 +573,7 @@ Motion SafetyShield::step(double cycle_begin_time) {
       if (is_plannable) {
         // Check if the starting position of the last replanning was very close to the current position
         bool last_close = true;
-        if (new_ltt_ == true) {
+        if (new_ltt_) {
           for (int i = 0; i < current_motion.getAngle().size(); i++) {
             if (std::abs(current_motion.getAngle()[i] - last_replan_start_motion_.getAngle()[i]) > 0.01) {
               last_close = false;
@@ -621,8 +621,12 @@ Motion SafetyShield::step(double cycle_begin_time) {
       } else {
         // Compute the robot reachable set for the potential trajectory
         // TODO: Liste von einzelnen Zeitschritten
-        improved_robot_capsules_ =
-            robot_reach_->improvedReach(getMotionsOfAllTimeSteps(current_motion, goal_motion), alpha_i);
+        // STP VERSION: improved_robot_capsules_ = robot_reach_->improvedReach(getMotionsOfAllTimeStepsFromSTP(current_motion, goal_motion), alpha_i);
+        if(new_ltt_) {
+          improved_robot_capsules_ = getRobotReachabilitySetsFromLTT(current_motion, goal_motion, new_long_term_trajectory_);
+        } else {
+          improved_robot_capsules_ = getRobotReachabilitySetsFromLTT(current_motion, goal_motion, long_term_trajectory_);
+        }
         // Compute the human reachable sets for the potential trajectory
         // humanReachabilityAnalysis(t_command, t_brake)
         // TODO: Liste von einzelnen Zeitschritten
@@ -764,8 +768,8 @@ bool SafetyShield::calculateLongTermTrajectory(const std::vector<double>& start_
   return true;
 }
 
-/// interpolate all robot configurations for each time step and collect in list
-std::vector<Motion> SafetyShield::getMotionsOfAllTimeSteps(Motion start_config, Motion end_config) {
+/// interpolate all robot configurations for each time step and collect in list from STP
+std::vector<Motion> SafetyShield::getMotionsOfAllTimeStepsFromSTP(Motion& start_config, Motion& end_config) {
   std::vector<Motion> list;
   double t_reach = end_config.getTime() - start_config.getTime();
   int time_steps = ceil(t_reach / sample_time_);
@@ -783,6 +787,22 @@ std::vector<Motion> SafetyShield::getMotionsOfAllTimeSteps(Motion start_config, 
     list.push_back(temp);
   }
   return list;
+}
+
+/// calculates list of time steps of robot reachability sets from LTT
+std::vector<std::vector<reach_lib::Capsule>> getRobotReachabilitySetsFromLTT(Motion& start_config, Motion& end_config, LongTermTraj& ltt) {
+  // get those robot reachability sets with (start_config.s; end_config.s)
+  // find first element, which is greater or equal to start_config.s
+  int start = 0;
+  while(start < ltt.getLength() && ltt.getMotion(start).getS() < start_config.getS()) {
+    ++start;
+  }
+  int end = start;
+  // find first element, which is greater or equal to end_config.s
+  while(end < ltt.getLength() && ltt.getMotion(end).getS() < end_config.getS()) {
+    ++end;
+  }
+
 }
 
 }  // namespace safety_shield

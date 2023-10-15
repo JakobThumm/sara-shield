@@ -524,12 +524,20 @@ class SafetyShield {
   void setLongTermTrajectory(LongTermTraj& traj);
 
   /**
-   * calculates list of motions of all (discrete) time steps
+   * calculates list of motions of all (discrete) time steps from STP
    * @param start_config
    * @param end_config
    * @return list of motions
    */
-  std::vector<Motion> getMotionsOfAllTimeSteps(Motion start_config, Motion end_config);
+  std::vector<Motion> getMotionsOfAllTimeStepsFromSTP(Motion& start_config, Motion& end_config);
+
+  /**
+   * calculates list of time steps of robot reachability sets from LTT
+   * @param start_config
+   * @param end_config
+   * @return list of robot reachability sets
+   */
+  std::vector<std::vector<reach_lib::Capsule>> getRobotReachabilitySetsFromLTT(Motion& start_config, Motion& end_config, LongTermTraj& ltt);
 
   /**
    * @brief Receive a new human measurement
