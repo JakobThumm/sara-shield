@@ -293,6 +293,14 @@ class LongTermTraj {
    * @param s look at Motions until trajectory_time s
    */
   double getMaxofMaximumCartesianVelocityWithS(double s);
+
+  /**
+   * @returns reference of reachability sets list
+   */
+  inline std::vector<std::vector<reach_lib::Capsule>>& getReachabilitySetsRef() {
+    return reachability_sets_;
+  }
+
 };
 }  // namespace safety_shield
 #endif  // LONG_TERM_TRAJ_H

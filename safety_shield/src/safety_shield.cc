@@ -790,7 +790,7 @@ std::vector<Motion> SafetyShield::getMotionsOfAllTimeStepsFromSTP(Motion& start_
 }
 
 /// calculates list of time steps of robot reachability sets from LTT
-std::vector<std::vector<reach_lib::Capsule>> getRobotReachabilitySetsFromLTT(Motion& start_config, Motion& end_config, LongTermTraj& ltt) {
+std::vector<std::vector<reach_lib::Capsule>> SafetyShield::getRobotReachabilitySetsFromLTT(Motion& start_config, Motion& end_config, LongTermTraj& ltt) {
   // get those robot reachability sets with (start_config.s; end_config.s)
   // find first element, which is greater or equal to start_config.s
   int start = 0;
@@ -802,7 +802,36 @@ std::vector<std::vector<reach_lib::Capsule>> getRobotReachabilitySetsFromLTT(Mot
   while(end < ltt.getLength() && ltt.getMotion(end).getS() < end_config.getS()) {
     ++end;
   }
+  auto pointer = ltt.getReachabilitySetsRef().begin();
+  //std::vector<std::vector<reach_lib::Capsule>> ltt_list(pointer + start, pointer + end);
 
+  // TODO: Liste erstellen, wo jede Timestep den jeweiligen LTT-Step kriegt, Elemente kopieren oder verweisen?
+  std::vector<Motion> motions = getMotionsOfAllTimeStepsFromSTP(start_config, end_config);
+  std::vector<std::vector<reach_lib::Capsule>> final_list;
+  int index_for_ltt_list = start;
+  for(int i = start; i < motions.size() - 1; i++) {
+    index_for_ltt_list = incrementIndexForLttList(index_for_ltt_list, end, motions[i], ltt);
+    if(ltt.getMotion(index_for_ltt_list + 1).getS() <= motions[i + 1].getS()) {
+      // STP-Interval is completely included in LTT-Interval, we can just take over the LTT-Interval
+      final_list.push_back(ltt.getReachabilitySetsRef()[index_for_ltt_list]);
+    } else {
+      // STP-Interval is included in two LTT-Intervals, we take both LTT-Intervals
+      // TODO: have to take the union of reachable sets, but how?
+      spdlog::error("error in getRobotReachabilitySetsFromLTT: have to take union of reachable sets");
+    }
+  }
+  return final_list;
+}
+
+/// increment pointer until motion.s >= ltt_list[pointer]
+int SafetyShield::incrementIndexForLttList(int index, int end, Motion& motion, LongTermTraj& ltt) {
+  for(int i = index; i < end; i++) {
+    if(motion.getS() >= ltt.getMotion(i).getS()) {
+      return i;
+    }
+  }
+  spdlog::error("error in incrementIndexForLttList: out of bounds?");
+  return 0;
 }
 
 }  // namespace safety_shield

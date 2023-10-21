@@ -540,6 +540,16 @@ class SafetyShield {
   std::vector<std::vector<reach_lib::Capsule>> getRobotReachabilitySetsFromLTT(Motion& start_config, Motion& end_config, LongTermTraj& ltt);
 
   /**
+   *
+   * @param index
+   * @param end
+   * @param motion
+   * @param ltt_list
+   * @return
+   */
+  int incrementIndexForLttList(int index, int end, Motion& motion, LongTermTraj& ltt);
+
+  /**
    * @brief Receive a new human measurement
    * @param[in] human_measurement A vector of human joint measurements (list of reach_lib::Points)
    * @param[in] time The timestep of the measurement in seconds.

@@ -41,6 +41,7 @@ LongTermTraj::LongTermTraj(const std::vector<Motion>& long_term_traj, double sam
     /// calculate robot reachability between this motion and next motion
     reachability_sets_.push_back(robot_reach.reach(long_term_traj_[i], long_term_traj_[i+1], long_term_traj_[i+1].getS()-long_term_traj_[i].getS(), alpha_i_));
   }
+
 }
 
 Motion LongTermTraj::interpolate(double s, double ds, double dds, double ddds, std::vector<double>& v_max_allowed,
