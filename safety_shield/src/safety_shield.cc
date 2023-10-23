@@ -789,12 +789,13 @@ std::vector<Motion> SafetyShield::getMotionsOfAllTimeStepsFromSTP(Motion& start_
   return list;
 }
 
+// TODO: special case vergessen: ltt empty?
 /// calculates list of time steps of robot reachability sets from LTT
 std::vector<std::vector<reach_lib::Capsule>> SafetyShield::getRobotReachabilitySetsFromLTT(Motion& start_config, Motion& end_config, LongTermTraj& ltt) {
   // get those robot reachability sets with (start_config.s; end_config.s)
   // find first element, which is greater or equal to start_config.s
   int start = 0;
-  while(start < ltt.getLength() && ltt.getMotion(start).getS() < start_config.getS()) {
+  while(start < ltt.getLength() && ltt.getMotion(start).getS() > start_config.getS()) {
     ++start;
   }
   int end = start;
@@ -802,6 +803,7 @@ std::vector<std::vector<reach_lib::Capsule>> SafetyShield::getRobotReachabilityS
   while(end < ltt.getLength() && ltt.getMotion(end).getS() < end_config.getS()) {
     ++end;
   }
+  // TODO: special case, wenn start = end und ganz am Ende von der Liste
   auto pointer = ltt.getReachabilitySetsRef().begin();
   //std::vector<std::vector<reach_lib::Capsule>> ltt_list(pointer + start, pointer + end);
 
@@ -809,7 +811,7 @@ std::vector<std::vector<reach_lib::Capsule>> SafetyShield::getRobotReachabilityS
   std::vector<Motion> motions = getMotionsOfAllTimeStepsFromSTP(start_config, end_config);
   std::vector<std::vector<reach_lib::Capsule>> final_list;
   int index_for_ltt_list = start;
-  for(int i = start; i < motions.size() - 1; i++) {
+  for(int i = 0; i < motions.size() - 1; i++) {
     index_for_ltt_list = incrementIndexForLttList(index_for_ltt_list, end, motions[i], ltt);
     if(ltt.getMotion(index_for_ltt_list + 1).getS() <= motions[i + 1].getS()) {
       // STP-Interval is completely included in LTT-Interval, we can just take over the LTT-Interval
