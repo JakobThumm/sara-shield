@@ -323,7 +323,11 @@ bool VerifyISO::environmentally_constrained_collision_check(const std::vector<in
         spdlog::info("Link {} moving towards environment element {}", link_index, environment_collision);
         return true;
       }
-      spdlog::info("Collision between link {} and environment element {} was disregarded.", link_index, environment_collision);
+      spdlog::info("Collision between link {} and environment element {} was disregarded: normal [{}, {}, {}], velocity error {}.", 
+        link_index,
+        environment_collision,
+        normal[0], normal[1], normal[2],
+        velocity_error);
     }
   }
   return false;
