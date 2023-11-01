@@ -318,7 +318,7 @@ bool VerifyISO::environmentally_constrained_collision_check(const std::vector<in
       // \epsilon <= 1/2 \Delta s (\alpha_i + \beta_i * r_i)
       assert (link_index < alpha_i.size());
       assert (link_index < beta_i.size());
-      double velocity_error = 1/2 * delta_s * (alpha_i[link_index] + beta_i[link_index] * robot_capsules[link_index].r_);
+      double velocity_error = 0.5 * delta_s * (alpha_i[link_index] + beta_i[link_index] * robot_capsules[link_index].r_);
       if (capsule_trajectory_moving_towards_element(robot_capsule_velocities_start, robot_capsule_velocities_end, robot_capsules, link_index, normal, velocity_error)) {
         spdlog::info("Link {} moving towards environment element {}", link_index, environment_collision);
         return true;
