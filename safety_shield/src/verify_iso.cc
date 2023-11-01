@@ -91,7 +91,77 @@ void VerifyISO::combine_contact_maps(const std::vector<reach_lib::Capsule>& huma
       std::unordered_map<int, std::vector<int>>& robot_collision_map,
       std::unordered_map<int, std::vector<int>>& environment_collision_map,
       std::vector<double>& combined_human_radii) {
+  // Find human capsules in contact and merge them together
+  std::vector<std::vector<int>> human_contact_graphs = build_human_contact_graphs(human_capsules, unclampable_body_part_map);
+  // Combine the radii, robot collisions, and environment collisions of the human capsules in contact
+  std::unordered_map<int, std::vector<int>> combined_robot_collision_map;
+  std::unordered_map<int, std::vector<int>> combined_environment_collision_map;
+  combined_human_radii.resize(human_contact_graphs.size());
+  for (int i = 0; i < human_contact_graphs.size(); i++) {
+    combined_human_radii[i] = 0;
+    for (int j = 0; j < human_contact_graphs[i].size(); j++) {
+      combined_human_radii[i] += human_radii[j];
+      combined_robot_collision_map[i].insert(
+        combined_robot_collision_map[i].end(),
+        robot_collision_map[j].begin(),
+        robot_collision_map[j].end());
+      combined_environment_collision_map[i].insert(
+        combined_environment_collision_map[i].end(),
+        environment_collision_map[j].begin(),
+        environment_collision_map[j].end());
+    }
+  }
+  robot_collision_map = combined_robot_collision_map;
+  environment_collision_map = combined_environment_collision_map;
+}
 
+std::vector<std::vector<int>> VerifyISO::build_human_contact_graphs(
+  const std::vector<reach_lib::Capsule>& human_capsules,
+  const std::unordered_map<int, std::set<int>>& unclampable_body_part_map
+) {
+  std::vector<std::vector<int>> human_contact_graphs;
+  std::unordered_set<int> unvisited_body_parts;
+  for (int i = 0; i < human_capsules.size(); i++) {
+    unvisited_body_parts.insert(i);
+  }
+  while (!unvisited_body_parts.empty()) {
+    int i = *unvisited_body_parts.begin();
+    unvisited_body_parts.erase(i);
+    std::vector<int> human_contact_graph;
+    human_contact_graph.push_back(i);
+    build_human_contact_graph(
+      i,
+      human_capsules,
+      unclampable_body_part_map,
+      unvisited_body_parts,
+      human_contact_graph);
+    human_contact_graphs.push_back(human_contact_graph);
+  }
+  return human_contact_graphs;
+}
+
+void VerifyISO::build_human_contact_graph(
+      int current,
+      const std::vector<reach_lib::Capsule>& human_capsules,
+      const std::unordered_map<int, std::set<int>>& unclampable_body_part_map,
+      std::unordered_set<int>& unvisited_body_parts,
+      std::vector<int>& human_contact_graph) {
+  human_contact_graph.push_back(current);
+  // Iterate over all remaining unvisited body parts while checking if the unvisited body part is still in the set.
+  for (int i : unvisited_body_parts) {
+    if (unvisited_body_parts.count(i) == 0) {
+      continue;
+    }
+    if (link_pair_unclampable(current, i, unclampable_body_part_map)) {
+      continue;
+    }
+    // Check if the current body part is in contact with the unvisited body part
+    if (capsuleCollisionCheck(human_capsules[current], human_capsules[i])) {
+      unvisited_body_parts.erase(i);
+      // Recursively build the contact graph
+      build_human_contact_graph(i, human_capsules, unclampable_body_part_map, unvisited_body_parts, human_contact_graph);
+    }
+  }
 }
 
 bool VerifyISO::self_constrained_collision_check(const std::vector<int>& robot_collisions,

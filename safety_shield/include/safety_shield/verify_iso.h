@@ -123,6 +123,34 @@ class VerifyISO : public Verify {
       std::unordered_map<int, std::vector<int>>& robot_collision_map,
       std::unordered_map<int, std::vector<int>>& environment_collision_map,
       std::vector<double>& combined_human_radii);
+
+  /**
+   * @brief Build the graphs of human contact. 
+   * 
+   * @param[in] human_capsules List of human capsules.
+   * @param[in] unclampable_body_part_map List of pairs of human body parts that cannot cause clamping because they are part of the same body chain.
+   * @return std::vector<std::vector<int>> List of connected circles of human body parts in contact.
+   */
+  std::vector<std::vector<int>> build_human_contact_graphs(
+    const std::vector<reach_lib::Capsule>& human_capsules,
+    const std::unordered_map<int, std::set<int>>& unclampable_body_part_map
+  );
+
+  /**
+   * @brief Recursively build the graph of human body parts in contact with each other.
+   * 
+   * @param[in] current Index of the current capsule/body part.
+   * @param[in] human_capsules List of human capsules.
+   * @param[in] unclampable_body_part_map List of pairs of human body parts that cannot cause clamping because they are part of the same body chain.
+   * @param[in, out] unvisited_body_parts Set of body parts not visited yet.
+   * @param[out] human_contact_graph List of elements of the new combined body part.
+   */
+  void build_human_contact_graph(
+      int current,
+      const std::vector<reach_lib::Capsule>& human_capsules,
+      const std::unordered_map<int, std::set<int>>& unclampable_body_part_map,
+      std::unordered_set<int>& unvisited_body_parts,
+      std::vector<int>& human_contact_graph);
   
   inline bool link_pair_unclampable(int link1, int link2, 
       const std::unordered_map<int, std::set<int>>& unclampable_enclosures_map) const {
