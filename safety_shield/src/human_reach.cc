@@ -12,6 +12,7 @@ HumanReach::HumanReach(int n_joints_meas,
       std::vector<std::string>& extremity_end_names, 
       std::vector<double>& extremity_length,
       std::vector<double>& extremity_thickness,
+      std::unordered_map<int, std::set<int>>& unclampable_map,
       double measurement_error_pos, 
       double measurement_error_vel, 
       double delay):
@@ -39,6 +40,9 @@ HumanReach::HumanReach(int n_joints_meas,
     joint_pos_.push_back(reach_lib::Point(0.0, 0.0, 0.0));
     joint_vel_.push_back(reach_lib::Point(0.0, 0.0, 0.0));
   }
+  unclampable_map_.resize(3);
+  unclampable_map_[0] = unclampable_map;
+  unclampable_map_[1] = unclampable_map;
 }
 
 void HumanReach::reset() {

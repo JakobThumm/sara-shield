@@ -152,6 +152,14 @@ SafetyShield::SafetyShield(double sample_time, std::string trajectory_config_fil
     extremity_length.push_back(extremity["length"].as<double>());
     extremity_thickness.push_back(extremity["thickness"].as<double>());
   }
+  std::vector<std::pair<int, int>> unclampable_body_parts;
+  if (human_config["unclampable_body_parts"]) {
+    unclampable_body_parts = human_config["unclampable_body_parts"].as<std::vector<std::pair<int, int>>>();
+  }
+  std::unordered_map<int, std::set<int>> unclampable_body_part_map;
+  for (auto const& body_part : unclampable_body_parts) {
+    unclampable_body_part_map[body_part.first].insert(body_part.second);
+  }
   human_reach_ = new HumanReach(joint_names.size(),
     joint_names,
     body_link_joints, 
@@ -162,6 +170,7 @@ SafetyShield::SafetyShield(double sample_time, std::string trajectory_config_fil
     extremity_end_names, 
     extremity_length,
     extremity_thickness,
+    unclampable_body_part_map,
     measurement_error_pos, 
     measurement_error_vel, 
     delay);
@@ -652,7 +661,7 @@ Motion SafetyShield::step(double cycle_begin_time) {
         human_capsules_ = human_reach_->getAllCapsules();
         // Verify if the robot and human reachable sets are collision free
         is_safe_ = verify_->verify_clamping(robot_capsules_, human_capsules_, environment_elements_,
-            human_reach_->getAllHumanRadii(), robot_reach_->getUnclampableEnclosures(),
+            human_reach_->getAllHumanRadii(), human_reach_->getUnclampableMap(), robot_reach_->getUnclampableEnclosures(),
             vel_cap_start, vel_cap_end, alpha_i, beta_i, sample_time_);
         // is_safe_ = verify_->verify_human_reach(robot_capsules_, human_capsules_); 
         // if (shield_type_ == ShieldType::PFL) {

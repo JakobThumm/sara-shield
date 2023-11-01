@@ -99,6 +99,30 @@ class VerifyISO : public Verify {
       const std::vector<reach_lib::AABB>& environment_elements,
       std::unordered_map<int, std::vector<int>>& robot_collision_map,
       std::unordered_map<int, std::vector<int>>& environment_collision_map);
+
+  /**
+   * @brief Combine human capsules and their collision maps if multiple human capsules collide. 
+   * @details First find all human colliding human capsules.
+   *          Then sort out all collision pairs that are excluded by the unclampable body part map.
+   *          Then combine the robot and environment collision maps of the remaining human capsules.
+   *          The final robot_collision_map will map robot capsule indices to the list of new human capsule indices,
+   *          where colliding capsules are combined.
+   *          Finally, the combined_human_radii list contains the radii of the new human capsules,
+   *          where colliding capsules are combined.
+   * 
+   * @param[in] human_capsules List of human capsules.
+   * @param[in] human_radii List of radii of human body parts/extremities.
+   * @param[in] unclampable_body_part_map List of pairs of human body parts that cannot cause clamping because they are part of the same body chain.
+   * @param[in, out] robot_collision_map Maps robot capsule indices to human capsule indices in contact.
+   * @param[in, out] environment_collision_map Maps environment element indices to human capsule indices in contact.
+   * @param[out] combined_human_radii 
+   */
+  void combine_contact_maps(const std::vector<reach_lib::Capsule>& human_capsules,
+      const std::vector<double>& human_radii,
+      const std::unordered_map<int, std::set<int>>& unclampable_body_part_map,
+      std::unordered_map<int, std::vector<int>>& robot_collision_map,
+      std::unordered_map<int, std::vector<int>>& environment_collision_map,
+      std::vector<double>& combined_human_radii);
   
   inline bool link_pair_unclampable(int link1, int link2, 
       const std::unordered_map<int, std::set<int>>& unclampable_enclosures_map) const {
@@ -223,6 +247,7 @@ class VerifyISO : public Verify {
    * @param human_capsules List of human reachable set capsules.
    * @param environment_elements List of environment elements
    * @param human_radii List of radii of human body parts/extremities.
+   * @param unclampable_body_part_map List of pairs of human body parts that cannot cause clamping because they are part of the same body chain.
    * @param unclampable_enclosures_map List of pairs of robot links that cannot cause clamping.
    * @param robot_capsule_velocities_it Iterator pointing to the beginning of the list of robot capsule velocities for this short-term plan.
    * @param robot_capsule_velocities_end Iterator pointing to the end of the list of robot capsule velocities for this short-term plan.
@@ -236,6 +261,7 @@ class VerifyISO : public Verify {
       const std::vector<reach_lib::Capsule>& human_capsules,
       const std::vector<reach_lib::AABB>& environment_elements,
       const std::vector<double>& human_radii,
+      const std::unordered_map<int, std::set<int>>& unclampable_body_part_map,
       const std::unordered_map<int, std::set<int>>& unclampable_enclosures_map,
       std::vector<std::vector<RobotReach::CapsuleVelocity>>::const_iterator robot_capsule_velocities_it,
       std::vector<std::vector<RobotReach::CapsuleVelocity>>::const_iterator robot_capsule_velocities_end,
@@ -256,6 +282,7 @@ class VerifyISO : public Verify {
    * @param human_capsules List of list of capsules. Each list of capsules corresponds to a human reachable set model.
    * @param environment_elements List of environment elements
    * @param human_radii List of list of radii. Each list of radii corresponds to a human reachable set model.
+   * @param unclampable_body_part_map List of pairs of human body parts that cannot cause clamping because they are part of the same body chain.
    * @param unclampable_enclosures_map List of pairs of robot links that cannot cause clamping.
    * @param robot_capsule_velocities_it Iterator pointing to the beginning of the list of robot capsule velocities for this short-term plan.
    * @param robot_capsule_velocities_end Iterator pointing to the end of the list of robot capsule velocities for this short-term plan.
@@ -269,6 +296,7 @@ class VerifyISO : public Verify {
       const std::vector<std::vector<reach_lib::Capsule>>& human_capsules,
       const std::vector<reach_lib::AABB>& environment_elements,
       const std::vector<std::vector<double>>& human_radii,
+      const std::vector<std::unordered_map<int, std::set<int>>>& unclampable_body_part_map,
       const std::unordered_map<int, std::set<int>>& unclampable_enclosures_map,
       std::vector<std::vector<RobotReach::CapsuleVelocity>>::const_iterator robot_capsule_velocities_it,
       std::vector<std::vector<RobotReach::CapsuleVelocity>>::const_iterator robot_capsule_velocities_end,

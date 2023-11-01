@@ -85,6 +85,15 @@ void VerifyISO::build_contact_maps(const std::vector<reach_lib::Capsule>& robot_
   }
 }
 
+void VerifyISO::combine_contact_maps(const std::vector<reach_lib::Capsule>& human_capsules,
+      const std::vector<double>& human_radii,
+      const std::unordered_map<int, std::set<int>>& unclampable_body_part_map,
+      std::unordered_map<int, std::vector<int>>& robot_collision_map,
+      std::unordered_map<int, std::vector<int>>& environment_collision_map,
+      std::vector<double>& combined_human_radii) {
+
+}
+
 bool VerifyISO::self_constrained_collision_check(const std::vector<int>& robot_collisions,
       const std::unordered_map<int, std::set<int>>& unclampable_enclosures_map,
       const std::vector<reach_lib::Capsule>& robot_capsules,
@@ -254,6 +263,7 @@ bool VerifyISO::clamping_possible(const std::vector<reach_lib::Capsule>& robot_c
       const std::vector<reach_lib::Capsule>& human_capsules,
       const std::vector<reach_lib::AABB>& environment_elements,
       const std::vector<double>& human_radii,
+      const std::unordered_map<int, std::set<int>>& unclampable_body_part_map,
       const std::unordered_map<int, std::set<int>>& unclampable_enclosures_map,
       std::vector<std::vector<RobotReach::CapsuleVelocity>>::const_iterator robot_capsule_velocities_it,
       std::vector<std::vector<RobotReach::CapsuleVelocity>>::const_iterator robot_capsule_velocities_end,
@@ -266,10 +276,12 @@ bool VerifyISO::clamping_possible(const std::vector<reach_lib::Capsule>& robot_c
   std::unordered_map<int, std::vector<int>> robot_collision_map;
   std::unordered_map<int, std::vector<int>> environment_collision_map;
   build_contact_maps(robot_capsules, human_capsules, environment_elements, robot_collision_map, environment_collision_map);
+  std::vector<double> combined_human_radii;
+  combine_contact_maps(human_capsules, human_radii, unclampable_body_part_map, robot_collision_map, environment_collision_map, combined_human_radii);
   // Check for self-constrained collisions and environmentally-constrained collisions
   for (const auto& robot_collisions : robot_collision_map) {
     int human_index = robot_collisions.first;
-    double d_human = 2 * human_radii[human_index];
+    double d_human = 2 * combined_human_radii[human_index];
     // Self-constrained collision check
     if (self_constrained_collision_check(robot_collisions.second, unclampable_enclosures_map, robot_capsules, d_human)) {
       return true;
@@ -293,6 +305,7 @@ bool VerifyISO::verify_clamping(const std::vector<reach_lib::Capsule>& robot_cap
       const std::vector<std::vector<reach_lib::Capsule>>& human_capsules,
       const std::vector<reach_lib::AABB>& environment_elements,
       const std::vector<std::vector<double>>& human_radii,
+      const std::vector<std::unordered_map<int, std::set<int>>>& unclampable_body_part_map,
       const std::unordered_map<int, std::set<int>>& unclampable_enclosures_map,
       std::vector<std::vector<RobotReach::CapsuleVelocity>>::const_iterator robot_capsule_velocities_it,
       std::vector<std::vector<RobotReach::CapsuleVelocity>>::const_iterator robot_capsule_velocities_end,
@@ -303,7 +316,7 @@ bool VerifyISO::verify_clamping(const std::vector<reach_lib::Capsule>& robot_cap
   try {
     for (int i = 0; i < human_capsules.size(); i++) {
       // If no collision occured, we are safe and don't have to check the rest.
-      if (!clamping_possible(robot_capsules, human_capsules[i], environment_elements, human_radii[i], unclampable_enclosures_map,
+      if (!clamping_possible(robot_capsules, human_capsules[i], environment_elements, human_radii[i], unclampable_enclosures_map[i],
           robot_capsule_velocities_it, robot_capsule_velocities_end, alpha_i, beta_i, delta_s)) {
         spdlog::info("Clamping is not possible for human capsule set {}", i);
         return true;
