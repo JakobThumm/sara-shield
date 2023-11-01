@@ -387,6 +387,54 @@ TEST_F(VerifyIsoTest, BuildHumanContactGraphsTest) {
   EXPECT_TRUE(human_contact_graphs[3][0] != human_contact_graphs[3][1]);
 }
 
+TEST_F(VerifyIsoTest, CombineContactMapsTest) {
+  std::vector<reach_lib::Capsule> human_capsules = {
+    reach_lib::Capsule({1, 1, 0}, {1, 3, 0}, 1),
+    reach_lib::Capsule({4, 1, 0}, {4, 3, 0}, 1),
+    reach_lib::Capsule({1, 0, 0}, {1, -3, 0}, 1),
+    reach_lib::Capsule({2, -3, 0}, {2, -3, 0}, 1),
+    reach_lib::Capsule({5, -2, 0}, {5, -2, 0}, 1),
+    reach_lib::Capsule({7, 4, 0}, {7, 4, 0}, 1),
+    reach_lib::Capsule({1, 4, 0}, {4, 4, 0}, 1),
+    reach_lib::Capsule({8, 4, 0}, {8, 4, 0}, 1),
+  };
+  std::unordered_map<int, std::set<int>> unclampable_body_part_map = {
+    {0, {1, 2}},
+    {1, {2}},
+    {3, {4, 5}},
+    {4, {5}},
+    {6, {7}}
+  };
+  std::vector<double> human_radii = {0.1, 10, 200, 3000, 40000, 500000, 6000000, 70000000};
+  std::unordered_map<int, std::vector<int>> robot_collision_map;
+  robot_collision_map[0] = {0};
+  std::unordered_map<int, std::vector<int>> environment_collision_map;
+  environment_collision_map[1] = {0};
+  std::vector<double> combined_human_radii;
+  verify_iso_.combine_contact_maps(
+    human_capsules,
+    human_radii,
+    unclampable_body_part_map,
+    robot_collision_map,
+    environment_collision_map,
+    combined_human_radii
+  );
+  EXPECT_EQ(combined_human_radii.size(), 4);
+  EXPECT_EQ(combined_human_radii[0], 6000010.1);
+  EXPECT_EQ(combined_human_radii[1], 3200);
+  EXPECT_EQ(combined_human_radii[2], 40000);
+  EXPECT_EQ(combined_human_radii[3], 70500000);
+  EXPECT_EQ(robot_collision_map[0].size(), 1);
+  EXPECT_EQ(robot_collision_map[0][0], 0);
+  EXPECT_EQ(robot_collision_map[1].size(), 0);
+  EXPECT_EQ(robot_collision_map[2].size(), 0);
+  EXPECT_EQ(robot_collision_map[3].size(), 0);
+  EXPECT_EQ(environment_collision_map[0].size(), 1);
+  EXPECT_EQ(environment_collision_map[0][0], 0);
+  EXPECT_EQ(environment_collision_map[1].size(), 0);
+  EXPECT_EQ(environment_collision_map[2].size(), 0);
+  EXPECT_EQ(environment_collision_map[3].size(), 0);
+}
 }  // namespace safety_shield
 
 int main(int argc, char **argv) {

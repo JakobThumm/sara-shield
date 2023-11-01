@@ -100,15 +100,16 @@ void VerifyISO::combine_contact_maps(const std::vector<reach_lib::Capsule>& huma
   for (int i = 0; i < human_contact_graphs.size(); i++) {
     combined_human_radii[i] = 0;
     for (int j = 0; j < human_contact_graphs[i].size(); j++) {
-      combined_human_radii[i] += human_radii[j];
+      int idx = human_contact_graphs[i][j];
+      combined_human_radii[i] += human_radii[idx];
       combined_robot_collision_map[i].insert(
         combined_robot_collision_map[i].end(),
-        robot_collision_map[j].begin(),
-        robot_collision_map[j].end());
+        robot_collision_map[idx].begin(),
+        robot_collision_map[idx].end());
       combined_environment_collision_map[i].insert(
         combined_environment_collision_map[i].end(),
-        environment_collision_map[j].begin(),
-        environment_collision_map[j].end());
+        environment_collision_map[idx].begin(),
+        environment_collision_map[idx].end());
     }
   }
   robot_collision_map = combined_robot_collision_map;
