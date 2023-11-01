@@ -362,6 +362,29 @@ TEST_F(VerifyIsoTest, BuildHumanContactGraphsTest) {
     {4, {5}},
     {6, {7}}
   };
+  std::vector<std::vector<int>> human_contact_graphs = verify_iso_.build_human_contact_graphs(human_capsules, unclampable_body_part_map);
+  EXPECT_EQ(human_contact_graphs.size(), 4);
+  // [0]: 0, 1, 6 (any order)
+  EXPECT_EQ(human_contact_graphs[0].size(), 3);
+  EXPECT_TRUE(human_contact_graphs[0][0] == 0 || human_contact_graphs[0][0] == 1 || human_contact_graphs[0][0] == 6);
+  EXPECT_TRUE(human_contact_graphs[0][1] == 0 || human_contact_graphs[0][1] == 1 || human_contact_graphs[0][1] == 6);
+  EXPECT_TRUE(human_contact_graphs[0][2] == 0 || human_contact_graphs[0][2] == 1 || human_contact_graphs[0][2] == 6);
+  EXPECT_TRUE(human_contact_graphs[0][0] != human_contact_graphs[0][1]);
+  EXPECT_TRUE(human_contact_graphs[0][0] != human_contact_graphs[0][2]);
+  EXPECT_TRUE(human_contact_graphs[0][1] != human_contact_graphs[0][2]);
+  // [1]: 2, 3 (any order)
+  EXPECT_EQ(human_contact_graphs[1].size(), 2);
+  EXPECT_TRUE(human_contact_graphs[1][0] == 2 || human_contact_graphs[1][0] == 3);
+  EXPECT_TRUE(human_contact_graphs[1][1] == 2 || human_contact_graphs[1][1] == 3);
+  EXPECT_TRUE(human_contact_graphs[1][0] != human_contact_graphs[1][1]);
+  // [2]: 4
+  EXPECT_EQ(human_contact_graphs[2].size(), 1);
+  EXPECT_EQ(human_contact_graphs[2][0], 4);
+  // [3]: 5, 7 (any order)
+  EXPECT_EQ(human_contact_graphs[3].size(), 2);
+  EXPECT_TRUE(human_contact_graphs[3][0] == 5 || human_contact_graphs[3][0] == 7);
+  EXPECT_TRUE(human_contact_graphs[3][1] == 5 || human_contact_graphs[3][1] == 7);
+  EXPECT_TRUE(human_contact_graphs[3][0] != human_contact_graphs[3][1]);
 }
 
 }  // namespace safety_shield
