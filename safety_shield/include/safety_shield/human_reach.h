@@ -20,6 +20,7 @@
 #include <map>
 #include <string>
 #include <vector>
+#include <set>
 
 #include "reach_lib.hpp"
 #include "spdlog/spdlog.h"
@@ -65,7 +66,7 @@ class HumanReach {
   /**
    * @brief Map the the body parts to body parts that cannot be in collision with them.
    */
-  std::vector<std::unordered_map<int, std::set<int>>> _unclampable_map;
+  std::vector<std::unordered_map<int, std::set<int>>> unclampable_map_;
 
   /**
    * @brief The object for calculating the position based reachable set.
@@ -232,7 +233,7 @@ class HumanReach {
   }
 
   inline std::vector<std::unordered_map<int, std::set<int>>> getUnclampableMap() {
-    return _unclampable_map;
+    return unclampable_map_;
   }
 
   /**

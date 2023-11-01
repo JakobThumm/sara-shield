@@ -81,6 +81,14 @@ class HumanReachTest : public ::testing::Test {
       extremity_length.push_back(extremity["length"].as<double>());
       extremity_thickness.push_back(extremity["thickness"].as<double>());
     }
+    std::vector<std::pair<int, int>> unclampable_body_parts;
+    if (human_config["unclampable_body_parts"]) {
+      unclampable_body_parts = human_config["unclampable_body_parts"].as<std::vector<std::pair<int, int>>>();
+    }
+    std::unordered_map<int, std::set<int>> unclampable_body_part_map;
+    for (auto const& body_part : unclampable_body_parts) {
+      unclampable_body_part_map[body_part.first].insert(body_part.second);
+    }
     human_reach_ = new HumanReach(joint_names.size(),
       joint_names,
       body_link_joints, 
@@ -91,6 +99,7 @@ class HumanReachTest : public ::testing::Test {
       extremity_end_names, 
       extremity_length,
       extremity_thickness,
+      unclampable_body_part_map,
       measurement_error_pos, 
       measurement_error_vel, 
       delay);
@@ -148,6 +157,14 @@ class HumanReachTestError : public ::testing::Test {
       extremity_length.push_back(extremity["length"].as<double>());
       extremity_thickness.push_back(extremity["thickness"].as<double>());
     }
+    std::vector<std::pair<int, int>> unclampable_body_parts;
+    if (human_config["unclampable_body_parts"]) {
+      unclampable_body_parts = human_config["unclampable_body_parts"].as<std::vector<std::pair<int, int>>>();
+    }
+    std::unordered_map<int, std::set<int>> unclampable_body_part_map;
+    for (auto const& body_part : unclampable_body_parts) {
+      unclampable_body_part_map[body_part.first].insert(body_part.second);
+    }
     human_reach_ = new HumanReach(joint_names.size(),
       joint_names,
       body_link_joints, 
@@ -158,6 +175,7 @@ class HumanReachTestError : public ::testing::Test {
       extremity_end_names, 
       extremity_length,
       extremity_thickness,
+      unclampable_body_part_map,
       measurement_error_pos, 
       measurement_error_vel, 
       delay);
@@ -215,6 +233,14 @@ class HumanReachTestPos : public ::testing::Test {
       extremity_length.push_back(extremity["length"].as<double>());
       extremity_thickness.push_back(extremity["thickness"].as<double>());
     }
+    std::vector<std::pair<int, int>> unclampable_body_parts;
+    if (human_config["unclampable_body_parts"]) {
+      unclampable_body_parts = human_config["unclampable_body_parts"].as<std::vector<std::pair<int, int>>>();
+    }
+    std::unordered_map<int, std::set<int>> unclampable_body_part_map;
+    for (auto const& body_part : unclampable_body_parts) {
+      unclampable_body_part_map[body_part.first].insert(body_part.second);
+    }
     human_reach_ = new HumanReach(joint_names.size(),
       joint_names,
       body_link_joints, 
@@ -225,6 +251,7 @@ class HumanReachTestPos : public ::testing::Test {
       extremity_end_names, 
       extremity_length,
       extremity_thickness,
+      unclampable_body_part_map,
       measurement_error_pos, 
       measurement_error_vel, 
       delay);

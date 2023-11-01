@@ -305,7 +305,7 @@ bool VerifyISO::verify_clamping(const std::vector<reach_lib::Capsule>& robot_cap
       const std::vector<std::vector<reach_lib::Capsule>>& human_capsules,
       const std::vector<reach_lib::AABB>& environment_elements,
       const std::vector<std::vector<double>>& human_radii,
-      const std::vector<std::unordered_map<int, std::set<int>>>& unclampable_body_part_map,
+      const std::vector<std::unordered_map<int, std::set<int>>>& unclampable_body_part_maps,
       const std::unordered_map<int, std::set<int>>& unclampable_enclosures_map,
       std::vector<std::vector<RobotReach::CapsuleVelocity>>::const_iterator robot_capsule_velocities_it,
       std::vector<std::vector<RobotReach::CapsuleVelocity>>::const_iterator robot_capsule_velocities_end,
@@ -316,8 +316,18 @@ bool VerifyISO::verify_clamping(const std::vector<reach_lib::Capsule>& robot_cap
   try {
     for (int i = 0; i < human_capsules.size(); i++) {
       // If no collision occured, we are safe and don't have to check the rest.
-      if (!clamping_possible(robot_capsules, human_capsules[i], environment_elements, human_radii[i], unclampable_enclosures_map[i],
-          robot_capsule_velocities_it, robot_capsule_velocities_end, alpha_i, beta_i, delta_s)) {
+      if (!clamping_possible(
+            robot_capsules,
+            human_capsules[i],
+            environment_elements,
+            human_radii[i],
+            unclampable_body_part_maps[i],
+            unclampable_enclosures_map,
+            robot_capsule_velocities_it,
+            robot_capsule_velocities_end,
+            alpha_i,
+            beta_i,
+            delta_s)) {
         spdlog::info("Clamping is not possible for human capsule set {}", i);
         return true;
       }
