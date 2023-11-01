@@ -120,20 +120,19 @@ std::vector<std::vector<int>> VerifyISO::build_human_contact_graphs(
   const std::unordered_map<int, std::set<int>>& unclampable_body_part_map
 ) {
   std::vector<std::vector<int>> human_contact_graphs;
-  std::unordered_set<int> unvisited_body_parts;
+  std::unordered_set<int> visited_body_parts;
   for (int i = 0; i < human_capsules.size(); i++) {
-    unvisited_body_parts.insert(i);
-  }
-  while (!unvisited_body_parts.empty()) {
-    int i = *unvisited_body_parts.begin();
-    unvisited_body_parts.erase(i);
+    if (visited_body_parts.find(i) != visited_body_parts.end()) {
+      continue;
+    }
     std::vector<int> human_contact_graph;
     human_contact_graph.push_back(i);
+    visited_body_parts.insert(i);
     build_human_contact_graph(
       i,
       human_capsules,
       unclampable_body_part_map,
-      unvisited_body_parts,
+      visited_body_parts,
       human_contact_graph);
     human_contact_graphs.push_back(human_contact_graph);
   }
@@ -144,12 +143,11 @@ void VerifyISO::build_human_contact_graph(
       int current,
       const std::vector<reach_lib::Capsule>& human_capsules,
       const std::unordered_map<int, std::set<int>>& unclampable_body_part_map,
-      std::unordered_set<int>& unvisited_body_parts,
+      std::unordered_set<int>& visited_body_parts,
       std::vector<int>& human_contact_graph) {
-  human_contact_graph.push_back(current);
   // Iterate over all remaining unvisited body parts while checking if the unvisited body part is still in the set.
-  for (int i : unvisited_body_parts) {
-    if (unvisited_body_parts.count(i) == 0) {
+  for (int i = 0; i < human_capsules.size(); i++) {
+    if (visited_body_parts.find(i) != visited_body_parts.end()) {
       continue;
     }
     if (link_pair_unclampable(current, i, unclampable_body_part_map)) {
@@ -157,9 +155,10 @@ void VerifyISO::build_human_contact_graph(
     }
     // Check if the current body part is in contact with the unvisited body part
     if (capsuleCollisionCheck(human_capsules[current], human_capsules[i])) {
-      unvisited_body_parts.erase(i);
+      human_contact_graph.push_back(i);
+      visited_body_parts.insert(i);
       // Recursively build the contact graph
-      build_human_contact_graph(i, human_capsules, unclampable_body_part_map, unvisited_body_parts, human_contact_graph);
+      build_human_contact_graph(i, human_capsules, unclampable_body_part_map, visited_body_parts, human_contact_graph);
     }
   }
 }

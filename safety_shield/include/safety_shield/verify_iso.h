@@ -142,14 +142,14 @@ class VerifyISO : public Verify {
    * @param[in] current Index of the current capsule/body part.
    * @param[in] human_capsules List of human capsules.
    * @param[in] unclampable_body_part_map List of pairs of human body parts that cannot cause clamping because they are part of the same body chain.
-   * @param[in, out] unvisited_body_parts Set of body parts not visited yet.
+   * @param[in, out] visited_body_parts Set of body parts already visited.
    * @param[out] human_contact_graph List of elements of the new combined body part.
    */
   void build_human_contact_graph(
       int current,
       const std::vector<reach_lib::Capsule>& human_capsules,
       const std::unordered_map<int, std::set<int>>& unclampable_body_part_map,
-      std::unordered_set<int>& unvisited_body_parts,
+      std::unordered_set<int>& visited_body_parts,
       std::vector<int>& human_contact_graph);
   
   inline bool link_pair_unclampable(int link1, int link2, 

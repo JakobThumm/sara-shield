@@ -81,3 +81,13 @@ extremities:
     end: "rHand"
     length: 1.0 # See Tabelle 21 — Reichweite nach vorn (Griffachse) - Half a hand length.
     thickness: 0.0
+
+unclampable_body_parts: [
+  [0, 1],
+  [0, 2],
+  [1, 2],
+  [3, 4],
+  [3, 5],
+  [4, 5],
+  [6, 7]
+]

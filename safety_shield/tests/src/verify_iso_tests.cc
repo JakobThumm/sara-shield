@@ -280,6 +280,90 @@ TEST_F(VerifyIsoTest, EnvironmentallyConstrainedCollisionCheckTest) {
       robot_capsule_velocities_start, robot_capsule_velocities_end, alpha_i, beta_i, delta_s));
 }
 
+TEST_F(VerifyIsoTest, BuildHumanContactGraphTest) {
+  std::vector<reach_lib::Capsule> human_capsules = {
+    reach_lib::Capsule({1, 1, 0}, {1, 3, 0}, 1),
+    reach_lib::Capsule({4, 1, 0}, {4, 3, 0}, 1),
+    reach_lib::Capsule({1, 0, 0}, {1, -3, 0}, 1),
+    reach_lib::Capsule({2, -3, 0}, {2, -3, 0}, 1),
+    reach_lib::Capsule({5, -2, 0}, {5, -2, 0}, 1),
+    reach_lib::Capsule({7, 4, 0}, {7, 4, 0}, 1),
+    reach_lib::Capsule({1, 4, 0}, {4, 4, 0}, 1),
+    reach_lib::Capsule({8, 4, 0}, {8, 4, 0}, 1),
+  };
+  std::unordered_map<int, std::set<int>> unclampable_body_part_map = {
+    {0, {1, 2}},
+    {1, {2}},
+    {3, {4, 5}},
+    {4, {5}},
+    {6, {7}}
+  };
+  int current_body_part = 0;
+  std::vector<int> human_contact_graph = {current_body_part};
+  std::unordered_set<int> visited_body_parts = {current_body_part};
+  verify_iso_.build_human_contact_graph(current_body_part, human_capsules, unclampable_body_part_map, visited_body_parts, human_contact_graph);
+  // check if the human contact graph size is 3 and print the graph if not.
+  std::string debug_out = "Human contact graph contents: ";
+  for (int i = 0; i < human_contact_graph.size(); i++) {
+    debug_out += std::to_string(human_contact_graph[i]) + ", ";
+  }
+  EXPECT_EQ(human_contact_graph.size(), 3) << debug_out;
+  EXPECT_EQ(human_contact_graph[0], 0) << debug_out;
+  EXPECT_TRUE(human_contact_graph[1] == 1 || human_contact_graph[1] == 6) << debug_out;
+  EXPECT_TRUE(human_contact_graph[2] == 1 || human_contact_graph[2] == 6) << debug_out;
+  EXPECT_TRUE(human_contact_graph[1] != human_contact_graph[2]) << debug_out;
+  EXPECT_EQ(visited_body_parts.size(), 3);
+  EXPECT_FALSE(visited_body_parts.find(0) == visited_body_parts.end());
+  EXPECT_FALSE(visited_body_parts.find(1) == visited_body_parts.end());
+  EXPECT_FALSE(visited_body_parts.find(6) == visited_body_parts.end());
+  current_body_part = 2;
+  human_contact_graph = {current_body_part};
+  visited_body_parts.insert(current_body_part);
+  verify_iso_.build_human_contact_graph(current_body_part, human_capsules, unclampable_body_part_map, visited_body_parts, human_contact_graph);
+  EXPECT_EQ(human_contact_graph.size(), 2);
+  EXPECT_EQ(human_contact_graph[0], 2);
+  EXPECT_EQ(human_contact_graph[1], 3);
+  EXPECT_EQ(visited_body_parts.size(), 5);
+  EXPECT_FALSE(visited_body_parts.find(2) == visited_body_parts.end());
+  EXPECT_FALSE(visited_body_parts.find(3) == visited_body_parts.end());
+  current_body_part = 4;
+  human_contact_graph = {current_body_part};
+  visited_body_parts.insert(current_body_part);
+  verify_iso_.build_human_contact_graph(current_body_part, human_capsules, unclampable_body_part_map, visited_body_parts, human_contact_graph);
+  EXPECT_EQ(human_contact_graph.size(), 1);
+  EXPECT_EQ(human_contact_graph[0], 4);
+  EXPECT_EQ(visited_body_parts.size(), 6);
+  EXPECT_FALSE(visited_body_parts.find(4) == visited_body_parts.end());
+  current_body_part = 5;
+  human_contact_graph = {current_body_part};
+  visited_body_parts.insert(current_body_part);
+  verify_iso_.build_human_contact_graph(current_body_part, human_capsules, unclampable_body_part_map, visited_body_parts, human_contact_graph);
+  EXPECT_EQ(human_contact_graph.size(), 2);
+  EXPECT_EQ(human_contact_graph[0], 5);
+  EXPECT_EQ(human_contact_graph[1], 7);
+  EXPECT_EQ(visited_body_parts.size(), 8);
+}
+
+TEST_F(VerifyIsoTest, BuildHumanContactGraphsTest) {
+  std::vector<reach_lib::Capsule> human_capsules = {
+    reach_lib::Capsule({1, 1, 0}, {1, 3, 0}, 1),
+    reach_lib::Capsule({4, 1, 0}, {4, 3, 0}, 1),
+    reach_lib::Capsule({1, 0, 0}, {1, -3, 0}, 1),
+    reach_lib::Capsule({2, -3, 0}, {2, -3, 0}, 1),
+    reach_lib::Capsule({5, -2, 0}, {5, -2, 0}, 1),
+    reach_lib::Capsule({7, 4, 0}, {7, 4, 0}, 1),
+    reach_lib::Capsule({1, 4, 0}, {4, 4, 0}, 1),
+    reach_lib::Capsule({8, 4, 0}, {8, 4, 0}, 1),
+  };
+  std::unordered_map<int, std::set<int>> unclampable_body_part_map = {
+    {0, {1, 2}},
+    {1, {2}},
+    {3, {4, 5}},
+    {4, {5}},
+    {6, {7}}
+  };
+}
+
 }  // namespace safety_shield
 
 int main(int argc, char **argv) {
