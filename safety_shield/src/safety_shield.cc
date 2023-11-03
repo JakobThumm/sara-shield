@@ -88,8 +88,10 @@ SafetyShield::SafetyShield(double sample_time, std::string trajectory_config_fil
   sliding_window_k_ = (int)std::floor(max_s_stop_ / sample_time_);
   std::vector<Motion> long_term_traj;
   long_term_traj.push_back(Motion(0.0, init_qpos));
-  if (shield_type_ == ShieldType::SSM || shield_type_ == ShieldType::OFF) {
+  if (shield_type_ == ShieldType::SSM) {
     long_term_trajectory_ = LongTermTraj(*robot_reach_, long_term_traj, sample_time_, path_s_discrete_, sliding_window_k_, alpha_i_max_);
+  } else if(shield_type_ == ShieldType::OFF) {
+    long_term_trajectory_ = LongTermTraj(long_term_traj, sample_time_, path_s_discrete_, sliding_window_k_, alpha_i_max_);
   } else {
     long_term_trajectory_ = LongTermTraj(long_term_traj, sample_time_, *robot_reach_, path_s_discrete_, sliding_window_k_);
   }
@@ -190,8 +192,11 @@ void SafetyShield::reset(double init_x, double init_y, double init_z, double ini
   // Initialize the long term trajectory
   std::vector<Motion> long_term_traj;
   long_term_traj.push_back(Motion(0.0, init_qpos));
-  if (shield_type_ == ShieldType::SSM || shield_type_ == ShieldType::OFF) {
-    long_term_trajectory_ = LongTermTraj(*robot_reach_, long_term_traj, sample_time_, path_s_discrete_, sliding_window_k_, alpha_i_max_);
+  if (shield_type_ == ShieldType::SSM) {
+    long_term_trajectory_ =
+        LongTermTraj(*robot_reach_, long_term_traj, sample_time_, path_s_discrete_, sliding_window_k_, alpha_i_max_);
+  } else if(shield_type_ == ShieldType::OFF) {
+    long_term_trajectory_ = LongTermTraj(long_term_traj, sample_time_, path_s_discrete_, sliding_window_k_, alpha_i_max_);
   } else {
     long_term_trajectory_ = LongTermTraj(long_term_traj, sample_time_, *robot_reach_, path_s_discrete_, sliding_window_k_);
   }
@@ -768,8 +773,10 @@ bool SafetyShield::calculateLongTermTrajectory(const std::vector<double>& start_
     new_traj[i] = Motion(new_time, q, dq, ddq, dddq);
     new_time += sample_time_;
   }
-  if (shield_type_ == ShieldType::OFF || shield_type_ == ShieldType::SSM) {
+  if (shield_type_ == ShieldType::SSM) {
     ltt = LongTermTraj(*robot_reach_, new_traj, sample_time_, path_s_discrete_, sliding_window_k_, alpha_i_max_);
+  } else if(shield_type_ == ShieldType::OFF) {
+    long_term_trajectory_ = LongTermTraj(new_traj, sample_time_, path_s_discrete_, sliding_window_k_, alpha_i_max_);
   } else {
     ltt = LongTermTraj(new_traj, sample_time_, *robot_reach_, path_s_discrete_, sliding_window_k_);
   }
