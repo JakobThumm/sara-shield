@@ -39,3 +39,6 @@ __pycache__/
 *.egg-info/
 *.egg
 .gittoken
+.idea/
+cmake-build-debug/
+cmake-build-debug-coverage/

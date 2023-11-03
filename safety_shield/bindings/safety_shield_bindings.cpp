@@ -57,7 +57,7 @@ PYBIND11_MODULE(safety_shield_py, handle) {
   // Long-term trajectory class
   py::class_<safety_shield::LongTermTraj>(handle, "LongTermTraj")
     .def(py::init<>())
-    .def(py::init<std::vector<safety_shield::Motion>, double, int, int>(), py::arg("long_term_traj"), py::arg("sample_time"), py::arg("starting_index") = 0, py::arg("sliding_window_k") = 10)
+    .def(py::init<std::vector<safety_shield::Motion>, double, int, int, double>(), py::arg("long_term_traj"), py::arg("sample_time"), py::arg("starting_index") = 0, py::arg("sliding_window_k") = 10, py::arg("alpha_i_max") = 1.0)
     .def("interpolate", &safety_shield::LongTermTraj::interpolate, py::arg("s"), py::arg("ds"), py::arg("dds"), py::arg("ddds"), py::arg("v_max_allowed"), py::arg("a_max_allowed"), py::arg("j_max_allowed"))
     .def("setLongTermTrajectory", py::overload_cast<const std::vector<safety_shield::Motion>&>(&safety_shield::LongTermTraj::setLongTermTrajectory), py::arg("long_term_traj"))
     .def("setLongTermTrajectory", py::overload_cast<const std::vector<safety_shield::Motion>&, double>(&safety_shield::LongTermTraj::setLongTermTrajectory), py::arg("long_term_traj"), py::arg("sample_time"))
@@ -70,13 +70,18 @@ PYBIND11_MODULE(safety_shield_py, handle) {
     .def("increasePosition", &safety_shield::LongTermTraj::increasePosition)
     .def("getMaxAccelerationWindow", &safety_shield::LongTermTraj::getMaxAccelerationWindow)
     .def("getMaxJerkWindow", &safety_shield::LongTermTraj::getMaxJerkWindow)
+    .def("getAlphaI", &safety_shield::LongTermTraj::getAlphaI)
     .def("calculate_max_acc_jerk_window", &safety_shield::LongTermTraj::calculate_max_acc_jerk_window, py::arg("long_term_traj"), py::arg("k"))
     ;
+  // Safety shield type
+  py::enum_<safety_shield::ShieldType>(handle, "ShieldType", py::arithmetic())
+        .value("OFF", safety_shield::ShieldType::OFF)
+        .value("SSM", safety_shield::ShieldType::SSM)
+        .value("PFL", safety_shield::ShieldType::PFL);
   // Safety shield class
   py::class_<safety_shield::SafetyShield>(handle, "SafetyShield")
     .def(py::init<>())
-    .def(py::init<bool, double, std::string, std::string, std::string, double, double, double, double, double, double, const std::vector<double>&>(),
-      py::arg("activate_shield"),
+    .def(py::init<double, std::string, std::string, std::string, double, double, double, double, double, double, const std::vector<double>&, safety_shield::ShieldType>(),
       py::arg("sample_time"),
       py::arg("trajectory_config_file"),
       py::arg("robot_config_file"),
@@ -87,9 +92,9 @@ PYBIND11_MODULE(safety_shield_py, handle) {
       py::arg("init_roll"),
       py::arg("init_pitch"),
       py::arg("init_yaw"),
-      py::arg("init_qpos"))
+      py::arg("init_qpos"),
+      py::arg("shield_type") = safety_shield::ShieldType::SSM)
     .def("reset", &safety_shield::SafetyShield::reset, 
-      py::arg("activate_shield"),
       py::arg("init_x"),
       py::arg("init_y"),
       py::arg("init_z"),
@@ -97,7 +102,8 @@ PYBIND11_MODULE(safety_shield_py, handle) {
       py::arg("init_pitch"),
       py::arg("init_yaw"),
       py::arg("init_qpos"),
-      py::arg("current_time"))
+      py::arg("current_time"),
+      py::arg("shield_type") = safety_shield::ShieldType::SSM)
     .def("step", &safety_shield::SafetyShield::step, py::arg("cycle_begin_time"))
     .def("newLongTermTrajectory", &safety_shield::SafetyShield::newLongTermTrajectory, py::arg("goal_position"), py::arg("goal_velocity"))
     .def("setLongTermTrajectory", &safety_shield::SafetyShield::setLongTermTrajectory, py::arg("traj"))
@@ -105,6 +111,7 @@ PYBIND11_MODULE(safety_shield_py, handle) {
     .def("getRobotReachCapsules", &safety_shield::SafetyShield::getRobotReachCapsules)
     .def("getHumanReachCapsules", &safety_shield::SafetyShield::getHumanReachCapsules, py::arg("type") = 1)
     .def("getSafety", &safety_shield::SafetyShield::getSafety)
+    .def("getShieldType", &safety_shield::SafetyShield::getShieldType)
   ;
   
 }

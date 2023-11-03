@@ -4,19 +4,20 @@
  * @brief Defines the motion class
  * @version 0.1
  * @copyright This file is part of SaRA-Shield.
- * SaRA-Shield is free software: you can redistribute it and/or modify it under 
- * the terms of the GNU General Public License as published by the Free Software Foundation, 
+ * SaRA-Shield is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License as published by the Free Software Foundation,
  * either version 3 of the License, or (at your option) any later version.
- * SaRA-Shield is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
- * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+ * SaRA-Shield is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+ * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
  * See the GNU General Public License for more details.
- * You should have received a copy of the GNU General Public License along with SaRA-Shield. 
- * If not, see <https://www.gnu.org/licenses/>. 
+ * You should have received a copy of the GNU General Public License along with SaRA-Shield.
+ * If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <vector>
-#include <cmath>
 #include <assert.h>
+
+#include <cmath>
+#include <vector>
 
 #ifndef MOTION_H
 #define MOTION_H
@@ -40,7 +41,7 @@ class Motion {
 
   /**
    * @brief Trajectory time
-   * 
+   *
    */
   double s_;
 
@@ -63,17 +64,19 @@ class Motion {
    * @brief The joint jerks
    */
   std::vector<double> dddq_;
-  
+
+  /**
+   * @brief maximum cartesian velocity of robot
+   */
+  double maximumCartesianVelocity_;
+
  public:
   /**
    * @brief Construct a new Motion object
-   * 
+   *
    * Initializes the motion with no modules and t = 0
    */
-  Motion():
-    nb_modules_(0),
-    time_(0) 
-  {}
+  Motion() : nb_modules_(0), time_(0) {}
 
   /**
    * @brief Construct a new Motion object
@@ -85,51 +88,51 @@ class Motion {
 
   /**
    * @brief Construct a new Motion object
-   * A motion constructor taking a situation (time and angle) and returning the given motion (with velocity and 
+   * A motion constructor taking a situation (time and angle) and returning the given motion (with velocity and
    * acceleration non initialized)
    *
-   * @param time the time 
+   * @param time the time
    * @param q the angle
    * @param s trajectory time parameter
-  */
-  Motion(double time, const std::vector<double> &q, double s=0.0);
-  
+   */
+  Motion(double time, const std::vector<double> &q, double s = 0.0);
+
   /**
    * @brief Construct a new Motion object
-   * A motion constructor taking a situation (time and angle) and returning the given motion (with velocity and 
+   * A motion constructor taking a situation (time and angle) and returning the given motion (with velocity and
    * acceleration non initialized)
    *
-   * @param time the time 
+   * @param time the time
    * @param q the angle
    * @param dq velocity
    * @param s trajectory time parameter
-  */
-  Motion(double time, const std::vector<double> &q, const std::vector<double> &dq, double s=0.0);
+   */
+  Motion(double time, const std::vector<double> &q, const std::vector<double> &dq, double s = 0.0);
 
   /**
    * @brief Construct a new Motion object
    *
-   * @param time the time 
+   * @param time the time
    * @param q angle
    * @param dq velocity
-   * @param ddq acceleration 
+   * @param ddq acceleration
    * @param s trajectory time parameter
-  */
-  Motion(double time, const std::vector<double> &q, const std::vector<double> &dq, 
-        const std::vector<double> &ddq, double s=0.0);
+   */
+  Motion(double time, const std::vector<double> &q, const std::vector<double> &dq, const std::vector<double> &ddq,
+         double s = 0.0);
 
   /**
    * @brief Construct a new Motion object
    *
-   * @param time the time 
+   * @param time the time
    * @param q angle
    * @param dq velocity
-   * @param ddq acceleration 
+   * @param ddq acceleration
    * @param dddq jerk
    * @param s trajectory time parameter
-  */
-  Motion(double time, const std::vector<double> &q, const std::vector<double> &dq, 
-        const std::vector<double> &ddq, const std::vector<double> &dddq, double s=0.0);
+   */
+  Motion(double time, const std::vector<double> &q, const std::vector<double> &dq, const std::vector<double> &ddq,
+         const std::vector<double> &dddq, double s = 0.0);
 
   /**
    * @brief Destroy the Motion object
@@ -138,16 +141,14 @@ class Motion {
 
   /**
    * @brief Check if this motion is at a complete stop (v, a, j) = 0 for all nb_modules_.
-   * 
+   *
    * @param threshold Threshold for numerical impercision
    * @return true when motion is at a complete stop
    * @return false when motion is not at a complete stop
    */
-  inline bool isStopped(double threshold=1e-4) {
+  inline bool isStopped(double threshold = 1e-4) {
     for (int i = 0; i < nb_modules_; i++) {
-      if (std::abs(dq_[i]) > threshold ||
-          std::abs(ddq_[i]) > threshold ||
-          std::abs(dddq_[i]) > threshold) {
+      if (std::abs(dq_[i]) > threshold || std::abs(ddq_[i]) > threshold || std::abs(dddq_[i]) > threshold) {
         return false;
       }
     }
@@ -156,17 +157,17 @@ class Motion {
 
   /**
    * @brief Checks if the given motion has the same position as this motion.
-   * 
+   *
    * @param motion Motion to compare position to
    * @param threshold Threshold of similarity
    * @return true Position is the same
    * @return false Position is not the same
    */
-  inline bool hasSamePos(Motion* motion, double threshold=1e-3) {
+  inline bool hasSamePos(Motion *motion, double threshold = 1e-3) {
     assert(motion->getNbModules() == nb_modules_);
     // Check if traj starts at the same position
     for (int i = 0; i < nb_modules_; i++) {
-      if (std::abs(q_[i]-motion->getAngle()[i]) > threshold) {
+      if (std::abs(q_[i] - motion->getAngle()[i]) > threshold) {
         return false;
       }
     }
@@ -175,17 +176,17 @@ class Motion {
 
   /**
    * @brief Checks if the given motion has the same velocity as this motion.
-   * 
+   *
    * @param motion Motion to compare velocity to
    * @param threshold Threshold of similarity
    * @return true Velocity is the same
    * @return false Velocity is not the same
    */
-  inline bool hasSameVel(Motion* motion, double threshold=1e-4) {
+  inline bool hasSameVel(Motion *motion, double threshold = 1e-4) {
     assert(motion->getNbModules() == nb_modules_);
     // Check if traj starts at the same position
     for (int i = 0; i < nb_modules_; i++) {
-      if (std::abs(dq_[i]-motion->getVelocity()[i]) > threshold) {
+      if (std::abs(dq_[i] - motion->getVelocity()[i]) > threshold) {
         return false;
       }
     }
@@ -194,17 +195,17 @@ class Motion {
 
   /**
    * @brief Checks if the given motion has the same acceleration as this motion.
-   * 
+   *
    * @param motion Motion to compare acceleration to
    * @param threshold Threshold of similarity
    * @return true acceleration is the same
    * @return false acceleration is not the same
    */
-  inline bool hasSameAcc(Motion* motion, double threshold=1e-4) {
+  inline bool hasSameAcc(Motion *motion, double threshold = 1e-4) {
     assert(motion->getNbModules() == nb_modules_);
     // Check if traj starts at the same position
     for (int i = 0; i < nb_modules_; i++) {
-      if (std::abs(ddq_[i]-motion->getAcceleration()[i]) > threshold) {
+      if (std::abs(ddq_[i] - motion->getAcceleration()[i]) > threshold) {
         return false;
       }
     }
@@ -215,92 +216,148 @@ class Motion {
    * @brief Returns the number of modules
    * @return the number of modules
    */
-  inline int getNbModules() { return nb_modules_; }
+  inline int getNbModules() {
+    return nb_modules_;
+  }
 
   /**
    * @brief Returns the time of the motion
    *
    * @return the time of the motion
    */
-  inline double getTime() { return time_; }
+  inline double getTime() {
+    return time_;
+  }
 
   /**
    * @brief Return the trajectory time variable
-   * 
-   * @return double 
+   *
+   * @return double
    */
-  inline double getS() { return s_; }
+  inline double getS() {
+    return s_;
+  }
 
   /**
    * @brief Returns the angle of the motion
    *
    * @return the angle of the motion
    */
-  inline std::vector<double> getAngle() { return q_; }
-  
+  inline std::vector<double> getAngle() {
+    return q_;
+  }
+
   /**
    * @brief Returns the velocity of the motion
    *
    * @return the velocity of the motion
    */
-  inline std::vector<double> getVelocity() { return dq_; }
-  
+  inline std::vector<double> getVelocity() {
+    return dq_;
+  }
+
   /**
    * @brief Returns the acceleration of the motion
    *
    * @return the acceleration of the motion
    */
-  inline std::vector<double> getAcceleration() { return ddq_; }
+  inline std::vector<double> getAcceleration() {
+    return ddq_;
+  }
 
   /**
    * @brief Returns the jerk of the motion
    *
    * @return the jerk of the motion
    */
-  inline std::vector<double> getJerk() { return dddq_; }
+  inline std::vector<double> getJerk() {
+    return dddq_;
+  }
 
   /**
    * @brief Sets the time of the motion
    *
    * @param new_time the new motion's time
    */
-  inline void setTime(double new_time) { time_ = new_time; }
+  inline void setTime(double new_time) {
+    time_ = new_time;
+  }
 
   /**
    * @brief Set the s value of the motion
-   * 
+   *
    * @param new_s New s value
    */
-  inline void setS(double new_s) { s_ = new_s; }
+  inline void setS(double new_s) {
+    s_ = new_s;
+  }
 
   /**
    * @brief Sets the angle
    *
    * @param new_q the new motion's angle
    */
-  inline void setAngle(const std::vector<double> &new_q) { q_ = new_q; }
-  
+  inline void setAngle(const std::vector<double> &new_q) {
+    q_ = new_q;
+  }
+
   /**
    * @brief Sets the velocity
    *
    * @param new_dq the new motion's velocity
    */
-  inline void setVelocity(const std::vector<double> &new_dq) { dq_ = new_dq; }
-  
+  inline void setVelocity(const std::vector<double> &new_dq) {
+    dq_ = new_dq;
+  }
+
   /**
    * @brief Sets the acceleration
    *
    * @param new_acceleration the new motion's acceleration
    */
-  inline void setAcceleration(const std::vector<double> &new_ddq) { ddq_ = new_ddq; }
+  inline void setAcceleration(const std::vector<double> &new_ddq) {
+    ddq_ = new_ddq;
+  }
 
   /**
    * @brief Sets the jerk
    *
    * @param new_jerk the new motion's jerk
    */
-  inline void setJerk(const std::vector<double> &new_dddq) { dddq_ = new_dddq; }
-};
-} // namespace safety_shield
+  inline void setJerk(const std::vector<double> &new_dddq) {
+    dddq_ = new_dddq;
+  }
 
-#endif // MOTION_H
+  /**
+   * @brief Sets the maximum cartesian velocity
+   *
+   * @param vel the new velocity
+   */
+  inline void setMaximumCartesianVelocity(double vel) {
+    maximumCartesianVelocity_ = vel;
+  }
+
+  /**
+   * @brief returns maximum cartesian velocity
+   */
+  inline double const getMaximumCartesianVelocity() {
+    return maximumCartesianVelocity_;
+  }
+
+  /**
+   * @brief returns angle as reference
+   */
+  inline const std::vector<double> &getAngleRef() const {
+    return q_;
+  }
+
+  /**
+   * @brief returns velocity as reference
+   */
+  inline const std::vector<double> &getVelocityRef() const {
+    return dq_;
+  }
+};
+}  // namespace safety_shield
+
+#endif  // MOTION_H
