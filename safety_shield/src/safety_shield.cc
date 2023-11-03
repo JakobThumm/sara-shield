@@ -623,9 +623,17 @@ Motion SafetyShield::step(double cycle_begin_time) {
         // TODO: Liste von einzelnen Zeitschritten
         // STP VERSION: improved_robot_capsules_ = robot_reach_->improvedReach(getMotionsOfAllTimeStepsFromSTP(current_motion, goal_motion), alpha_i);
         if(new_ltt_) {
-          improved_robot_capsules_ = getRobotReachabilitySetsFromLTT(current_motion, goal_motion, new_long_term_trajectory_);
+          if(new_long_term_trajectory_.getLength() < 2) {
+            improved_robot_capsules_ = robot_reach_->improvedReach(getMotionsOfAllTimeStepsFromSTP(current_motion, goal_motion), alpha_i);
+          } else {
+            improved_robot_capsules_ = getRobotReachabilitySetsFromLTT(current_motion, goal_motion, new_long_term_trajectory_);
+          }
         } else {
-          improved_robot_capsules_ = getRobotReachabilitySetsFromLTT(current_motion, goal_motion, long_term_trajectory_);
+          if(long_term_trajectory_.getLength() < 2) {
+            improved_robot_capsules_ = robot_reach_->improvedReach(getMotionsOfAllTimeStepsFromSTP(current_motion, goal_motion), alpha_i);
+          } else {
+            improved_robot_capsules_ = getRobotReachabilitySetsFromLTT(current_motion, goal_motion, long_term_trajectory_);
+          }
         }
         // Compute the human reachable sets for the potential trajectory
         // humanReachabilityAnalysis(t_command, t_brake)
@@ -802,14 +810,7 @@ std::vector<std::vector<reach_lib::Capsule>> SafetyShield::getRobotReachabilityS
   while(end < ltt.getLength() && ltt.getMotion(end).getS() < end_config.getS()) {
     ++end;
   }
-  // TODO: special case vergessen: ltt empty?
-  // TODO: special case, wenn start = end und ganz am Ende von der Liste
-  if(start == end || ltt.getLength() == 0) {
-    spdlog::error("start == end or ltt empty");
-  }
   auto pointer = ltt.getReachabilitySetsRef().begin();
-  //std::vector<std::vector<reach_lib::Capsule>> ltt_list(pointer + start, pointer + end);
-
   // TODO: Liste erstellen, wo jede Timestep den jeweiligen LTT-Step kriegt, Elemente kopieren oder verweisen?
   std::vector<Motion> motions = getMotionsOfAllTimeStepsFromSTP(start_config, end_config);
   std::vector<std::vector<reach_lib::Capsule>> final_list;
