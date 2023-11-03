@@ -122,6 +122,28 @@ class LongTermTraj {
   }
 
   /**
+   * @brief Construct a new Long Term Traj object.
+   *
+   * @param long_term_traj Vector of motions that make up the LTT.
+   * @param sliding_window_k Size of sliding window for max acc and jerk calculation
+   */
+  LongTermTraj(RobotReach& robot_reach, const std::vector<Motion>& long_term_traj, double sample_time, int starting_index = 0,
+               int sliding_window_k = 10, double alpha_i_max = 1.0)
+      : long_term_traj_(long_term_traj), sample_time_(sample_time), current_pos_(0), starting_index_(starting_index) {
+    length_ = long_term_traj.size();
+    calculate_max_acc_jerk_window(long_term_traj_, sliding_window_k);
+    for (int i = 0; i < long_term_traj_[0].getNbModules(); i++) {
+      alpha_i_.push_back(alpha_i_max);
+    }
+    for (int i = 0; i < getLength() - 1; i++) {
+      /// calculate robot reachability between this motion and next motion
+      reachability_sets_.push_back(robot_reach.reach(long_term_traj_[i], long_term_traj_[i+1], long_term_traj_[i+1].getS()-long_term_traj_[i].getS(), alpha_i_));
+    }
+  }
+
+
+
+  /**
    * @brief constructor for maximum velocity functionality of LTT
    *
    * @param long_term_traj Vector of motions that make up the LTT.
@@ -298,6 +320,13 @@ class LongTermTraj {
    * @returns reference of reachability sets list
    */
   inline std::vector<std::vector<reach_lib::Capsule>>& getReachabilitySetsRef() {
+    return reachability_sets_;
+  }
+
+  /**
+   * @returns reachability sets list
+   */
+  inline std::vector<std::vector<reach_lib::Capsule>> getReachabilitySets() {
     return reachability_sets_;
   }
 

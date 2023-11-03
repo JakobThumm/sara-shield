@@ -89,7 +89,7 @@ SafetyShield::SafetyShield(double sample_time, std::string trajectory_config_fil
   std::vector<Motion> long_term_traj;
   long_term_traj.push_back(Motion(0.0, init_qpos));
   if (shield_type_ == ShieldType::SSM || shield_type_ == ShieldType::OFF) {
-    long_term_trajectory_ = LongTermTraj(long_term_traj, sample_time_, path_s_discrete_, sliding_window_k_, alpha_i_max_);
+    long_term_trajectory_ = LongTermTraj(*robot_reach_, long_term_traj, sample_time_, path_s_discrete_, sliding_window_k_, alpha_i_max_);
   } else {
     long_term_trajectory_ = LongTermTraj(long_term_traj, sample_time_, *robot_reach_, path_s_discrete_, sliding_window_k_);
   }
@@ -191,7 +191,7 @@ void SafetyShield::reset(double init_x, double init_y, double init_z, double ini
   std::vector<Motion> long_term_traj;
   long_term_traj.push_back(Motion(0.0, init_qpos));
   if (shield_type_ == ShieldType::SSM || shield_type_ == ShieldType::OFF) {
-    long_term_trajectory_ = LongTermTraj(long_term_traj, sample_time_, path_s_discrete_, sliding_window_k_, alpha_i_max_);
+    long_term_trajectory_ = LongTermTraj(*robot_reach_, long_term_traj, sample_time_, path_s_discrete_, sliding_window_k_, alpha_i_max_);
   } else {
     long_term_trajectory_ = LongTermTraj(long_term_traj, sample_time_, *robot_reach_, path_s_discrete_, sliding_window_k_);
   }
@@ -769,7 +769,7 @@ bool SafetyShield::calculateLongTermTrajectory(const std::vector<double>& start_
     new_time += sample_time_;
   }
   if (shield_type_ == ShieldType::OFF || shield_type_ == ShieldType::SSM) {
-    ltt = LongTermTraj(new_traj, sample_time_, path_s_discrete_, sliding_window_k_, alpha_i_max_);
+    ltt = LongTermTraj(*robot_reach_, new_traj, sample_time_, path_s_discrete_, sliding_window_k_, alpha_i_max_);
   } else {
     ltt = LongTermTraj(new_traj, sample_time_, *robot_reach_, path_s_discrete_, sliding_window_k_);
   }
@@ -819,7 +819,8 @@ std::vector<std::vector<reach_lib::Capsule>> SafetyShield::getRobotReachabilityS
     index_for_ltt_list = incrementIndexForLttList(index_for_ltt_list, end, motions[i], ltt);
     if(ltt.getMotion(index_for_ltt_list + 1).getS() <= motions[i + 1].getS()) {
       // STP-Interval is completely included in LTT-Interval, we can just take over the LTT-Interval
-      final_list.push_back(ltt.getReachabilitySetsRef()[index_for_ltt_list]);
+      auto temp = ltt.getReachabilitySetsRef()[index_for_ltt_list];
+      final_list.push_back(temp);
     } else {
       // STP-Interval is included in two LTT-Intervals, we take both LTT-Intervals
       // TODO: have to take the union of reachable sets, but how?
