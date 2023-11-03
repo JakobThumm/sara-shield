@@ -789,7 +789,6 @@ std::vector<Motion> SafetyShield::getMotionsOfAllTimeStepsFromSTP(Motion& start_
   return list;
 }
 
-// TODO: special case vergessen: ltt empty?
 /// calculates list of time steps of robot reachability sets from LTT
 std::vector<std::vector<reach_lib::Capsule>> SafetyShield::getRobotReachabilitySetsFromLTT(Motion& start_config, Motion& end_config, LongTermTraj& ltt) {
   // get those robot reachability sets with (start_config.s; end_config.s)
@@ -803,7 +802,11 @@ std::vector<std::vector<reach_lib::Capsule>> SafetyShield::getRobotReachabilityS
   while(end < ltt.getLength() && ltt.getMotion(end).getS() < end_config.getS()) {
     ++end;
   }
+  // TODO: special case vergessen: ltt empty?
   // TODO: special case, wenn start = end und ganz am Ende von der Liste
+  if(start == end || ltt.getLength() == 0) {
+    spdlog::error("start == end or ltt empty");
+  }
   auto pointer = ltt.getReachabilitySetsRef().begin();
   //std::vector<std::vector<reach_lib::Capsule>> ltt_list(pointer + start, pointer + end);
 
