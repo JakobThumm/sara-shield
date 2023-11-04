@@ -665,7 +665,7 @@ Motion SafetyShield::step(double cycle_begin_time) {
     auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(finish - start).count();
     ++num_steps_;
     total_step_duration_ += elapsed;
-    average_step_duration_ = total_step_duration_ / num_steps_;
+    average_step_duration_ = (double) total_step_duration_ / num_steps_;
     maximum_step_duration_ = std::max(maximum_step_duration_, elapsed);
 
     return next_motion_;

@@ -308,7 +308,7 @@ class SafetyShield {
 
   long total_step_duration_ = 0;
 
-  long average_step_duration_ = 0;
+  double average_step_duration_ = 0;
 
   long maximum_step_duration_ = 0;
 

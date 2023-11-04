@@ -37,11 +37,7 @@ LongTermTraj::LongTermTraj(const std::vector<Motion>& long_term_traj, double sam
     // Max velocity of the entire LTT.
     max_cart_vel_ = std::max(max_cart_vel_, motion_vel);
   }
-
-  for (int i = 0; i < getLength() - 1; i++) {
-    /// calculate robot reachability between this motion and next motion
-    reachability_sets_.push_back(robot_reach.reach(long_term_traj_[i], long_term_traj_[i+1], long_term_traj_[i+1].getS()-long_term_traj_[i].getS(), alpha_i_));
-  }
+  calculateReachbilitySets(robot_reach);
 
 }
 
@@ -191,6 +187,28 @@ void LongTermTraj::velocitiesOfAllMotions(RobotReach& robot_reach) {
     motion.setMaximumCartesianVelocity(motion_vel);
     // save maximum of whole LTT for TRIVIAL_CARTESIAN
     max_cart_vel_ = std::max(motion_vel, max_cart_vel_);
+  }
+}
+
+// TODO: between n-th motion
+void LongTermTraj::calculateReachbilitySets(RobotReach& robot_reach) {
+  int remainder = getLength() % reachability_sets_interval_size_;
+  int last_index;
+  if(remainder == 0) {
+    last_index = getLength() - reachability_sets_interval_size_;
+  } else {
+    last_index = getLength() - 2*reachability_sets_interval_size_ - 1;
+  }
+  for (int i = 0; i < last_index; i += reachability_sets_interval_size_) {
+    // calculate robot reachability between this motion and next motion
+    Motion& first = long_term_traj_[i];
+    Motion& second = long_term_traj_[i+reachability_sets_interval_size_];
+    reachability_sets_.push_back(robot_reach.reach(first, second, second.getS()-first.getS(), alpha_i_));
+  }
+  if(remainder != 0) {
+    Motion& prelast = long_term_traj_[getLength()-2*reachability_sets_interval_size_];
+    Motion& last = long_term_traj_[getLength()-1];
+    reachability_sets_.push_back(robot_reach.reach(prelast, last, last.getS()-prelast.getS(), alpha_i_));
   }
 }
 

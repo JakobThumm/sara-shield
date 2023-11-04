@@ -89,10 +89,21 @@ class LongTermTraj {
   double max_cart_vel_;
 
   /**
+   * @brief interval size of reachability sets; calculate reachability sets between n-th motion
+   */
+   int reachability_sets_interval_size_ = 2;
+
+  /**
    * @brief sets maximum cartesian velocity for all Motions in LTT
-   * @param[in] uses robot_reach to calculate jacobians and velocities
+   * @param[in] robot_reach used to calculate jacobians and velocities
    */
   void velocitiesOfAllMotions(RobotReach& robot_reach);
+
+  /**
+   * @brief calculates reachability sets
+   * @param[in] used to calculate reachability sets
+   */
+  void calculateReachbilitySets(RobotReach& robot_reach);
 
  public:
   /**
@@ -135,10 +146,7 @@ class LongTermTraj {
     for (int i = 0; i < long_term_traj_[0].getNbModules(); i++) {
       alpha_i_.push_back(alpha_i_max);
     }
-    for (int i = 0; i < getLength() - 1; i++) {
-      /// calculate robot reachability between this motion and next motion
-      reachability_sets_.push_back(robot_reach.reach(long_term_traj_[i], long_term_traj_[i+1], long_term_traj_[i+1].getS()-long_term_traj_[i].getS(), alpha_i_));
-    }
+    calculateReachbilitySets(robot_reach);
   }
 
   /**
