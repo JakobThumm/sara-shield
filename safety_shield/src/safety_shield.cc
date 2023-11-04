@@ -1,4 +1,5 @@
 #include "safety_shield/safety_shield.h"
+#include <chrono>
 
 namespace safety_shield {
 
@@ -752,6 +753,7 @@ Motion SafetyShield::determineNextMotion(bool is_safe) {
 }
 
 Motion SafetyShield::step(double cycle_begin_time) {
+  auto start = std::chrono::high_resolution_clock::now();
   cycle_begin_time_ = cycle_begin_time;
   try {
     // Get current motion
@@ -885,6 +887,15 @@ Motion SafetyShield::step(double cycle_begin_time) {
     next_motion_ = determineNextMotion(is_safe_);
     next_motion_.setTime(cycle_begin_time);
     new_ltt_processed_ = true;
+
+    // calculate maximum and average duration of step-calls
+    auto finish = std::chrono::high_resolution_clock::now();
+    auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(finish - start).count();
+    ++num_steps_;
+    total_step_duration_ += elapsed;
+    average_step_duration_ = (double) total_step_duration_ / num_steps_;
+    maximum_step_duration_ = std::max(maximum_step_duration_, elapsed);
+
     return next_motion_;
   } catch (const std::exception& exc) {
     spdlog::error("Exception in SafetyShield::getNextCycle: {}", exc.what());

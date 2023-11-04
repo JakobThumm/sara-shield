@@ -721,7 +721,7 @@ int main() {
   double init_pitch = 0.0;
   double init_yaw = 0.0;
   std::vector<double> init_qpos = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
-  safety_shield::ShieldType shield_type = safety_shield::ShieldType::SEVERAL_PFL;
+  safety_shield::ShieldType shield_type = safety_shield::ShieldType::SSM;
 
   safety_shield::SafetyShield shield =
       safety_shield::SafetyShield(sample_time, trajectory_config_file, robot_config_file, mocap_config_file, init_x,
@@ -749,5 +749,6 @@ int main() {
     shield.reset(init_x, init_y, init_z, init_roll, init_pitch, init_yaw, init_qpos, t, shield_type);
   }
   spdlog::info("Debug finished.");
+  shield.printStepInfo();
   return 0;
 }
