@@ -525,27 +525,28 @@ class SafetyShield {
 
   /**
    * calculates list of motions of all (discrete) time steps from STP
-   * @param start_config
-   * @param end_config
+   * @param start_config robot configuration at beginning
+   * @param end_config robot configuration at end
    * @return list of motions
    */
   std::vector<Motion> getMotionsOfAllTimeStepsFromSTP(Motion& start_config, Motion& end_config);
 
   /**
    * calculates list of time steps of robot reachability sets from LTT
-   * @param start_config
-   * @param end_config
+   * @param start_config robot configuration at beginning
+   * @param end_config robot configuration at end
+   * @param ltt long_term_trajectory_ or new_long_term_trajectory_
    * @return list of robot reachability sets
    */
   std::vector<std::vector<reach_lib::Capsule>> getRobotReachabilitySetsFromLTT(Motion& start_config, Motion& end_config, LongTermTraj& ltt);
 
   /**
-   *
-   * @param index
-   * @param end
-   * @param motion
-   * @param ltt_list
-   * @return
+   * advance index until motion is in the LTT-interval of the reachability sets
+   * @param index to be advanced
+   * @param end last possible LTT-interval
+   * @param motion robot configuration
+   * @param ltt long_term_trajectory_ or new_long_term_trajectory_
+   * @return index
    */
   int incrementIndexForLttList(int index, int end, Motion& motion, LongTermTraj& ltt);
 

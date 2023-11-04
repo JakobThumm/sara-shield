@@ -2,6 +2,7 @@
 
 namespace safety_shield {
 
+/// constructor for PFL version
 LongTermTraj::LongTermTraj(const std::vector<Motion>& long_term_traj, double sample_time, RobotReach& robot_reach,
                            int starting_index, int sliding_window_k)
     : long_term_traj_(long_term_traj), sample_time_(sample_time), current_pos_(0), starting_index_(starting_index) {

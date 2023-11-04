@@ -625,8 +625,6 @@ Motion SafetyShield::step(double cycle_begin_time) {
         is_safe_ = false;
       } else {
         // Compute the robot reachable set for the potential trajectory
-        // TODO: Liste von einzelnen Zeitschritten
-        // STP VERSION: improved_robot_capsules_ = robot_reach_->improvedReach(getMotionsOfAllTimeStepsFromSTP(current_motion, goal_motion), alpha_i);
         if(new_ltt_) {
           if(new_long_term_trajectory_.getLength() < 2) {
             improved_robot_capsules_ = robot_reach_->improvedReach(getMotionsOfAllTimeStepsFromSTP(current_motion, goal_motion), alpha_i);
@@ -642,12 +640,10 @@ Motion SafetyShield::step(double cycle_begin_time) {
         }
         // Compute the human reachable sets for the potential trajectory
         // humanReachabilityAnalysis(t_command, t_brake)
-        // TODO: Liste von einzelnen Zeitschritten
         improved_human_capsules_ = human_reach_->improvedHumanReachabilityAnalysis(cycle_begin_time_, current_motion.getTime(), goal_motion.getTime(), sample_time_);
         // Verify if the robot and human reachable sets are collision free
-        // TODO: checked auf intersection iterativ für alle Zeitschritte
         is_safe_ = verify_->improved_verify_human_reach(improved_robot_capsules_, improved_human_capsules_);
-        // TODO: zum visualisieren werden reachability sets vom letzten Zeitschritt verwendet
+        // for visualization in hrgym, reachability sets of last timestep are used
         robot_capsules_ = improved_robot_capsules_[improved_robot_capsules_.size()-1];
         human_capsules_ = improved_human_capsules_[improved_human_capsules_.size()-1];
         if (shield_type_ == ShieldType::PFL) {
@@ -814,11 +810,12 @@ std::vector<std::vector<reach_lib::Capsule>> SafetyShield::getRobotReachabilityS
   }
   int end = start;
   // find first element, which is greater or equal to end_config.s
-  while(end < ltt.getLength() && ltt.getMotion(end).getS() < end_config.getS()) {
+  while(end < ltt.getLength() && ltt.getMotion(end).getS() <= end_config.getS()) {
     ++end;
   }
   auto pointer = ltt.getReachabilitySetsRef().begin();
-  // TODO: Liste erstellen, wo jede Timestep den jeweiligen LTT-Step kriegt, Elemente kopieren oder verweisen?
+
+  // create vector, where each timestep gets corresponding reachability set of the LTT
   std::vector<Motion> motions = getMotionsOfAllTimeStepsFromSTP(start_config, end_config);
   std::vector<std::vector<reach_lib::Capsule>> final_list;
   int index_for_ltt_list = start;
@@ -829,17 +826,17 @@ std::vector<std::vector<reach_lib::Capsule>> SafetyShield::getRobotReachabilityS
       auto temp = ltt.getReachabilitySetsRef()[index_for_ltt_list];
       final_list.push_back(temp);
     } else {
-      // STP-Interval is included in two LTT-Intervals, we take both LTT-Intervals
-      // TODO: have to take the union of reachable sets, but how?
+      // TODO: STP-Interval is included in several LTT-Intervals, we have to take union of the corresponding LTT-Intervals
       spdlog::error("error in getRobotReachabilitySetsFromLTT: have to take union of reachable sets");
     }
   }
   return final_list;
 }
 
-/// increment pointer until motion.s >= ltt_list[pointer]
+/// advance index until motion is in the LTT-interval of the reachability sets
 int SafetyShield::incrementIndexForLttList(int index, int end, Motion& motion, LongTermTraj& ltt) {
-  for(int i = index; i < end; i++) {
+  // increment index until motion.s >= ltt_list[index]
+  for(int i = index; i <= end; i++) {
     if(motion.getS() >= ltt.getMotion(i).getS()) {
       return i;
     }

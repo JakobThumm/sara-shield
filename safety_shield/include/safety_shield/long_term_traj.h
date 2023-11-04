@@ -122,7 +122,7 @@ class LongTermTraj {
   }
 
   /**
-   * @brief Construct a new Long Term Traj object.
+   * @brief Construct a new Long Term Traj object for SSM version of the improved verification mode
    *
    * @param long_term_traj Vector of motions that make up the LTT.
    * @param sliding_window_k Size of sliding window for max acc and jerk calculation
@@ -140,8 +140,6 @@ class LongTermTraj {
       reachability_sets_.push_back(robot_reach.reach(long_term_traj_[i], long_term_traj_[i+1], long_term_traj_[i+1].getS()-long_term_traj_[i].getS(), alpha_i_));
     }
   }
-
-
 
   /**
    * @brief constructor for maximum velocity functionality of LTT
