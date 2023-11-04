@@ -302,6 +302,16 @@ class SafetyShield {
    */
   double v_safe_ = 0.10;
 
+  //////// For measuring maximum and average duration of step-calls //////
+
+  long num_steps_ = 0;
+
+  long total_step_duration_ = 0;
+
+  long average_step_duration_ = 0;
+
+  long maximum_step_duration_ = 0;
+
  protected:
   /**
    * @brief Calculate max acceleration and jerk based on previous velocity
@@ -617,6 +627,14 @@ class SafetyShield {
   inline ShieldType getShieldType() {
     return shield_type_;
   }
+
+  inline void printStepInfo() {
+    std::cout << "number of steps: " << num_steps_ << std::endl;
+    std::cout << "average duration of step-call: " << average_step_duration_ << " ms" << std::endl;
+    std::cout << "maximum duration of step-call: " << maximum_step_duration_ << " ms" << std::endl;
+    std::cout << "total duration of step-calls: " << total_step_duration_ << " ms" << std::endl;
+  }
+
 };
 }  // namespace safety_shield
 
