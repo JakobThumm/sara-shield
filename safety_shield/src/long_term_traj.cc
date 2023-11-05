@@ -192,21 +192,36 @@ void LongTermTraj::velocitiesOfAllMotions(RobotReach& robot_reach) {
 
 // TODO: between n-th motion
 void LongTermTraj::calculateReachbilitySets(RobotReach& robot_reach) {
+
+  if(getLength() < 2) {
+    return;
+  }
+
+  if(reachability_sets_interval_size_ == 2) {
+    for (int i = 0; i < getLength() - 1; i++) {
+      // calculate robot reachability between this motion and next motion
+      Motion& first = long_term_traj_[i];
+      Motion& second = long_term_traj_[i+1];
+      reachability_sets_.push_back(robot_reach.reach(first, second, second.getS()-first.getS(), alpha_i_));
+    }
+    return;
+  }
+
   int remainder = getLength() % reachability_sets_interval_size_;
   int last_index;
   if(remainder == 0) {
-    last_index = getLength() - reachability_sets_interval_size_;
+    last_index = getLength() - reachability_sets_interval_size_ + 1;
   } else {
-    last_index = getLength() - 2*reachability_sets_interval_size_ - 1;
+    last_index = getLength() - reachability_sets_interval_size_ - remainder;
   }
   for (int i = 0; i < last_index; i += reachability_sets_interval_size_) {
     // calculate robot reachability between this motion and next motion
     Motion& first = long_term_traj_[i];
-    Motion& second = long_term_traj_[i+reachability_sets_interval_size_];
+    Motion& second = long_term_traj_[i + reachability_sets_interval_size_ - 1];
     reachability_sets_.push_back(robot_reach.reach(first, second, second.getS()-first.getS(), alpha_i_));
   }
   if(remainder != 0) {
-    Motion& prelast = long_term_traj_[getLength()-2*reachability_sets_interval_size_];
+    Motion& prelast = long_term_traj_[last_index];
     Motion& last = long_term_traj_[getLength()-1];
     reachability_sets_.push_back(robot_reach.reach(prelast, last, last.getS()-prelast.getS(), alpha_i_));
   }

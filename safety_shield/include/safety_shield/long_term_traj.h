@@ -89,9 +89,9 @@ class LongTermTraj {
   double max_cart_vel_;
 
   /**
-   * @brief interval size of reachability sets; calculate reachability sets between n-th motion
+   * @brief interval size of reachability sets; n = 2 means between every motion, n = 10 means between every 10th motion
    */
-   int reachability_sets_interval_size_ = 2;
+   int reachability_sets_interval_size_ = 10;
 
   /**
    * @brief sets maximum cartesian velocity for all Motions in LTT
