@@ -1,3 +1,13 @@
+#!/usr/bin/env python
+
+"""\
+This script uses the urdf file of the robot in addition to stl/dea mesh files of robot joints
+in order to generate config files for sara-shield. The output should be two yaml files.
+The robot parameter yaml describes the transformation and extend of each link, while
+the trajectory parameters describe maximal velocity, acceleration, ... of each joint.
+"""
+__author__ =  "Niket Lakhani, Manuel Vogel"
+
 import os
 import math
 import re
@@ -8,21 +18,25 @@ import matplotlib.pyplot as plt
 import trimesh
 import xml.etree.ElementTree as ET
 from sklearn.decomposition import PCA
+from scipy.spatial.transform import Rotation
 
 # make console output more readable
 np.set_printoptions(threshold=np.inf)
 np.set_printoptions(suppress=True)
 
 
-def export_PC(point_cloud, name):
+def export_PC(point_cloud, file_path, file_name):
     """
     debug function: export point cloud to ply file (can be imported to blender)
     :param point_cloud: the point cloud to export
-    :param name: name of the file
+    :param file_path: path to export the pc to (e.g '.' or '/home/user/')
+    :param file_name: name of the file (without filetype)
     :return: void
     """
-    print("saving to file: " + name)
-    with open(name + '.ply', "w") as file:
+    file_loc = os.path.join(file_path, file_name + '.ply')
+    print("saving debug point cloud to file: " + file_loc)
+    
+    with open(file_loc, "w") as file:
         # HEADER
         file.write("ply\n")
         file.write("format ascii 1.0\n")
@@ -51,33 +65,15 @@ def visualize_meshes(*meshes):
         ax.plot_trisurf(mesh.vertices[:, 0], mesh.vertices[:, 1], mesh.vertices[:, 2], triangles=mesh.faces)
 
 
-def rpy_to_rot_matrix(rpy):
+def get_mesh_filename_and_scale(link):
     """
-    construct rotation matrix from RPY parameters
-    :param rpy: np array with roll, pitch and yaw
-    :return: 3x3 array representing the rotation matrix
+    parse the urdf file to find mesh parameters of link
+    return the name of the meshfile specified in the urdf
+    along with the scale
+    :param link Element in the URDF tree
+    :return filename and scale of the mesh 
     """
-    roll = rpy[0]
-    pitch = rpy[1]
-    yaw = rpy[2]
-
-    Rx = np.array([[1, 0, 0],
-                   [0, np.cos(roll), -np.sin(roll)],
-                   [0, np.sin(roll), np.cos(roll)]])
-
-    Ry = np.array([[np.cos(pitch), 0, -np.sin(pitch)],  # correct?
-                   [0, 1, 0],
-                   [np.sin(pitch), 0, np.cos(pitch)]])  # correct?
-
-    Rz = np.array([[np.cos(yaw), -np.sin(yaw), 0],
-                   [np.sin(yaw), np.cos(yaw), 0],
-                   [0, 0, 1]])
-
-    R = Rz @ Ry @ Rx
-    return R
-
-
-def get_mesh_filename(link):
+    print("link:", link)
     visual = link.find('visual')
 
     if visual is not None:
@@ -134,10 +130,10 @@ def find_trafo_and_mesh_filenames(urdf_file, relevant_joint_type, joint_names_of
                 link_name = link.attrib.get('name', '')
 
                 if link_name == parent:
-                    parent_filename, parent_scale = get_mesh_filename(link)
+                    parent_filename, parent_scale = get_mesh_filename_and_scale(link)
 
                 if link_name == child:
-                    child_filename, child_scale = get_mesh_filename(link)
+                    child_filename, child_scale = get_mesh_filename_and_scale(link)
 
             # save the link names and filenames in fixed_joints_and_mesh_filenames
             fixed_joints_and_mesh_filenames.append(
@@ -148,7 +144,7 @@ def find_trafo_and_mesh_filenames(urdf_file, relevant_joint_type, joint_names_of
             rpy = np.array([float(x) for x in origin.get("rpy").split()])
             xyz = np.array([float(x) for x in origin.get("xyz").split()])
 
-            rotation_matrix = rpy_to_rot_matrix(rpy)
+            rotation_matrix = Rotation.from_euler("xyz", rpy).as_matrix()
 
             transformation_matrix = np.eye(4)
             transformation_matrix[:3, :3] = rotation_matrix
@@ -218,8 +214,8 @@ def generate_fixed_joint_point_clouds(fixed_joints_and_mesh_filenames, transform
                     point_clouds.append(point_cloud)
 
                     # DEBUG: visualize both meshes (parent and transformed child mesh)
-                    # visualize_meshes(parent_mesh, transformed_child_mesh)
-                    # export_PC(point_cloud=point_cloud, name=parent + "_" + child)
+                    visualize_meshes(parent_mesh, transformed_child_mesh)
+                    export_PC(point_cloud=point_cloud, file_path = "/home/manuel/testtest",file_name=parent + "_" + child)
 
                 except Exception as e:
                     print(f"Error processing fixed joint '{parent} -> {child}': {str(e)}")
@@ -355,7 +351,7 @@ def parse_urdf_file_transformations(urdf_file, joint_names_of_interest, alternat
         else:
             xyz = [0, 0, 0]
 
-        R = rpy_to_rot_matrix(rpy)
+        R = Rotation.from_euler("xyz", rpy).as_matrix()
 
         T = np.eye(4)
         T[:3, :3] = R
@@ -485,16 +481,16 @@ if __name__ == '__main__':
     '''
 
     # Things to edit
-    urdf_file = "panda_arm.urdf"
-    stl_folder = "meshes/visual"
-    robot_name = "panda"
-    alternating_fixed_and_revolute_joints = False  # set to True for CONCERT
+    urdf_file = "modularbot.urdf"
+    stl_folder = "meshes/concert/simple"
+    robot_name = "concert"
+    alternating_fixed_and_revolute_joints = True  # set to True for CONCERT
 
     # All relevant joints contain this regex, while other joints don't (e.g. "J[0-9]_E")
-    # joint_names_of_interest = "_E"   # use this for CONCERT
-    joint_names_of_interest = ""   # use this when all joints should be used
+    joint_names_of_interest = "_E"   # use this for CONCERT
+    # joint_names_of_interest = ""   # use this when all joints should be used
 
-    number_joints = 7
+    number_joints = 6
     secure_radius = 0.02
 
     # for fixed joints: combine two point-clouds: find the mesh-filenames, and the transformations
