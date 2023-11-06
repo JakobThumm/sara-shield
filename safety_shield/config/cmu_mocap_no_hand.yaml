@@ -32,42 +32,42 @@ bodies:
   - name: "lUpperArm" 
     proximal: "lShldr"
     distal: "lForeArm"
-    thickness: 0.1
+    thickness: 0.2
 
   - name: "lLowerArm"
     proximal: "lForeArm"
     distal: "lHand"
-    thickness: 0.066
+    thickness: 0.132
 
   - name: "lHand"
     proximal: "lHand"
     distal: "lHand"
-    thickness: 0.103
+    thickness: 0.206
 
   - name: "rUpperArm" 
     proximal: "rShldr"
     distal: "rForeArm"
-    thickness: 0.1
+    thickness: 0.2
 
   - name: "rLowerArm"
     proximal: "rForeArm"
     distal: "rHand"
-    thickness: 0.066
+    thickness: 0.132
 
   - name: "rHand"
     proximal: "rHand"
     distal: "rHand"
-    thickness: 0.103
+    thickness: 0.206
 
   - name: "torso"
     proximal: "hip"
     distal: "neck"
-    thickness: 0.217
+    thickness: 0.434
   
   - name: "head"
     proximal: "head"
     distal: "head"
-    thickness: 0.217
+    thickness: 0.434
 
 extremities:
   - name: "lArm"
@@ -81,13 +81,3 @@ extremities:
     end: "rHand"
     length: 1.0 # See Tabelle 21 — Reichweite nach vorn (Griffachse) - Half a hand length.
     thickness: 0.0
-
-unclampable_body_parts: [
-  [0, 1],
-  [0, 2],
-  [1, 2],
-  [3, 4],
-  [3, 5],
-  [4, 5],
-  [6, 7]
-]

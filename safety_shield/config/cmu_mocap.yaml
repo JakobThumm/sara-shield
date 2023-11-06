@@ -45,35 +45,35 @@ motion_capture:
     - lUpperArm: 
       - proximal: "lShldr"
       - distal: "lForeArm"
-      - thickness: 0.1
+      - thickness: 0.2
     - lLowerArm:
       - proximal: "lForeArm"
       - distal: "lHand"
-      - thickness: 0.066
+      - thickness: 0.132
     - lHand:
       - proximal: "lHand"
       - distal: "lHand"
-      - thickness: 0.103
+      - thickness: 0.206
     - rUpperArm: 
       - proximal: "rShldr"
       - distal: "rForeArm"
-      - thickness: 0.1
+      - thickness: 0.2
     - rLowerArm:
       - proximal: "rForeArm"
       - distal: "rHand"
-      - thickness: 0.066
+      - thickness: 0.132
     - rHand:
       - proximal: "rHand"
       - distal: "rHand"
-      - thickness: 0.103
+      - thickness: 0.206
     - torso:
       - proximal: "hip"
       - distal: "neck"
-      - thickness: 0.217 # Lays in 97% quantile according to https://www.rki.de/DE/Content/Gesundheitsmonitoring/Gesundheitsberichterstattung/GBEDownloadsB/KiGGS_Referenzperzentile.pdf?__blob=publicationFile
+      - thickness: 0.434
     - head:
       - proximal: "head"
       - distal: "head"
-      - thickness: 0.217
+      - thickness: 0.434
 
   extremities:
   - name: "lArm"

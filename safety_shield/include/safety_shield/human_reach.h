@@ -224,10 +224,10 @@ class HumanReach {
       radii[0].push_back(extremity.get_thickness() / 2.0);
     }
     for (auto& body_part : human_v_.get_occupancy()) {
-      radii[1].push_back(body_part.get_thicknes() / 2.0);
+      radii[1].push_back(body_part.get_thickness() / 2.0);
     }
     for (auto& body_part : human_a_.get_occupancy()) {
-      radii[2].push_back(body_part.get_thicknes() / 2.0);
+      radii[2].push_back(body_part.get_thickness() / 2.0);
     }
     return radii;
   }

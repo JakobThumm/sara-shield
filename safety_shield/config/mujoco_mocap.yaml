@@ -32,42 +32,42 @@ bodies:
   - name: "L_UpperArm" 
     proximal: "L_ShouLder"
     distal: "L_Elbow"
-    thickness: 0.1 # 95 percentile of upper leg radius according to DIN 33402-2:2020-12 (There is no information on upper arm radius.)
+    thickness: 0.2 # 95 percentile of upper leg diameter according to DIN 33402-2:2020-12 (There is no information on upper arm diameter.)
 
   - name: "L_LowerArm"
     proximal: "L_Elbow"
     distal: "L_Wrist"
-    thickness: 0.066 # 95 percentile of lower leg radius according to DIN 33402-2:2020-12 (There is no information on lower arm radius.)
+    thickness: 0.132 # 95 percentile of lower leg diameter according to DIN 33402-2:2020-12 (There is no information on lower arm diameter.)
 
   - name: "L_Hand"
     proximal: "L_Wrist"
     distal: "L_Hand"
-    thickness: 0.103 # 95 percentile of hand length according to DIN 33402-2:2020-12
+    thickness: 0.206 # 95 percentile of hand length according to DIN 33402-2:2020-12
 
   - name: "R_UpperArm" 
     proximal: "R_ShouLder"
     distal: "R_Elbow"
-    thickness: 0.1 # 95 percentile of upper leg radius according to DIN 33402-2:2020-12 (There is no information on upper arm radius.)
+    thickness: 0.2 # 95 percentile of upper leg diameter according to DIN 33402-2:2020-12 (There is no information on upper arm diameter.)
 
   - name: "R_LowerArm"
     proximal: "R_Elbow"
     distal: "R_Wrist"
-    thickness: 0.066 # 95 percentile of lower leg radius according to DIN 33402-2:2020-12 (There is no information on lower arm radius.)
+    thickness: 0.132 # 95 percentile of lower leg diameter according to DIN 33402-2:2020-12 (There is no information on lower arm diameter.)
 
   - name: "R_Hand"
     proximal: "R_Wrist"
     distal: "R_Hand"
-    thickness: 0.103 # 95 percentile of hand length according to DIN 33402-2:2020-12
+    thickness: 0.206 # 95 percentile of hand length according to DIN 33402-2:2020-12
 
   - name: "Torso"
     proximal: "Torso"
     distal: "Neck"
-    thickness: 0.217 # Lays in 95% of shoulder width according to DIN 33402-2:2020-12
+    thickness: 0.434 # Lays in 95% of shoulder width according to DIN 33402-2:2020-12
   
   - name: "Head"
     proximal: "Neck"
     distal: "Head"
-    thickness: 0.217 # Lays in 95% of shoulder width according to DIN 33402-2:2020-12
+    thickness: 0.434 # Lays in 95% of shoulder width according to DIN 33402-2:2020-12
 
 extremities:
   - name: "L_Arm"
