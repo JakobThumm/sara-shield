@@ -82,8 +82,8 @@ TEST_F(HumanReachTest, HumanReachAnalysisVelTest) {
   EXPECT_DOUBLE_EQ(v_cap[0].p2_.x, 1.0);
   EXPECT_DOUBLE_EQ(v_cap[0].p2_.y, 2.0);
   EXPECT_DOUBLE_EQ(v_cap[0].p2_.z, 3.0);
-  // radius = thickness + meas_err_pos + ((t_command-t_last) + t_break + t_delay) * v_max
-  EXPECT_DOUBLE_EQ(v_cap[0].r_, 0.21);
+  // radius = thickness/2.0 + meas_err_pos + ((t_command-t_last) + t_break + t_delay) * v_max
+  EXPECT_DOUBLE_EQ(v_cap[0].r_, 0.16);
 }
 
 TEST_F(HumanReachTest, HumanReachAnalysisAccTest) {
@@ -103,8 +103,9 @@ TEST_F(HumanReachTest, HumanReachAnalysisAccTest) {
   double t = (t_command - t_meas) + t_break + human_reach_->getDelay();
   double a_max = 10;
   double thickness = 0.1;
+  double radius = thickness/2.0;
   double v0 = sqrt(2);
-  double r = thickness + human_reach_->getMeasurementErrorPos() + human_reach_->getMeasurementErrorVel() * t +
+  double r = radius + human_reach_->getMeasurementErrorPos() + human_reach_->getMeasurementErrorVel() * t +
              0.5 * a_max * pow(t, 2.0);
   reach_lib::Point next_pos = q + (q - p) * t;
   std::vector<reach_lib::Capsule> a_cap = human_reach_->getArticulatedAccelCapsules();
@@ -126,11 +127,12 @@ TEST_F(HumanReachTestError, HumanReachAnalysisVelTestError) {
   double t_command = 1.01;
   double t_break = 0.1;
   double thickness = 0.1;
+  double radius = thickness/2.0;
   double v_max = 1;
   human_reach_->humanReachabilityAnalysis(t_command, t_break);
   double t = (t_command - t_meas) + t_break + human_reach_->getDelay();
   // radius = thickness + meas_err_pos + ((t_command-t_last) + t_break + t_delay) * v_max
-  double r = thickness + human_reach_->getMeasurementErrorPos() + t * v_max;
+  double r = radius + human_reach_->getMeasurementErrorPos() + t * v_max;
   std::vector<reach_lib::Capsule> v_cap = human_reach_->getArticulatedVelCapsules();
   EXPECT_DOUBLE_EQ(v_cap[0].p1_.x, 1.0);
   EXPECT_DOUBLE_EQ(v_cap[0].p1_.y, 2.0);
@@ -158,8 +160,9 @@ TEST_F(HumanReachTestError, HumanReachAnalysisAccTestError) {
   double t = (t_command - t_meas) + t_break + human_reach_->getDelay();
   double a_max = 10;
   double thickness = 0.1;
+  double radius = thickness / 2.0;
   double v0 = sqrt(2);
-  double r = thickness + human_reach_->getMeasurementErrorPos() + human_reach_->getMeasurementErrorVel() * t +
+  double r = radius + human_reach_->getMeasurementErrorPos() + human_reach_->getMeasurementErrorVel() * t +
              0.5 * a_max * pow(t, 2.0);
   reach_lib::Point next_pos = q + (q - p) * t;
   std::vector<reach_lib::Capsule> a_cap = human_reach_->getArticulatedAccelCapsules();
