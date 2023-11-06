@@ -12,6 +12,7 @@ import os
 import math
 import re
 import warnings
+import argparse
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -52,10 +53,10 @@ def export_PC(point_cloud, file_path, file_name):
                 "{} {} {} \n".format(p[0], p[1], p[2]))
 
 
-def visualize_meshes(*meshes):
+def visualize_meshes(meshes):
     """
     visualize tri meshes for debugging purposes
-    :param meshes: all meshes that should be visualized in same plot
+    :param meshes: list of all meshes that should be visualized
     :return: void
     """
     fig = plt.figure()
@@ -73,7 +74,6 @@ def get_mesh_filename_and_scale(link):
     :param link Element in the URDF tree
     :return filename and scale of the mesh 
     """
-    print("link:", link)
     visual = link.find('visual')
 
     if visual is not None:
@@ -155,7 +155,7 @@ def find_trafo_and_mesh_filenames(urdf_file, relevant_joint_type, joint_names_of
     return fixed_joints_and_mesh_filenames, transformations
 
 
-def generate_fixed_joint_point_clouds(fixed_joints_and_mesh_filenames, transformations, stl_folder):
+def generate_fixed_joint_point_clouds(fixed_joints_and_mesh_filenames, transformations, stl_folder, visualize, export):
     """
     Load stl files of parent and child meshes. Transform child mesh and combine point clouds.
     Then return the point clouds.
@@ -163,6 +163,8 @@ def generate_fixed_joint_point_clouds(fixed_joints_and_mesh_filenames, transform
                                             as well as their mesh filenames and scales
     :param transformations: transformation between parent and child of fixed joints. Dict with child as key
     :param stl_folder: folder name that contains the stl meshes
+        :param visualize: whether the mesh should be visualized in pyplot
+    :param export: whether the mesh point clouds should be exported for debug use
     :return: list of point clouds. One numpy array for each joint
     """
     point_clouds = []
@@ -175,7 +177,7 @@ def generate_fixed_joint_point_clouds(fixed_joints_and_mesh_filenames, transform
         if parent_filename is not None and parent_filename not in parent_meshes:
             parent_mesh_file = os.path.join(stl_folder, parent_filename)
             if os.path.exists(parent_mesh_file):
-                print(parent_mesh_file)
+                # print(parent_mesh_file)
                 parent_meshes[parent_filename] = trimesh.load_mesh(parent_mesh_file)
                 parent_meshes[parent_filename].apply_scale(parent_scale)
 
@@ -214,21 +216,24 @@ def generate_fixed_joint_point_clouds(fixed_joints_and_mesh_filenames, transform
                     point_clouds.append(point_cloud)
 
                     # DEBUG: visualize both meshes (parent and transformed child mesh)
-                    visualize_meshes(parent_mesh, transformed_child_mesh)
-                    export_PC(point_cloud=point_cloud, file_path = "/home/manuel/testtest",file_name=parent + "_" + child)
+                    if visualize:
+                        visualize_meshes([parent_mesh, transformed_child_mesh])
+                    if export:
+                        export_PC(point_cloud=point_cloud, file_path=".", file_name=parent + "_" + child)
 
                 except Exception as e:
                     print(f"Error processing fixed joint '{parent} -> {child}': {str(e)}")
 
-    plt.show()
     return point_clouds
 
 
-def generate_joint_point_clouds(fixed_joints_and_mesh_filenames, stl_folder):
+def generate_joint_point_clouds(fixed_joints_and_mesh_filenames, stl_folder, visualize, export):
     """
     generate points clouds for normal robots (no fixed joints in chain)
     :param fixed_joints_and_mesh_filenames: parent and child of each joint. Only child mesh is used
     :param stl_folder: folder name that contains the stl meshes
+    :param visualize: whether the mesh should be visualized in pyplot
+    :param export: whether the mesh point clouds should be exported for debug use
     :return: list of point clouds. One numpy array for each joint
     """
     point_clouds = []
@@ -260,6 +265,10 @@ def generate_joint_point_clouds(fixed_joints_and_mesh_filenames, stl_folder):
 
             point_clouds.append(child_points)
 
+            if visualize:
+                visualize_meshes([child_mesh])
+            if export:
+                export_PC(point_cloud=child_points, file_path=".", file_name=child)
     return point_clouds
 
 
@@ -480,28 +489,35 @@ if __name__ == '__main__':
     The last fixed join we skip, since ee_E has no physical extend.
     '''
 
-    # Things to edit
-    urdf_file = "modularbot.urdf"
-    stl_folder = "meshes/concert/simple"
-    robot_name = "concert"
-    alternating_fixed_and_revolute_joints = True  # set to True for CONCERT
+    parser = argparse.ArgumentParser(
+        prog='Urdf Capsule Generation Script',
+        description='Convert URDF to yaml for sara-shield. All paths should be given relative to this file (or absolute)',
+        epilog='Default arguments can be used for CONCERT; The arguments for panda robots are:\
+                -u panda_arm.urdf -s meshes/visual -r panda -a False -j "" -n 7')
 
-    # All relevant joints contain this regex, while other joints don't (e.g. "J[0-9]_E")
-    joint_names_of_interest = "_E"   # use this for CONCERT
-    # joint_names_of_interest = ""   # use this when all joints should be used
+    parser.add_argument('-u', '--urdf_file', default='modularbot.urdf', dest='urdf_file')
+    parser.add_argument('-s', '--stl_folder', default='meshes/concert/simple', dest='stl_folder')
+    parser.add_argument('-r', '--robot_name', default='concert', dest='robot_name')
+    parser.add_argument('-a', '--alternating_fixed_and_revolute_joints', default=True, type=lambda x: (str(x).lower()=='true'))
 
-    number_joints = 6
-    secure_radius = 0.02
+    parser.add_argument('-j', '--joint_names_of_interest', default='_E', dest='joint_names_of_interest')
+    parser.add_argument('-n', '--number_joints', default=6, type=int, dest='number_joints')
+    parser.add_argument('--secure_radius', default=0.02, type=float, dest='secure_radius')
+
+    parser.add_argument('-v', '--visualize', action=argparse.BooleanOptionalAction, dest='visualize')
+    parser.add_argument('-e', '--export', action=argparse.BooleanOptionalAction, dest='export')
+
+    args = parser.parse_args()
 
     # for fixed joints: combine two point-clouds: find the mesh-filenames, and the transformations
     # between them and then join them.
-    if alternating_fixed_and_revolute_joints:
-        mesh_filenames, transformations = find_trafo_and_mesh_filenames(urdf_file, 'fixed', joint_names_of_interest)
-        pc = generate_fixed_joint_point_clouds(mesh_filenames, transformations, stl_folder)
+    if args.alternating_fixed_and_revolute_joints:
+        mesh_filenames, transformations = find_trafo_and_mesh_filenames(args.urdf_file, 'fixed', args.joint_names_of_interest)
+        pc = generate_fixed_joint_point_clouds(mesh_filenames, transformations, args.stl_folder, args.visualize, args.export)
     else:
         # for other joints, use only the child mesh of each revolute join
-        mesh_filenames, transformations = find_trafo_and_mesh_filenames(urdf_file, 'revolute', joint_names_of_interest)
-        pc = generate_joint_point_clouds(mesh_filenames, stl_folder)
+        mesh_filenames, transformations = find_trafo_and_mesh_filenames(args.urdf_file, 'revolute', args.joint_names_of_interest)
+        pc = generate_joint_point_clouds(mesh_filenames, args.stl_folder, args.visualize, args.export)
 
     # generate capsules for every point cloud
     capsules = []
@@ -512,12 +528,15 @@ if __name__ == '__main__':
     # get the transformations between each link (fixed + rotating)
     # also get the min and max position of joints, as well as the max velocity
     trafo, limit_q_min, limit_q_max, limit_v = (
-        parse_urdf_file_transformations(urdf_file, joint_names_of_interest, alternating_fixed_and_revolute_joints))
+        parse_urdf_file_transformations(args.urdf_file, args.joint_names_of_interest, args.alternating_fixed_and_revolute_joints))
 
     for name, T in trafo.items():
         print(f"{name} transformation matrix:")
         print(np.round(T, decimals=4))
 
     # generate output
-    export_capsules(robot_name, secure_radius, number_joints, capsules, trafo)
-    create_robot_file(limit_q_min, limit_q_max, limit_v, number_joints, robot_name)
+    export_capsules(args.robot_name, args.secure_radius, args.number_joints, capsules, trafo)
+    create_robot_file(limit_q_min, limit_q_max, limit_v, args.number_joints, args.robot_name)
+
+    plt.show()
+
