@@ -299,19 +299,19 @@ bool VerifyISO::environmentally_constrained_collision_check(const std::vector<in
   // and checking for intersection with the environment element.
   for (const int& environment_collision : environment_collisions) {
     for (const int& link_index : robot_collisions) {
-      spdlog::info("Checking link {} against environment element {} with max diameter {}", link_index, environment_collision, d_human);
+      // spdlog::info("Checking link {} against environment element {} with max diameter {}", link_index, environment_collision, d_human);
       reach_lib::Capsule expanded_robot_capsule = create_expanded_capsule(robot_capsules[link_index], d_human);
       if (!reach_lib::intersections::capsule_aabb_intersection(expanded_robot_capsule,
           environment_elements[environment_collision])) {
         continue;
       }
-      spdlog::info("Collision is possible between link {} and environment element {}", link_index, environment_collision);
+      // spdlog::info("Collision is possible between link {} and environment element {}", link_index, environment_collision);
       // Check if the link is moving towards the environment element
       // Find normal vector on the environment element pointing towards the link
       Eigen::Vector3d normal;
       if (!calculate_normal_vector(robot_capsules[link_index], environment_elements[environment_collision], normal)) {
         // If the calculation of the normal vector fails, the velocity criterion fails.
-        spdlog::info("Could not calculate normal vector for link {} and environment element {}", link_index, environment_collision);
+        // spdlog::info("Could not calculate normal vector for link {} and environment element {}", link_index, environment_collision);
         return true;
       }
       // Calculate maximal velocity error
@@ -320,14 +320,15 @@ bool VerifyISO::environmentally_constrained_collision_check(const std::vector<in
       assert (link_index < beta_i.size());
       double velocity_error = 0.5 * delta_s * (alpha_i[link_index] + beta_i[link_index] * robot_capsules[link_index].r_);
       if (capsule_trajectory_moving_towards_element(robot_capsule_velocities_start, robot_capsule_velocities_end, robot_capsules, link_index, normal, velocity_error)) {
-        spdlog::info("Link {} moving towards environment element {}", link_index, environment_collision);
+        // spdlog::info("Link {} moving towards environment element {}", link_index, environment_collision);
         return true;
       }
-      spdlog::info("Collision between link {} and environment element {} was disregarded: normal [{}, {}, {}], velocity error {}.", 
+      /* 
+        spdlog::info("Collision between link {} and environment element {} was disregarded: normal [{}, {}, {}], velocity error {}.", 
         link_index,
         environment_collision,
         normal[0], normal[1], normal[2],
-        velocity_error);
+        velocity_error);*/
     }
   }
   return false;
@@ -362,7 +363,7 @@ bool VerifyISO::clamping_possible(const std::vector<reach_lib::Capsule>& robot_c
     }
     // Environmentally-constrained collision check
     if (environment_collision_map.find(human_index) == environment_collision_map.end()) {
-      spdlog::info("Human element {} collides with robot but not with environment.", human_index);
+      // spdlog::info("Human element {} collides with robot but not with environment.", human_index);
       continue;
     }
     if (environmentally_constrained_collision_check(robot_collisions.second, robot_capsules,
@@ -370,7 +371,7 @@ bool VerifyISO::clamping_possible(const std::vector<reach_lib::Capsule>& robot_c
         robot_capsule_velocities_it, robot_capsule_velocities_end, alpha_i, beta_i, delta_s)) {
       return true;
     }
-    spdlog::info("Human element {} collides with robot and environment but is safe.", human_index);
+    // spdlog::info("Human element {} collides with robot and environment but is safe.", human_index);
   }
   return false;
 }
@@ -402,11 +403,11 @@ bool VerifyISO::verify_clamping(const std::vector<reach_lib::Capsule>& robot_cap
             alpha_i,
             beta_i,
             delta_s)) {
-        spdlog::info("Clamping is not possible for human capsule set {}", i);
+        // spdlog::info("Clamping is not possible for human capsule set {}", i);
         return true;
       }
     }
-    spdlog::info("Clamping is possible for all human capsule sets");
+    // spdlog::info("Clamping is possible for all human capsule sets");
     return false;
   } catch (const std::exception &exc) {
     spdlog::error("Exception in VerifyISO::verify_clamping: {}", exc.what());

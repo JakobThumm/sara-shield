@@ -676,10 +676,19 @@ Motion SafetyShield::step(double cycle_begin_time) {
     } else {
       is_safe_ = true;
     }
+    if (is_safe_) {
+      spdlog::info("Recovery path s = {}, ds = {}, dds = {}, ddds = {}", recovery_path_.getPosition(),
+                   recovery_path_.getClippedVelocity(), recovery_path_.getAcceleration(), recovery_path_.getJerk());
+    } else {
+      spdlog::info("Safe path s = {}, ds = {}, dds = {}, ddds = {}", safe_path_.getPosition(), safe_path_.getClippedVelocity(),
+                   safe_path_.getAcceleration(), safe_path_.getJerk());
+    }
     // Select the next motion based on the verified safety
     next_motion_ = determineNextMotion(is_safe_);
     next_motion_.setTime(cycle_begin_time);
     new_ltt_processed_ = true;
+    spdlog::info("Next motion [1]: q = {}, dq = {}, ddq = {}, dddq = {}", next_motion_.getAngle()[1], next_motion_.getVelocity()[1],
+                 next_motion_.getAcceleration()[1], next_motion_.getJerk()[1]);
     return next_motion_;
   } catch (const std::exception& exc) {
     spdlog::error("Exception in SafetyShield::getNextCycle: {}", exc.what());

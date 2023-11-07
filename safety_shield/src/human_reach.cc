@@ -75,6 +75,7 @@ void HumanReach::humanReachabilityAnalysis(double t_command, double t_brake) {
   try {
     // Time between reach command msg and last measurement plus the t_brake time.
     double t_reach = t_command - last_meas_timestep_ + t_brake;
+    spdlog::info("t_reach: {}", t_reach);
     // Calculate reachable set
     human_p_.update(0.0, t_reach, joint_pos_, joint_vel_);
     human_v_.update(0.0, t_reach, joint_pos_, joint_vel_);
