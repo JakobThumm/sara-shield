@@ -299,7 +299,7 @@ bool VerifyISO::environmentally_constrained_collision_check(const std::vector<in
   // and checking for intersection with the environment element.
   for (const int& environment_collision : environment_collisions) {
     for (const int& link_index : robot_collisions) {
-      spdlog::info("Checking link {} against environment element {} with max radius {}", link_index, environment_collision, d_human);
+      spdlog::info("Checking link {} against environment element {} with max diameter {}", link_index, environment_collision, d_human);
       reach_lib::Capsule expanded_robot_capsule = create_expanded_capsule(robot_capsules[link_index], d_human);
       if (!reach_lib::intersections::capsule_aabb_intersection(expanded_robot_capsule,
           environment_elements[environment_collision])) {
