@@ -435,7 +435,7 @@ Motion SafetyShield::computesPotentialTrajectory(bool v, const std::vector<doubl
     if (!recovery_path_.isCurrent()) {
       // plan repair path and replace
       recovery_path_correct_ =
-          planSafetyShield(failsafe_path_.getPosition(), failsafe_path_.getVelocity(), failsafe_path_.getAcceleration(),
+          planSafetyShield(failsafe_path_.getPosition(), failsafe_path_.getClippedVelocity(), failsafe_path_.getAcceleration(),
                            1, a_max_manoeuvre, j_max_manoeuvre, recovery_path_);
     }
     // Only plan new failsafe trajectory if the recovery path planning was successful.
@@ -449,7 +449,7 @@ Motion SafetyShield::computesPotentialTrajectory(bool v, const std::vector<doubl
       } else {
         // plan new failsafe path for STP
         failsafe_2_planning_success =
-            planSafetyShield(recovery_path_.getPosition(), recovery_path_.getVelocity(), recovery_path_.getAcceleration(),
+            planSafetyShield(recovery_path_.getPosition(), recovery_path_.getClippedVelocity(), recovery_path_.getAcceleration(),
                             0, a_max_manoeuvre, j_max_manoeuvre, failsafe_path_2_);
       }
       // Check the validity of the planned path
@@ -468,7 +468,7 @@ Motion SafetyShield::computesPotentialTrajectory(bool v, const std::vector<doubl
     //// Calculate start and goal pos of intended motion
     // Fill potential buffer with position and velocity from last failsafe path. This value is not really used.
     double s_d = failsafe_path_.getPosition();
-    double ds_d = failsafe_path_.getVelocity();
+    double ds_d = failsafe_path_.getClippedVelocity();
     double dds_d = failsafe_path_.getAcceleration();
     double ddds_d = failsafe_path_.getJerk();
     // Calculate goal
@@ -510,9 +510,9 @@ bool SafetyShield::planPFLFailsafe(double a_max_manoeuvre, double j_max_manoeuvr
       spdlog::error("v_limit = {} not between 0 and 1", v_limit);
     }
   } else {
-    v_limit = recovery_path_.getVelocity();
+    v_limit = recovery_path_.getClippedVelocity();
   }
-  bool planning_success = planSafetyShield(recovery_path_.getPosition(), recovery_path_.getVelocity(), recovery_path_.getAcceleration(), v_limit, a_max_manoeuvre, j_max_manoeuvre, failsafe_path_2_);
+  bool planning_success = planSafetyShield(recovery_path_.getPosition(), recovery_path_.getClippedVelocity(), recovery_path_.getAcceleration(), v_limit, a_max_manoeuvre, j_max_manoeuvre, failsafe_path_2_);
   if(!is_under_iso_velocity) {
     double max_d_s = failsafe_path_2_.getMaxVelocity();
     is_under_v_limit_ = max_d_s < v_limit;
@@ -538,13 +538,13 @@ Motion SafetyShield::determineNextMotion(bool is_safe) {
     // Fill potential buffer with position and velocity from recovery path
     if (recovery_path_.getPosition() >= failsafe_path_.getPosition()) {
       s_d = recovery_path_.getPosition();
-      ds_d = recovery_path_.getVelocity();
+      ds_d = recovery_path_.getClippedVelocity();
       dds_d = recovery_path_.getAcceleration();
       ddds_d = recovery_path_.getJerk();
     } else {
       potential_path_.increment(sample_time_);
       s_d = potential_path_.getPosition();
-      ds_d = potential_path_.getVelocity();
+      ds_d = potential_path_.getClippedVelocity();
       dds_d = potential_path_.getAcceleration();
       ddds_d = potential_path_.getJerk();
     }
@@ -563,7 +563,7 @@ Motion SafetyShield::determineNextMotion(bool is_safe) {
     // interpolate from old safe path
     safe_path_.increment(sample_time_);
     s_d = safe_path_.getPosition();
-    ds_d = safe_path_.getVelocity();
+    ds_d = safe_path_.getClippedVelocity();
     dds_d = safe_path_.getAcceleration();
     ddds_d = safe_path_.getJerk();
     next_motion =
@@ -685,11 +685,11 @@ Motion SafetyShield::step(double cycle_begin_time) {
 Motion SafetyShield::getCurrentMotion() {
   Motion current_pos;
   if (!recovery_path_.isCurrent()) {
-    current_pos = long_term_trajectory_.interpolate(failsafe_path_.getPosition(), failsafe_path_.getVelocity(),
+    current_pos = long_term_trajectory_.interpolate(failsafe_path_.getPosition(), failsafe_path_.getClippedVelocity(),
                                                     failsafe_path_.getAcceleration(), failsafe_path_.getJerk(),
                                                     v_max_allowed_, a_max_allowed_, j_max_allowed_);
   } else {
-    current_pos = long_term_trajectory_.interpolate(recovery_path_.getPosition(), recovery_path_.getVelocity(),
+    current_pos = long_term_trajectory_.interpolate(recovery_path_.getPosition(), recovery_path_.getClippedVelocity(),
                                                     recovery_path_.getAcceleration(), recovery_path_.getJerk(),
                                                     v_max_allowed_, a_max_allowed_, j_max_allowed_);
   }

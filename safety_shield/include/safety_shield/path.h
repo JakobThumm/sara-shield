@@ -119,12 +119,21 @@ class Path {
 
   /**
    * @brief Returns the path current velocity
+   *
+   * @return the current velocity
+   */
+  inline double getVelocity() {
+    return vel_;
+  }
+
+  /**
+   * @brief Returns the path current velocity
    * 
    * @details Clips the velocity to [0, 1]
    *
    * @return the current velocity
    */
-  inline double getVelocity() {
+  inline double getClippedVelocity() {
     // clip vel to [0, 1]
     if (vel_ > 1) {
       return 1;
@@ -132,7 +141,7 @@ class Path {
       return 0;
     } else {
       return vel_;
-    } 
+    }
   }
 
   /**
