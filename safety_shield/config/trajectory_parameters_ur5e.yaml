@@ -1,0 +1,27 @@
+robot_name: "ur5e"
+
+# Failsafe information
+max_s_stop: 0.2
+q_min_allowed: [-6.28318530718, -6.28318530718, -3.14159265359, -6.28318530718, -6.28318530718, -6.28318530718]
+q_max_allowed: [6.28318530718, 6.28318530718, 3.14159265359, 6.28318530718, 6.28318530718, 6.28318530718]
+v_max_allowed: [3.14, 3.14, 3.14, 6.28, 6.28, 6.28]
+a_max_allowed: [10, 10, 10, 10, 10, 10]
+j_max_allowed: [400, 400, 400, 400, 400, 400]
+# Maximum long-term planning acc / jerk
+a_max_ltt: [2, 2, 2, 2, 2, 2]
+j_max_ltt: [15, 15, 15, 15, 15, 15]
+
+nb_joints: 6
+
+q1: [0.0]
+q2: [0.0]
+q3: [0.0]
+q4: [0.0]
+q5: [0.0]
+q6: [0.0]
+alpha_i_max: 5.0
+# safety-rated speed specified by iso-norm
+v_safe: 0.05
+# APPROXIMATE == 0
+# EXACT == 1
+velocity_method: 0

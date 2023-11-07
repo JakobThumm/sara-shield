@@ -74,25 +74,30 @@ def get_mesh_filename_and_scale(link):
     :param link Element in the URDF tree
     :return filename and scale of the mesh 
     """
-    visual = link.find('visual')
+    # Prefer collision over visual
+    mesh_element = link.find('collision')
+    if mesh_element is None:
+        mesh_element = link.find('visual')
+    if mesh_element is None:
+        return None, None
 
-    if visual is not None:
-        geometry = visual.find('geometry')
+    geometry = mesh_element.find('geometry')
+    if geometry is None:
+        return None, None
 
-        if geometry is not None:
-            mesh = geometry.find('mesh')
+    mesh = geometry.find('mesh')
+    if mesh is None:
+        return None, None
 
-            if mesh is not None:
-                filepath = mesh.attrib.get('filename', '')
-                filename = os.path.basename(filepath)
+    filepath = mesh.attrib.get('filename', '')
+    filename = os.path.basename(filepath)
 
-                if 'scale' in mesh.attrib:
-                    scale_xyz = [float(x) for x in mesh.attrib.get('scale').split()]
-                else:
-                    scale_xyz = [1.0, 1.0, 1.0]
+    if 'scale' in mesh.attrib:
+        scale_xyz = [float(x) for x in mesh.attrib.get('scale').split()]
+    else:
+        scale_xyz = [1.0, 1.0, 1.0]
 
-                return filename, scale_xyz
-    return None, None
+    return filename, scale_xyz
 
 
 def find_trafo_and_mesh_filenames(urdf_file, relevant_joint_type, joint_names_of_interest):
@@ -341,6 +346,13 @@ def parse_urdf_file_transformations(urdf_file, joint_names_of_interest, alternat
 
     for joint in root.findall(".//joint"):
         name = joint.attrib['name']
+
+        # filter out non-joints
+        if 'type' not in joint.attrib:
+            continue
+        elif joint.attrib['type'] == 'fixed' and not alternating_fixed_and_revolute_joints:
+            continue
+
         type = joint.attrib['type']
 
         # skip irrelevant joints
@@ -401,6 +413,7 @@ def export_capsules(robot_name, secure_radius, nb_joints, capsules, transformati
     """
     if nb_joints != len(transformations.items()):
         warnings.warn("Warning...........The number of joints does not match the number of transformations!")
+        print("specified number:", nb_joints, "number of transformations", len(transformations.items()))
 
     if nb_joints == len(capsules) - 1:  # we ignore the first capsule, since this one is the base
         ignore_first = True
@@ -409,6 +422,7 @@ def export_capsules(robot_name, secure_radius, nb_joints, capsules, transformati
     else:
         warnings.warn("Warning...........The number of number does not match the number of capsules!")
         ignore_first = False
+        print("specified number:", nb_joints, "number of capsules:", len(capsules))
 
     filepath = f'robot_parameters_{robot_name}.yaml'
     with open(filepath, 'w') as f:
@@ -477,6 +491,12 @@ def create_robot_file(limit_q_min, limit_q_max, limit_v, nb_joints, robot_name):
         f.write(f'nb_joints: {nb_joints}\n\n')
         for i in range(1, nb_joints + 1):
             f.write(f'q{i}: [0.0]\n')
+        f.write('alpha_i_max: 5.0\n')
+        f.write('# safety-rated speed specified by iso-norm\n')
+        f.write('v_safe: 0.05\n')
+        f.write('# APPROXIMATE == 0\n')
+        f.write('# EXACT == 1\n')
+        f.write('velocity_method: 0\n')
 
 
 if __name__ == '__main__':
@@ -504,8 +524,8 @@ if __name__ == '__main__':
     parser.add_argument('-n', '--number_joints', default=6, type=int, dest='number_joints')
     parser.add_argument('--secure_radius', default=0.02, type=float, dest='secure_radius')
 
-    parser.add_argument('-v', '--visualize', action=argparse.BooleanOptionalAction, dest='visualize')
-    parser.add_argument('-e', '--export', action=argparse.BooleanOptionalAction, dest='export')
+    parser.add_argument('-v', '--visualize', action="store_true", dest='visualize')
+    parser.add_argument('-e', '--export', action="store_true", dest='export')
 
     args = parser.parse_args()
 
@@ -528,7 +548,8 @@ if __name__ == '__main__':
     # get the transformations between each link (fixed + rotating)
     # also get the min and max position of joints, as well as the max velocity
     trafo, limit_q_min, limit_q_max, limit_v = (
-        parse_urdf_file_transformations(args.urdf_file, args.joint_names_of_interest, args.alternating_fixed_and_revolute_joints))
+        parse_urdf_file_transformations(args.urdf_file, args.joint_names_of_interest,
+                                        args.alternating_fixed_and_revolute_joints))
 
     for name, T in trafo.items():
         print(f"{name} transformation matrix:")
@@ -539,4 +560,3 @@ if __name__ == '__main__':
     create_robot_file(limit_q_min, limit_q_max, limit_v, args.number_joints, args.robot_name)
 
     plt.show()
-

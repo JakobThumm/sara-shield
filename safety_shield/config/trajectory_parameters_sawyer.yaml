@@ -1,0 +1,31 @@
+robot_name: "sawyer"
+
+# Failsafe information
+max_s_stop: 0.2
+q_min_allowed: [-3.0503, -3.8095, -3.0426, -3.0439, -2.9761, -2.9761, -4.7124]
+q_max_allowed: [3.0503, 2.2736, 3.0426, 3.0439, 2.9761, 2.9761, 4.7124]
+v_max_allowed: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+a_max_allowed: [10, 10, 10, 10, 10, 10, 10]
+j_max_allowed: [400, 400, 400, 400, 400, 400, 400]
+# Maximum long-term planning acc / jerk
+a_max_ltt: [2, 2, 2, 2, 2, 2, 2]
+j_max_ltt: [15, 15, 15, 15, 15, 15, 15]
+
+nb_joints: 7
+
+q1: [0.0]
+q2: [0.0]
+q3: [0.0]
+q4: [0.0]
+q5: [0.0]
+q6: [0.0]
+q7: [0.0]
+
+alpha_i_max: 5.0
+
+# safety-rated speed specified by iso-norm
+v_safe: 0.05
+
+# APPROXIMATE == 0
+# EXACT == 1
+velocity_method: 0
