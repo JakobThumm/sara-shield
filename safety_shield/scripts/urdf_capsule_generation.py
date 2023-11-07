@@ -74,25 +74,30 @@ def get_mesh_filename_and_scale(link):
     :param link Element in the URDF tree
     :return filename and scale of the mesh 
     """
-    visual = link.find('visual')
+    # Prefer collision over visual
+    mesh_element = link.find('collision')
+    if mesh_element is None:
+        mesh_element = link.find('visual')
+    if mesh_element is None:
+        return None, None
 
-    if visual is not None:
-        geometry = visual.find('geometry')
+    geometry = mesh_element.find('geometry')
+    if geometry is None:
+        return None, None
 
-        if geometry is not None:
-            mesh = geometry.find('mesh')
+    mesh = geometry.find('mesh')
+    if mesh is None:
+        return None, None
 
-            if mesh is not None:
-                filepath = mesh.attrib.get('filename', '')
-                filename = os.path.basename(filepath)
+    filepath = mesh.attrib.get('filename', '')
+    filename = os.path.basename(filepath)
 
-                if 'scale' in mesh.attrib:
-                    scale_xyz = [float(x) for x in mesh.attrib.get('scale').split()]
-                else:
-                    scale_xyz = [1.0, 1.0, 1.0]
+    if 'scale' in mesh.attrib:
+        scale_xyz = [float(x) for x in mesh.attrib.get('scale').split()]
+    else:
+        scale_xyz = [1.0, 1.0, 1.0]
 
-                return filename, scale_xyz
-    return None, None
+    return filename, scale_xyz
 
 
 def find_trafo_and_mesh_filenames(urdf_file, relevant_joint_type, joint_names_of_interest):
@@ -513,8 +518,8 @@ if __name__ == '__main__':
     parser.add_argument('-n', '--number_joints', default=6, type=int, dest='number_joints')
     parser.add_argument('--secure_radius', default=0.02, type=float, dest='secure_radius')
 
-    parser.add_argument('-v', '--visualize', action=argparse.BooleanOptionalAction, dest='visualize')
-    parser.add_argument('-e', '--export', action=argparse.BooleanOptionalAction, dest='export')
+    parser.add_argument('-v', '--visualize', action="store_true", dest='visualize')
+    parser.add_argument('-e', '--export', action="store_true", dest='export')
 
     args = parser.parse_args()
 
