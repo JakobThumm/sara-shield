@@ -445,7 +445,12 @@ Motion SafetyShield::computesPotentialTrajectory(bool v, const std::vector<doubl
       bool failsafe_2_planning_success;
       if (shield_type_ == ShieldType::PFL) {
         // Plan new failsafe path for PFL
-        failsafe_2_planning_success = planPFLFailsafe(a_max_manoeuvre, j_max_manoeuvre);
+        // DEBUG mode for clamping prevention.
+        // TODO: This shoudl be planPFLFailsafe for PFL mode in the future.
+        // failsafe_2_planning_success = planPFLFailsafe(a_max_manoeuvre, j_max_manoeuvre);
+        failsafe_2_planning_success =
+            planSafetyShield(recovery_path_.getPosition(), recovery_path_.getClippedVelocity(), recovery_path_.getAcceleration(),
+                            0, a_max_manoeuvre, j_max_manoeuvre, failsafe_path_2_);
       } else {
         // plan new failsafe path for STP
         failsafe_2_planning_success =
