@@ -53,6 +53,12 @@ void HumanReach::measurement(const std::vector<reach_lib::Point>& human_joint_po
   try {
     if (last_meas_timestep_ != -1) {
       double dt = time - last_meas_timestep_;
+      if (dt < 1e-7) {
+        spdlog::warn("HumanReach::measurement: dt is too small. dt = {}", dt);
+        joint_pos_ = human_joint_pos;
+        last_meas_timestep_ = time;
+        return;
+      }
       for (int i = 0; i < human_joint_pos.size(); i++) {
         // If more than 1 measurement, calculate velocity
         joint_vel_[i] = (human_joint_pos[i] - joint_pos_[i]) * (1 / dt);
