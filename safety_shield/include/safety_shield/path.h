@@ -118,12 +118,21 @@ class Path {
   }
 
   /**
-   * @brief Returns the path starting velocity
+   * @brief Returns the path current velocity
+   * 
+   * @details Clips the velocity to [0, 1]
    *
-   * @return the starting velocity
+   * @return the current velocity
    */
   inline double getVelocity() {
-    return vel_;
+    // clip vel to [0, 1]
+    if (vel_ > 1) {
+      return 1;
+    } else if (vel_ < 0) {
+      return 0;
+    } else {
+      return vel_;
+    } 
   }
 
   /**
