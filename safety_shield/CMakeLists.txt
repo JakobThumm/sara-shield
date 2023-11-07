@@ -61,6 +61,8 @@ install(TARGETS ${PROJECT_NAME} DESTINATION /usr/lib)
 
 add_executable(debug src/debug.cc)
 target_link_libraries(debug ${PROJECT_NAME} long_term_planner spdlog yaml-cpp)
+add_executable(debug_single_step src/debug_single_step.cc)
+target_link_libraries(debug_single_step ${PROJECT_NAME} long_term_planner spdlog yaml-cpp)
 #############
 ## GTest ##
 #############

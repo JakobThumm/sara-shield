@@ -516,12 +516,24 @@ Motion SafetyShield::determineNextMotion(bool is_safe) {
     if (recovery_path_.getPosition() >= failsafe_path_.getPosition()) {
       s_d = recovery_path_.getPosition();
       ds_d = recovery_path_.getVelocity();
+      // Clip ds_d to [0, 1]
+      if (ds_d > 1) {
+        ds_d = 1;
+      } else if (ds_d < 0) {
+        ds_d = 0;
+      }
       dds_d = recovery_path_.getAcceleration();
       ddds_d = recovery_path_.getJerk();
     } else {
       potential_path_.increment(sample_time_);
       s_d = potential_path_.getPosition();
       ds_d = potential_path_.getVelocity();
+      // Clip ds_d to [0, 1]
+      if (ds_d > 1) {
+        ds_d = 1;
+      } else if (ds_d < 0) {
+        ds_d = 0;
+      }
       dds_d = potential_path_.getAcceleration();
       ddds_d = potential_path_.getJerk();
     }
@@ -541,6 +553,12 @@ Motion SafetyShield::determineNextMotion(bool is_safe) {
     safe_path_.increment(sample_time_);
     s_d = safe_path_.getPosition();
     ds_d = safe_path_.getVelocity();
+    // Clip ds_d to [0, 1]
+    if (ds_d > 1) {
+      ds_d = 1;
+    } else if (ds_d < 0) {
+      ds_d = 0;
+    }
     dds_d = safe_path_.getAcceleration();
     ddds_d = safe_path_.getJerk();
     next_motion =
@@ -735,8 +753,10 @@ bool SafetyShield::calculateLongTermTrajectory(const std::vector<double>& start_
   long_term_planner::Trajectory trajectory;
   bool success = ltp_.planTrajectory(goal_q, start_q, start_dq, start_ddq, trajectory);
   if (!success) return false;
-  std::vector<Motion> new_traj(trajectory.length);
+  std::vector<Motion> new_traj(trajectory.length + 1);
   double new_time = path_s_;
+  new_traj[0] = Motion(new_time, start_q, start_dq, start_ddq, 0.0);
+  new_time += sample_time_;
   std::vector<double> q(nb_joints_);
   std::vector<double> dq(nb_joints_);
   std::vector<double> ddq(nb_joints_);
@@ -748,7 +768,7 @@ bool SafetyShield::calculateLongTermTrajectory(const std::vector<double>& start_
       ddq[j] = trajectory.a[j][i];
       dddq[j] = trajectory.j[j][i];
     }
-    new_traj[i] = Motion(new_time, q, dq, ddq, dddq);
+    new_traj[i + 1] = Motion(new_time, q, dq, ddq, dddq);
     new_time += sample_time_;
   }
   if (shield_type_ == ShieldType::OFF || shield_type_ == ShieldType::SSM) {
