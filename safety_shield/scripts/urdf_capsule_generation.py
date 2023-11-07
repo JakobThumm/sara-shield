@@ -341,6 +341,13 @@ def parse_urdf_file_transformations(urdf_file, joint_names_of_interest, alternat
 
     for joint in root.findall(".//joint"):
         name = joint.attrib['name']
+
+        # filter out non-joints
+        if 'type' not in joint.attrib:
+            continue
+        elif joint.attrib['type'] == 'fixed' and not alternating_fixed_and_revolute_joints:
+            continue
+
         type = joint.attrib['type']
 
         # skip irrelevant joints
@@ -401,6 +408,7 @@ def export_capsules(robot_name, secure_radius, nb_joints, capsules, transformati
     """
     if nb_joints != len(transformations.items()):
         warnings.warn("Warning...........The number of joints does not match the number of transformations!")
+        print("specified number:", nb_joints, "number of transformations", len(transformations.items()))
 
     if nb_joints == len(capsules) - 1:  # we ignore the first capsule, since this one is the base
         ignore_first = True
@@ -409,6 +417,7 @@ def export_capsules(robot_name, secure_radius, nb_joints, capsules, transformati
     else:
         warnings.warn("Warning...........The number of number does not match the number of capsules!")
         ignore_first = False
+        print("specified number:", nb_joints, "number of capsules:", len(capsules))
 
     filepath = f'robot_parameters_{robot_name}.yaml'
     with open(filepath, 'w') as f:
@@ -528,7 +537,8 @@ if __name__ == '__main__':
     # get the transformations between each link (fixed + rotating)
     # also get the min and max position of joints, as well as the max velocity
     trafo, limit_q_min, limit_q_max, limit_v = (
-        parse_urdf_file_transformations(args.urdf_file, args.joint_names_of_interest, args.alternating_fixed_and_revolute_joints))
+        parse_urdf_file_transformations(args.urdf_file, args.joint_names_of_interest,
+                                        args.alternating_fixed_and_revolute_joints))
 
     for name, T in trafo.items():
         print(f"{name} transformation matrix:")
@@ -539,4 +549,3 @@ if __name__ == '__main__':
     create_robot_file(limit_q_min, limit_q_max, limit_v, args.number_joints, args.robot_name)
 
     plt.show()
-
