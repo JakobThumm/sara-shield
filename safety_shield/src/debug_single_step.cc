@@ -1,6 +1,9 @@
 #include <string>
 #include <vector>
 
+#define SPDLOG_ACTIVE_LEVEL SPDLOG_LEVEL_DEBUG
+#include "spdlog/spdlog.h"
+
 #include "reach_lib.hpp"
 #include "safety_shield/human_reach.h"
 #include "safety_shield/long_term_traj.h"
@@ -10,6 +13,7 @@
 #include "safety_shield/verify.h"
 
 int main() {
+  spdlog::set_level(spdlog::level::debug);
   double sample_time = 0.004;
   std::string trajectory_config_file = std::string("../config/trajectory_parameters_schunk.yaml");
   std::string robot_config_file = std::string("../config/robot_parameters_schunk.yaml");
@@ -41,21 +45,21 @@ int main() {
     spdlog::info("Next motion q[0], dq[0], ddq[0], dddq[0]");
     for (int i = 0; i < 100; i++) {  // i < 100; i<10000
       t += 0.001;
-      if (i < 10) {
+      if (i < 20 || (i > 40 && i % 2 == 0)) {
         shield.humanMeasurement(dummy_human_meas_safe, t);
       } else {
         shield.humanMeasurement(dummy_human_meas_unsafe, t);
         shield.humanMeasurement(dummy_human_meas_unsafe, t + 0.000001);
       }
       t += 0.003;
-      if (i % 10 == 0) {  // % 2
+      if (i % 100 == 0) {
         std::vector<double> qpos{1.0, 1.5, 0.0, 0.0, 0.0, 0.0};
         std::vector<double> qvel{0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
         shield.newLongTermTrajectory(qpos, qvel);
         spdlog::info("new LTT");
       }
       safety_shield::Motion next_motion = shield.step(t);
-      spdlog::info("{}, {}, {}, {}", next_motion.getAngle()[0], next_motion.getVelocity()[0],
+      spdlog::info("Is safe = {}, next motion: q = {}, dq = {}, ddq = {}, dddq = {}", shield.getSafety(), next_motion.getAngle()[0], next_motion.getVelocity()[0],
                    next_motion.getAcceleration()[0], next_motion.getJerk()[0]);
       // spdlog::info("finished step");
     }

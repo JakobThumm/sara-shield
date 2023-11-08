@@ -567,6 +567,7 @@ Motion SafetyShield::determineNextMotion(bool is_safe) {
   /// !!! Set s to the new path position !!!
   path_s_ = s_d;
   // Return the calculated next motion
+  spdlog::debug("Path values of next motion: s = {}, ds = {}, dds = {}, ddds = {}", s_d, ds_d, dds_d, ddds_d);
   return next_motion;
 }
 
