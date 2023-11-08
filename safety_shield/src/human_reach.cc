@@ -94,6 +94,7 @@ std::vector<std::vector<std::vector<reach_lib::Capsule>>> HumanReach::improvedHu
   double increment = goal_motion_time / time_steps;
   double begin = 0;
   double end = t_command - last_meas_timestep_;
+  // TODO: erstes intervall bis t_command - last_meas_timestep_ und dann danach die time_steps?
   for(int i = 0; i < time_steps; i++) {
     human_p_.update(begin, end, joint_pos_, joint_vel_);
     human_v_.update(begin, end, joint_pos_, joint_vel_);

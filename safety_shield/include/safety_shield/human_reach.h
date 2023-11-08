@@ -170,6 +170,10 @@ class HumanReach {
 
   /**
    * @brief calculates reachable sets for each time step
+   * @param[in] t_command
+   * @param[in] current_motion_time
+   * @param[in] goal_motion_time
+   * @param[in] sample_time
    * @return list of reachable sets in all time steps
    * first index is time step
    * second index is which model (pos, vel, acc)

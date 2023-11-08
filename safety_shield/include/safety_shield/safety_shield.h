@@ -302,6 +302,16 @@ class SafetyShield {
    */
   double v_safe_ = 0.10;
 
+  /**
+   * @brief
+   */
+  double reachability_sets_interval_size_ = 10;
+
+  /**
+   * @brief
+   */
+  bool ltt_mode_ = false;
+
   //////// For measuring maximum and average duration of step-calls //////
 
   long num_steps_ = 0;
@@ -537,9 +547,10 @@ class SafetyShield {
    * calculates list of motions of all (discrete) time steps from STP
    * @param start_config robot configuration at beginning
    * @param end_config robot configuration at end
+   * @param reachability_set_duration
    * @return list of motions
    */
-  std::vector<Motion> getMotionsOfAllTimeStepsFromSTP(Motion& start_config, Motion& end_config);
+  std::vector<Motion> getMotionsOfAllTimeStepsFromSTP(Motion& start_config, Motion& end_config, double reachability_set_duration);
 
   /**
    * calculates list of time steps of robot reachability sets from LTT
@@ -633,6 +644,8 @@ class SafetyShield {
     std::cout << "average duration of step-call: " << average_step_duration_ << " ms" << std::endl;
     std::cout << "maximum duration of step-call: " << maximum_step_duration_ << " ms" << std::endl;
     std::cout << "total duration of step-calls: " << total_step_duration_ << " ms" << std::endl;
+    std::cout << "ltt-mode: " << ltt_mode_ << std::endl;
+    std::cout << "reachability set size: " << reachability_sets_interval_size_ << std::endl;
   }
 
 };

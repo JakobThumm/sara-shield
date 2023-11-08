@@ -627,22 +627,23 @@ Motion SafetyShield::step(double cycle_begin_time) {
         is_safe_ = false;
       } else {
         // Compute the robot reachable set for the potential trajectory
+        double reachability_set_duration = reachability_sets_interval_size_ * sample_time_;
         if(new_ltt_) {
-          if(new_long_term_trajectory_.getLength() < 2) {
-            improved_robot_capsules_ = robot_reach_->improvedReach(getMotionsOfAllTimeStepsFromSTP(current_motion, goal_motion), alpha_i);
+          if(new_long_term_trajectory_.getLength() < 2 || !ltt_mode_) {
+            improved_robot_capsules_ = robot_reach_->improvedReach(getMotionsOfAllTimeStepsFromSTP(current_motion, goal_motion, reachability_set_duration), alpha_i);
           } else {
             improved_robot_capsules_ = getRobotReachabilitySetsFromLTT(current_motion, goal_motion, new_long_term_trajectory_);
           }
         } else {
-          if(long_term_trajectory_.getLength() < 2) {
-            improved_robot_capsules_ = robot_reach_->improvedReach(getMotionsOfAllTimeStepsFromSTP(current_motion, goal_motion), alpha_i);
+          if(long_term_trajectory_.getLength() < 2 || !ltt_mode_) {
+            improved_robot_capsules_ = robot_reach_->improvedReach(getMotionsOfAllTimeStepsFromSTP(current_motion, goal_motion, reachability_set_duration), alpha_i);
           } else {
             improved_robot_capsules_ = getRobotReachabilitySetsFromLTT(current_motion, goal_motion, long_term_trajectory_);
           }
         }
         // Compute the human reachable sets for the potential trajectory
         // humanReachabilityAnalysis(t_command, t_brake)
-        improved_human_capsules_ = human_reach_->improvedHumanReachabilityAnalysis(cycle_begin_time_, current_motion.getTime(), goal_motion.getTime(), sample_time_);
+        improved_human_capsules_ = human_reach_->improvedHumanReachabilityAnalysis(cycle_begin_time_, current_motion.getTime(), goal_motion.getTime(), reachability_set_duration);
         // Verify if the robot and human reachable sets are collision free
         is_safe_ = verify_->improved_verify_human_reach(improved_robot_capsules_, improved_human_capsules_);
         // for visualization in hrgym, reachability sets of last timestep are used
@@ -791,10 +792,10 @@ bool SafetyShield::calculateLongTermTrajectory(const std::vector<double>& start_
 }
 
 /// interpolate all robot configurations for each time step and collect in list from STP
-std::vector<Motion> SafetyShield::getMotionsOfAllTimeStepsFromSTP(Motion& start_config, Motion& end_config) {
+std::vector<Motion> SafetyShield::getMotionsOfAllTimeStepsFromSTP(Motion& start_config, Motion& end_config, double reachability_set_duration) {
   std::vector<Motion> list;
   double t_reach = end_config.getTime() - start_config.getTime();
-  int time_steps = ceil(t_reach / sample_time_);
+  int time_steps = ceil(t_reach / reachability_set_duration);
   Path path = potential_path_;
   LongTermTraj& ltt = long_term_trajectory_;
   if(new_ltt_) {
@@ -803,7 +804,7 @@ std::vector<Motion> SafetyShield::getMotionsOfAllTimeStepsFromSTP(Motion& start_
   list.push_back(start_config);
   for(int i = 0; i < time_steps; i++) {
     // TODO: statt sample_time, roundToTimestep() verwenden?
-    path.increment(sample_time_);
+    path.increment(reachability_set_duration);
     Motion temp = ltt.interpolate(path.getPosition(), path.getVelocity(), path.getAcceleration(), path.getJerk(), v_max_allowed_,
                                   a_max_allowed_, j_max_allowed_);
     list.push_back(temp);
@@ -827,7 +828,7 @@ std::vector<std::vector<reach_lib::Capsule>> SafetyShield::getRobotReachabilityS
   auto pointer = ltt.getReachabilitySetsRef().begin();
 
   // create vector, where each timestep gets corresponding reachability set of the LTT
-  std::vector<Motion> motions = getMotionsOfAllTimeStepsFromSTP(start_config, end_config);
+  std::vector<Motion> motions = getMotionsOfAllTimeStepsFromSTP(start_config, end_config, reachability_sets_interval_size_ * sample_time_);
   std::vector<std::vector<reach_lib::Capsule>> final_list;
   int index_for_ltt_list = start;
   for(int i = 0; i < motions.size() - 1; i++) {
