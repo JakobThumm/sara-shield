@@ -82,6 +82,69 @@ TEST_F(HumanReachCombinedOnlyTest, HumanReachAnalysisCombinedTest) {
   EXPECT_DOUBLE_EQ(c_cap[0].r_, r);
 }
 
+TEST_F(HumanReachCombinedOnlyArmTest, HumanReachAnalysisCombinedTest) {
+  reach_lib::Point p1(0.0, 0.0, 0.0);
+  reach_lib::Point p2(0.5, 0.0, 0.0);
+  reach_lib::Point p3(1.0, 0.0, 0.0);
+  std::vector<reach_lib::Point> human_joint_pos = {p1, p2, p3};
+  double t_meas = 0.0;
+  human_reach_->measurement(human_joint_pos, t_meas);
+  p1 = reach_lib::Point(0.0, 0.01, 0.0);
+  p2 = reach_lib::Point(0.5, 0.01, 0.0);
+  p3 = reach_lib::Point(1.0, 0.01, 0.0);
+  human_joint_pos = {p1, p2, p3};
+  t_meas = 0.01;
+  human_reach_->measurement(human_joint_pos, t_meas);
+  double t_command = 0.02;
+  double t_break = 0.03;
+  // Delay = 0.01
+  human_reach_->humanReachabilityAnalysis(t_command, t_break);
+  double t = (t_command - t_meas) + t_break + human_reach_->getDelay();
+  double a_max = 50;
+  double thickness_1 = 0.1;
+  double thickness_2 = 0.1;
+  double thickness_3 = 0.208;
+  double v_0 = 1.0;
+  reach_lib::Point dy_0(0.0, 1.0, 0.0);
+  double v_max = 2.0;
+  double t_up = std::max(std::min((v_max - v_0) / a_max, t), 0.0);
+  double t_down = std::max(std::min((v_max + v_0) / a_max, t), 0.0);
+  double t_bar = std::max(std::min(v_max / a_max, t), 0.0);
+  double base_r = a_max * std::sqrt(std::pow(0.5 * (t*(t_up+t_down) - 0.5 * (std::pow(t_up, 2.0) + std::pow(t_down, 2.0))), 2.0) + 
+      std::pow(t*t_bar - 0.5 * std::pow(t_bar, 2.0), 2.0)) + human_reach_->getMeasurementErrorPos() + human_reach_->getMeasurementErrorVel() * t;
+  double r_1 = base_r + thickness_1/2.0;
+  double r_2 = base_r + thickness_2/2.0;
+  double r_3 = base_r + thickness_3/2.0;
+  double shift = (v_0 * t + 0.5 * a_max * (t * (t_up - t_down) - 0.5 * (std::pow(t_up, 2.0) - std::pow(t_down, 2.0))));
+  reach_lib::Point next_pos_1 = p1 + dy_0 * shift;
+  reach_lib::Point next_pos_2 = p2 + dy_0 * shift;
+  reach_lib::Point next_pos_3 = p3 + dy_0 * shift;
+  std::vector<std::vector<reach_lib::Capsule>> caps = human_reach_->getAllCapsules();
+  std::vector<reach_lib::Capsule> c_cap = caps[0];
+  EXPECT_EQ(c_cap.size(), 3);
+  EXPECT_DOUBLE_EQ(c_cap[2].p1_.x, next_pos_1.x);
+  EXPECT_DOUBLE_EQ(c_cap[2].p1_.y, next_pos_1.y);
+  EXPECT_DOUBLE_EQ(c_cap[2].p1_.z, next_pos_1.z);
+  EXPECT_DOUBLE_EQ(c_cap[2].p2_.x, next_pos_2.x);
+  EXPECT_DOUBLE_EQ(c_cap[2].p2_.y, next_pos_2.y);
+  EXPECT_DOUBLE_EQ(c_cap[2].p2_.z, next_pos_2.z);
+  EXPECT_DOUBLE_EQ(c_cap[2].r_, r_1);
+  EXPECT_DOUBLE_EQ(c_cap[1].p1_.x, next_pos_2.x);
+  EXPECT_DOUBLE_EQ(c_cap[1].p1_.y, next_pos_2.y);
+  EXPECT_DOUBLE_EQ(c_cap[1].p1_.z, next_pos_2.z);
+  EXPECT_DOUBLE_EQ(c_cap[1].p2_.x, next_pos_3.x);
+  EXPECT_DOUBLE_EQ(c_cap[1].p2_.y, next_pos_3.y);
+  EXPECT_DOUBLE_EQ(c_cap[1].p2_.z, next_pos_3.z);
+  EXPECT_DOUBLE_EQ(c_cap[1].r_, r_2);
+  EXPECT_DOUBLE_EQ(c_cap[0].p1_.x, next_pos_3.x);
+  EXPECT_DOUBLE_EQ(c_cap[0].p1_.y, next_pos_3.y);
+  EXPECT_DOUBLE_EQ(c_cap[0].p1_.z, next_pos_3.z);
+  EXPECT_DOUBLE_EQ(c_cap[0].p2_.x, next_pos_3.x);
+  EXPECT_DOUBLE_EQ(c_cap[0].p2_.y, next_pos_3.y);
+  EXPECT_DOUBLE_EQ(c_cap[0].p2_.z, next_pos_3.z);
+  EXPECT_DOUBLE_EQ(c_cap[0].r_, r_3);
+}
+
 TEST_F(HumanReachTest, InitializationTest) {
   EXPECT_DOUBLE_EQ(0, 0);
 }
