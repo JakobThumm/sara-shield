@@ -3,6 +3,8 @@ measurement_error_pos: 0.0
 measurement_error_vel: 0.0
 delay: 0.0
 
+use_combined_model: true
+
 # Names of joints in correct outputted order
 joint_names: [
   "L_Hip", "R_Hip", "Torso", "L_Knee", "R_Knee",

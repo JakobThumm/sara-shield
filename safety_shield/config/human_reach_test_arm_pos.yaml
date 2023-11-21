@@ -3,6 +3,8 @@ measurement_error_pos: 0.1
 measurement_error_vel: 1.0
 delay: 0.01
 
+use_combined_model: true
+
 # Names of joints in correct outputted order
 joint_names: [
   "rightShoulder", "rightElbow", "rightWrist"
