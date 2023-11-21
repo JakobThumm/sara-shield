@@ -20,6 +20,7 @@
 #include <map>
 #include <string>
 #include <vector>
+#include <typeinfo>
 
 #include "reach_lib.hpp"
 #include "spdlog/spdlog.h"
@@ -28,6 +29,24 @@
 #define HUMAN_REACH_H
 
 namespace safety_shield {
+
+/**
+ * @brief Exception thrown when the human model is not found in the list.
+ */
+class HumanModelNotFoundException : public std::exception {
+  std::string msg_;
+ public:
+
+  HumanModelNotFoundException(const std::string& type)
+    : msg_(std::string("[HumanModelNotFoundException] Human model of type ") + type +
+           std::string(" not found."))
+  {}
+
+  virtual const char* what() const throw()
+  {
+    return msg_.c_str();
+  }
+};
 
 /**
  * @brief Class handling the reachability analysis of the human.
@@ -63,19 +82,10 @@ class HumanReach {
   std::map<std::string, reach_lib::jointPair> body_link_joints_;
 
   /**
-   * @brief The object for calculating the position based reachable set.
+   * @brief List of human models to use.
+   * @details Vector of pointers necessary to prevent object slicing.
    */
-  reach_lib::ArticulatedPos human_p_;
-
-  /**
-   * @brief The object for calculating the velocity based reachable set.
-   */
-  reach_lib::ArticulatedVel human_v_;
-
-  /**
-   * @brief The object for calculating the acceleration based reachable set.
-   */
-  reach_lib::ArticulatedAccel human_a_;
+  std::vector<reach_lib::Articulated*> human_models_;
 
   /**
    * @brief We need two measurements for velocity calculation.
@@ -107,7 +117,30 @@ class HumanReach {
   HumanReach() {}
 
   /**
-   * @brief HumanReach constructor
+   * @brief HumanReach constructor when using the single motion models (combined).
+   * @param[in] n_joints_meas Number of joints in the measurement
+   * @param[in] joint_names Maps the joint name to the joint index (key: Joint name, value: Joint index)
+   * @param[in] body_link_joints Maps the body name to the proximal and distal joint ids (key: Body name, value: Joint pair)
+   * @param[in] thickness Defines the thickness of the body parts (key: Name of body part, value: Thickness of body
+   * part)
+   * @param[in] max_v The maximum velocity of the joints
+   * @param[in] max_a The maximum acceleration of the joints
+   * @param[in] measurement_error_pos Maximal positional measurement error
+   * @param[in] measurement_error_vel Maximal velocity measurement error
+   * @param[in] delay Delay in measurement processing pipeline
+  */
+  HumanReach(int n_joints_meas,
+      std::map<std::string, int> joint_names,
+      std::map<std::string, reach_lib::jointPair>& body_link_joints, 
+      const std::map<std::string, double>& thickness, 
+      std::vector<double>& max_v, 
+      std::vector<double>& max_a,
+      double measurement_error_pos, 
+      double measurement_error_vel, 
+      double delay);
+
+  /**
+   * @brief HumanReach constructor when using the three motion models (pos, vel, accel).
    * @param[in] n_joints_meas Number of joints in the measurement
    * @param[in] joint_names Maps the joint name to the joint index (key: Joint name, value: Joint index)
    * @param[in] body_link_joints Maps the body name to the proximal and distal joint ids (key: Body name, value: Joint pair)
@@ -142,7 +175,11 @@ class HumanReach {
   /**
    * @brief Destructor
    */
-  ~HumanReach() {}
+  ~HumanReach() {
+    for (auto& model : human_models_) {
+      delete model;
+    }
+  }
 
   /**
    * @brief Reset the human reach object.
@@ -169,12 +206,33 @@ class HumanReach {
   void humanReachabilityAnalysis(double t_command, double t_brake);
 
   /**
+   * @brief Get the capsules of a model
+   * 
+   * @param[in] model The model to get the capsules from
+   * 
+   * @return reach_lib::Articulated[TYPE] capsules
+   * @throw HumanModelNotFoundException
+   */
+  inline std::vector<reach_lib::Capsule> getCapsulesOfModel(const reach_lib::Articulated& model) {
+    if (reach_lib::get_capsule_map.find(model.get_mode()) != reach_lib::get_capsule_map.end()) {
+      return reach_lib::get_capsule_map.at(model.get_mode())(model);
+    } else {
+      throw HumanModelNotFoundException(model.get_mode());
+    }
+  }
+
+  /**
    * @brief Get the Articulated Pos capsules
    *
    * @return reach_lib::ArticulatedPos capsules
    */
   inline std::vector<reach_lib::Capsule> getArticulatedPosCapsules() {
-    return reach_lib::get_capsules(human_p_);
+    for (const auto& model : human_models_) {
+      if (model->get_mode() == "ARTICULATED-POS") {
+        return getCapsulesOfModel(*model);
+      }
+    }
+    throw HumanModelNotFoundException("ARTICULATED-POS");
   }
 
   /**
@@ -183,7 +241,12 @@ class HumanReach {
    * @return reach_lib::ArticulatedVel capsules
    */
   inline std::vector<reach_lib::Capsule> getArticulatedVelCapsules() {
-    return reach_lib::get_capsules(human_v_);
+    for (const auto& model : human_models_) {
+      if (model->get_mode() == "ARTICULATED-VEL") {
+        return getCapsulesOfModel(*model);
+      }
+    }
+    throw HumanModelNotFoundException("ARTICULATED-VEL");
   }
 
   /**
@@ -192,7 +255,26 @@ class HumanReach {
    * @return reach_lib::ArticulatedAccel capsules
    */
   inline std::vector<reach_lib::Capsule> getArticulatedAccelCapsules() {
-    return reach_lib::get_capsules(human_a_);
+    for (const auto& model : human_models_) {
+      if (model->get_mode() == "ARTICULATED-ACCEL") {
+        return getCapsulesOfModel(*model);
+      }
+    }
+    throw HumanModelNotFoundException("ARTICULATED-ACCEL");
+  }
+
+  /**
+   * @brief Get the Combined capsules
+   *
+   * @return reach_lib::ArticulatedCombined capsules
+   */
+  inline std::vector<reach_lib::Capsule> getArticulatedCombinedCapsules() {
+    for (const auto& model : human_models_) {
+      if (model->get_mode() == "ARTICULATED-COMBINED") {
+        return getCapsulesOfModel(*model);
+      }
+    }
+    throw HumanModelNotFoundException("ARTICULATED-COMBINED");   
   }
 
   /**
@@ -201,7 +283,11 @@ class HumanReach {
    * @return std::vector<std::vector<reach_lib::Capsule>>
    */
   inline std::vector<std::vector<reach_lib::Capsule>> getAllCapsules() {
-    return {getArticulatedPosCapsules(), getArticulatedVelCapsules(), getArticulatedAccelCapsules()};
+    std::vector<std::vector<reach_lib::Capsule>> all_capsules = {};
+    for (const auto& model : human_models_) {
+      all_capsules.push_back(getCapsulesOfModel(*model));
+    }
+    return all_capsules;
   }
 
   /**
