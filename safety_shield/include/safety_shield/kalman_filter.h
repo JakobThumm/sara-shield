@@ -87,12 +87,25 @@ class KalmanFilter {
   }
 
   /**
+   * @brief Reset the Kalman filter.
+   * 
+   * @param initial_state Initial state estimate.
+   * @param initial_covariance Covariance of the initial state estimate.
+   */
+  inline void reset(Vector<DIM_X> initial_state, Matrix<DIM_X, DIM_X> initial_covariance) {
+    initialized_ = true;
+    x_ = initial_state;
+    C_ = initial_covariance;
+  }
+
+  /**
    * @brief Prediction step of the Kalman filter with a linear process model.
    * @details x_{k+1} = A * x_k
    *          C_{k+1} = A * C_k * A^T + C_w
    * 
    * @param A The state transition matrix.
    * @param C_w The process noise covariance matrix.
+   * @throws std::runtime_error if the Kalman filter was not initialized.
    */
   void predict(const Matrix<DIM_X, DIM_X>& A, const Matrix<DIM_X, DIM_X>& C_w);
 
@@ -105,10 +118,17 @@ class KalmanFilter {
    * @param y The measurement vector.
    * @param C_v The measurement noise covariance matrix.
    * @param H The measurement transition matrix (measurement model).
+   * @throws std::runtime_error if the Kalman filter was not initialized.
    */
   void update(const Vector<DIM_Y>& y, const Matrix<DIM_Y, DIM_Y>& C_v, const Matrix<DIM_Y, DIM_X>& H);
 
 protected:
+
+  /**
+   * @brief Indicates if the reset function was called once.
+   */
+  bool initialized_ = false;
+
   /**
    * @brief The state vector.
    * @details Depending on the last function call (update or predict) this vector contains the predicted or updated state.
@@ -124,7 +144,7 @@ protected:
   /**
    * @brief Identity matrix.
    */
-  const Matrix<DIM_X, DIM_X> I_{ Matrix<DIM_X, DIM_X>::Identity() };
+  Matrix<DIM_X, DIM_X> I_{ Matrix<DIM_X, DIM_X>::Identity() };
 };
 } // namespace safety_shield
 

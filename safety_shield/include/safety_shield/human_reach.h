@@ -57,7 +57,7 @@ class HumanModelNotFoundException : public std::exception {
 class HumanReach {
  private:
   /**
-   * @brief Last measured timestep.
+   * @brief Last measured time.
    */
   double last_meas_timestep_ = -1;
 
