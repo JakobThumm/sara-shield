@@ -61,22 +61,22 @@ class MeasurementHandler {
   /**
    * @brief Power spectral density of the system noise
    */
-  double s_w_ = 10E7;
+  double s_w_ = 2e2;
   
   /**
    * @brief Power spectral density of the measurement noise
    */
-  double s_v_ = 2;
+  double s_v_ = 1e-6;
 
   /**
    * @brief Variance of initial measured position.
    */
-  double initial_pos_var_ = 0.01;
+  double initial_pos_var_ = 0.003;
 
   /**
    * @brief Variance of initial velocity.
    */
-  double initial_vel_var_ = 1;
+  double initial_vel_var_ = 0.5;
 
   /**
    * @brief Transition matrix
