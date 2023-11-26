@@ -34,6 +34,24 @@ HumanReach::HumanReach(int n_joints_meas,
       const std::map<std::string, double>& thickness, 
       std::vector<double>& max_v, 
       std::vector<double>& max_a,
+      double measurement_error_pos, 
+      double measurement_error_vel, 
+      double delay,
+      double s_w,
+      double s_v,
+      double initial_pos_var,
+      double initial_vel_var):
+      HumanReach(n_joints_meas, joint_names, body_link_joints, thickness, max_v, max_a, measurement_error_pos, measurement_error_vel, delay) {
+  use_kalman_filter_ = true;
+  measurement_handler_ = new MeasurementHandler(n_joints_meas, s_w, s_v, initial_pos_var, initial_vel_var);
+}
+
+HumanReach::HumanReach(int n_joints_meas,
+      std::map<std::string, int> joint_names,
+      std::map<std::string, reach_lib::jointPair>& body_link_joints, 
+      const std::map<std::string, double>& thickness, 
+      std::vector<double>& max_v, 
+      std::vector<double>& max_a,
       std::vector<std::string>& extremity_base_names, 
       std::vector<std::string>& extremity_end_names, 
       std::vector<double>& extremity_length,
@@ -74,6 +92,28 @@ HumanReach::HumanReach(int n_joints_meas,
   }
 }
 
+HumanReach::HumanReach(int n_joints_meas,
+      std::map<std::string, int> joint_names,
+      std::map<std::string, reach_lib::jointPair>& body_link_joints, 
+      const std::map<std::string, double>& thickness, 
+      std::vector<double>& max_v, 
+      std::vector<double>& max_a,
+      std::vector<std::string>& extremity_base_names, 
+      std::vector<std::string>& extremity_end_names, 
+      std::vector<double>& extremity_length,
+      std::vector<double>& extremity_thickness,
+      double measurement_error_pos, 
+      double measurement_error_vel, 
+      double delay,
+      double s_w,
+      double s_v,
+      double initial_pos_var,
+      double initial_vel_var):
+      HumanReach(n_joints_meas, joint_names, body_link_joints, thickness, max_v, max_a, extremity_base_names, extremity_end_names, extremity_length, extremity_thickness, measurement_error_pos, measurement_error_vel, delay) {
+  use_kalman_filter_ = true;
+  measurement_handler_ = new MeasurementHandler(n_joints_meas, s_w, s_v, initial_pos_var, initial_vel_var);
+}
+
 void HumanReach::reset() {
   last_meas_timestep_ = -1;
   for (int i = 0; i < n_joints_meas_; i++) {
@@ -84,23 +124,38 @@ void HumanReach::reset() {
 
 void HumanReach::measurement(const std::vector<reach_lib::Point>& human_joint_pos, double time) {
   try {
-    if (last_meas_timestep_ != -1) {
-      double dt = time - last_meas_timestep_;
-      if (dt < 1e-7) {
-        spdlog::warn("HumanReach::measurement: dt is too small. dt = {}", dt);
-        joint_pos_ = human_joint_pos;
-        last_meas_timestep_ = time;
-        return;
+    if (use_kalman_filter_) {
+      // Filter measurements
+      Observation filtered_measurements = measurement_handler_->filterMeasurements(human_joint_pos, time);
+      joint_pos_ = filtered_measurements.position;
+      joint_vel_ = filtered_measurements.velocity;
+      // TODO make vector
+      measurement_error_pos_ = 0;
+      for (int i = 0; i < filtered_measurements.pos_variance.size(); i++) {
+        measurement_error_pos_ += std::sqrt(filtered_measurements.pos_variance[i]);
       }
-      for (int i = 0; i < human_joint_pos.size(); i++) {
-        // If more than 1 measurement, calculate velocity
-        joint_vel_[i] = (human_joint_pos[i] - joint_pos_[i]) * (1 / dt);
+      // Three sigma rule
+      measurement_error_pos_ = 3.0 * measurement_error_pos_ / filtered_measurements.pos_variance.size();
+      last_meas_timestep_ = time;
+      return;
+    } else {
+      if (last_meas_timestep_ != -1) {
+        double dt = time - last_meas_timestep_;
+        if (dt < 1e-7) {
+          spdlog::warn("HumanReach::measurement: dt is too small. dt = {}", dt);
+          joint_pos_ = human_joint_pos;
+          last_meas_timestep_ = time;
+          return;
+        }
+        for (int i = 0; i < human_joint_pos.size(); i++) {
+          // If more than 1 measurement, calculate velocity
+          joint_vel_[i] = (human_joint_pos[i] - joint_pos_[i]) * (1 / dt);
+        }
+        has_second_meas_ = true;
       }
-      has_second_meas_ = true;
+      joint_pos_ = human_joint_pos;
+      last_meas_timestep_ = time;
     }
-    joint_pos_ = human_joint_pos;
-    last_meas_timestep_ = time;
-    // ROS_INFO_STREAM("Human Mocap measurement received. Timestamp of meas was " << last_meas_timestep);
   } catch (const std::exception& exc) {
     spdlog::error("Exception in HumanReach::measurement: {}", exc.what());
   }

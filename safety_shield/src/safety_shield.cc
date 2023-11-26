@@ -141,19 +141,48 @@ SafetyShield::SafetyShield(double sample_time, std::string trajectory_config_fil
       extremity_length.push_back(extremity["length"].as<double>());
       extremity_thickness.push_back(extremity["thickness"].as<double>());
     }
-    human_reach_ = new HumanReach(joint_names.size(),
-      joint_names,
-      body_link_joints, 
-      thickness, 
-      joint_v_max, 
-      joint_a_max,
-      extremity_base_names, 
-      extremity_end_names, 
-      extremity_length,
-      extremity_thickness,
-      measurement_error_pos, 
-      measurement_error_vel, 
-      delay);
+    bool use_kalman_filter = human_config["use_kalman_filter"].as<bool>();
+    if (use_kalman_filter) {
+      double s_w = human_config["s_w"].as<double>();
+      double s_v = human_config["s_v"].as<double>();
+      double initial_pos_var = human_config["initial_pos_var"].as<double>();
+      double initial_vel_var = human_config["initial_vel_var"].as<double>();
+      human_reach_ = new HumanReach(
+        joint_names.size(),
+        joint_names,
+        body_link_joints, 
+        thickness, 
+        joint_v_max, 
+        joint_a_max,
+        extremity_base_names, 
+        extremity_end_names, 
+        extremity_length,
+        extremity_thickness,
+        measurement_error_pos, 
+        measurement_error_vel, 
+        delay,
+        s_w,
+        s_v,
+        initial_pos_var,
+        initial_vel_var
+      );
+    } else {
+      human_reach_ = new HumanReach(
+        joint_names.size(),
+        joint_names,
+        body_link_joints, 
+        thickness, 
+        joint_v_max, 
+        joint_a_max,
+        extremity_base_names, 
+        extremity_end_names, 
+        extremity_length,
+        extremity_thickness,
+        measurement_error_pos, 
+        measurement_error_vel, 
+        delay
+      );
+    }
   }
   ///////////// Build verifier
   verify_ = new safety_shield::VerifyISO();

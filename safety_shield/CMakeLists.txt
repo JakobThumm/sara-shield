@@ -30,6 +30,8 @@ add_library(${PROJECT_NAME}
         src/robot_reach.cc
         src/human_reach.cc
         src/verify_iso.cc
+        src/kalman_filter.cc
+        src/measurement_handler.cc
         #src/advanced_verify_iso.cc
         )
 

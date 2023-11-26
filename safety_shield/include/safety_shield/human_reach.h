@@ -24,6 +24,7 @@
 
 #include "reach_lib.hpp"
 #include "spdlog/spdlog.h"
+#include "safety_shield/measurement_handler.h"
 
 #ifndef HUMAN_REACH_H
 #define HUMAN_REACH_H
@@ -56,8 +57,21 @@ class HumanModelNotFoundException : public std::exception {
  */
 class HumanReach {
  private:
+  
   /**
-   * @brief Last measured timestep.
+   * @brief The measurement handler object
+   * 
+   * @details This object filters the human measurements with a Kalman Filter.
+   */
+  MeasurementHandler* measurement_handler_;
+
+  /**
+   * @brief Whether or not to use the Kalman Filter and thereby the measurement handler.
+   */
+  bool use_kalman_filter_ = false;
+
+  /**
+   * @brief Last measured time.
    */
   double last_meas_timestep_ = -1;
 
@@ -140,6 +154,37 @@ class HumanReach {
       double delay);
 
   /**
+   * @brief HumanReach constructor when using the single motion models (combined) and Kalman filter.
+   * @param[in] n_joints_meas Number of joints in the measurement
+   * @param[in] joint_names Maps the joint name to the joint index (key: Joint name, value: Joint index)
+   * @param[in] body_link_joints Maps the body name to the proximal and distal joint ids (key: Body name, value: Joint pair)
+   * @param[in] thickness Defines the thickness of the body parts (key: Name of body part, value: Thickness of body
+   * part)
+   * @param[in] max_v The maximum velocity of the joints
+   * @param[in] max_a The maximum acceleration of the joints
+   * @param[in] measurement_error_pos Maximal positional measurement error
+   * @param[in] measurement_error_vel Maximal velocity measurement error
+   * @param[in] delay Delay in measurement processing pipeline
+   * @param[in] s_w Power spectral density of the system noise
+   * @param[in] s_v Power spectral density of the measurement noise
+   * @param[in] initial_pos_var Variance of initial measured position.
+   * @param[in] initial_vel_var Variance of initial velocity.
+  */
+  HumanReach(int n_joints_meas,
+      std::map<std::string, int> joint_names,
+      std::map<std::string, reach_lib::jointPair>& body_link_joints, 
+      const std::map<std::string, double>& thickness, 
+      std::vector<double>& max_v, 
+      std::vector<double>& max_a,
+      double measurement_error_pos, 
+      double measurement_error_vel, 
+      double delay,
+      double s_w,
+      double s_v,
+      double initial_pos_var,
+      double initial_vel_var);
+
+  /**
    * @brief HumanReach constructor when using the three motion models (pos, vel, accel).
    * @param[in] n_joints_meas Number of joints in the measurement
    * @param[in] joint_names Maps the joint name to the joint index (key: Joint name, value: Joint index)
@@ -171,6 +216,47 @@ class HumanReach {
       double measurement_error_pos, 
       double measurement_error_vel, 
       double delay);
+  
+  /**
+   * @brief HumanReach constructor when using the three motion models (pos, vel, accel) and a Kalman Filter.
+   * @param[in] n_joints_meas Number of joints in the measurement
+   * @param[in] joint_names Maps the joint name to the joint index (key: Joint name, value: Joint index)
+   * @param[in] body_link_joints Maps the body name to the proximal and distal joint ids (key: Body name, value: Joint pair)
+   * @param[in] thickness Defines the thickness of the body parts (key: Name of body part, value: Thickness of body
+   * part)
+   * @param[in] max_v The maximum velocity of the joints
+   * @param[in] max_a The maximum acceleration of the joints
+   * @param[in] extremity_base_names The base joints of extremities, e.g., right / left shoulder, right / left hip
+   * socket
+   * @param[in] extremity_end_names The end joints of extremities, e.g., right / left hand, right / left foot --> Is
+   * used for thickness of extremities
+   * @param[in] extremity_length The max length of the extremities (related to extremity_base_names)
+   * @param[in] extremity_thickness The thickness of the extremities (usually zero, as it is already considered in extremity_length)
+   * @param[in] measurement_error_pos Maximal positional measurement error
+   * @param[in] measurement_error_vel Maximal velocity measurement error
+   * @param[in] delay Delay in measurement processing pipeline
+   * @param[in] s_w Power spectral density of the system noise
+   * @param[in] s_v Power spectral density of the measurement noise
+   * @param[in] initial_pos_var Variance of initial measured position.
+   * @param[in] initial_vel_var Variance of initial velocity.
+  */
+  HumanReach(int n_joints_meas,
+      std::map<std::string, int> joint_names,
+      std::map<std::string, reach_lib::jointPair>& body_link_joints, 
+      const std::map<std::string, double>& thickness, 
+      std::vector<double>& max_v, 
+      std::vector<double>& max_a,
+      std::vector<std::string>& extremity_base_names, 
+      std::vector<std::string>& extremity_end_names, 
+      std::vector<double>& extremity_length, 
+      std::vector<double>& extremity_thickness,
+      double measurement_error_pos, 
+      double measurement_error_vel, 
+      double delay,
+      double s_w,
+      double s_v,
+      double initial_pos_var,
+      double initial_vel_var);
 
   /**
    * @brief Destructor
