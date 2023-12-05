@@ -560,11 +560,13 @@ class SafetyShield {
    * p2: Center point of half sphere 2
    * r: Radius of half spheres and cylinder
    *
-   * @param type Type of capsule. Select 0 for POS, 1 for VEL, and 2 for ACCEL
+   * @param type Type of capsule. 
+   *  If in combined mode: select 0 for combined model
+   *  If not in combined mode: select 0 for POS, 1 for VEL, and 2 for ACCEL
    *
    * @return std::vector<std::vector<double>> Capsules
    */
-  inline std::vector<std::vector<double>> getHumanReachCapsules(int type = 1) {
+  inline std::vector<std::vector<double>> getHumanReachCapsules(int type = 0) {
     assert(type >= 0 && type <= human_capsules_.size());
     std::vector<std::vector<double>> capsules(human_capsules_[type].size(), std::vector<double>(7));
     for (int i = 0; i < human_capsules_[type].size(); i++) {
