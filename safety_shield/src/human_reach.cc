@@ -2,6 +2,41 @@
 
 namespace safety_shield {
 
+HumanReach* createHumanReach(
+      bool use_single_motion_model,
+      bool use_kalman_filter,
+      int n_joints_meas,
+      std::map<std::string, int> joint_names,
+      std::map<std::string, reach_lib::jointPair>& body_link_joints, 
+      const std::map<std::string, double>& thickness, 
+      std::vector<double>& max_v, 
+      std::vector<double>& max_a,
+      double measurement_error_pos, 
+      double measurement_error_vel, 
+      double delay,
+      std::vector<std::string> extremity_base_names = std::vector<std::string>(), 
+      std::vector<std::string> extremity_end_names = std::vector<std::string>(), 
+      std::vector<double> extremity_length = std::vector<double>(),
+      std::vector<double> extremity_thickness = std::vector<double>(),
+      double s_w = 2.0e+2,
+      double s_v = 1.0e-6,
+      double initial_pos_var = 0.0,
+      double initial_vel_var = 0.0) {
+  if (use_single_motion_model) {
+    if (use_kalman_filter) {
+      return new HumanReach(n_joints_meas, joint_names, body_link_joints, thickness, max_v, max_a, measurement_error_pos, measurement_error_vel, delay, s_w, s_v, initial_pos_var, initial_vel_var);
+    } else {
+      return new HumanReach(n_joints_meas, joint_names, body_link_joints, thickness, max_v, max_a, measurement_error_pos, measurement_error_vel, delay);
+    }
+  } else {
+    if (use_kalman_filter) {
+      return new HumanReach(n_joints_meas, joint_names, body_link_joints, thickness, max_v, max_a, extremity_base_names, extremity_end_names, extremity_length, extremity_thickness, measurement_error_pos, measurement_error_vel, delay, s_w, s_v, initial_pos_var, initial_vel_var);
+    } else {
+      return new HumanReach(n_joints_meas, joint_names, body_link_joints, thickness, max_v, max_a, extremity_base_names, extremity_end_names, extremity_length, extremity_thickness, measurement_error_pos, measurement_error_vel, delay);
+    }
+  }
+}
+
 HumanReach::HumanReach(int n_joints_meas,
       std::map<std::string, int> joint_names,
       std::map<std::string, reach_lib::jointPair>& body_link_joints, 

@@ -439,5 +439,27 @@ class HumanReach {
     return delay_;
   }
 };
+
+HumanReach* createHumanReach(
+      bool use_single_motion_model,
+      bool use_kalman_filter,
+      int n_joints_meas,
+      std::map<std::string, int> joint_names,
+      std::map<std::string, reach_lib::jointPair>& body_link_joints, 
+      const std::map<std::string, double>& thickness, 
+      std::vector<double>& max_v, 
+      std::vector<double>& max_a,
+      double measurement_error_pos, 
+      double measurement_error_vel, 
+      double delay,
+      std::vector<std::string> extremity_base_names, 
+      std::vector<std::string> extremity_end_names, 
+      std::vector<double> extremity_length, 
+      std::vector<double> extremity_thickness,
+      double s_w,
+      double s_v,
+      double initial_pos_var,
+      double initial_vel_var);
+
 }  // namespace safety_shield
 #endif  // HUMAN_REACH_H
