@@ -1,89 +1,95 @@
-motion_capture:
-  # cutains information
-  measurement_error_pos: 0.0
-  measurement_error_vel: 0.0
-  delay: 0.0
+# cutains information
+measurement_error_pos: 0.0
+measurement_error_vel: 0.1
+delay: 0.0
+use_kalman_filter: true
+s_w: 2.0e+2
+s_v: 1.0e-6
+initial_pos_var: 0.003
+initial_vel_var: 0.5
 
-  # Names of joints in correct outputted order
-  joint_names: [
-    "abdomen", "chest", "head", "hip", "lButtock", 
-    "lCollar", "lFoot", "lForeArm", "lHand", "lIndex1",
-    "lIndex2", "lMid1", "lMid2", "lPinky1", "lPinky2",
-    "lRing1", "lRing2", "lShin", "lShldr", "lThigh",
-    "lThumb1", "lThumb2", "leftEye", "neck", "rButtock",
-    "rCollar", "rFoot", "rForeArm", "rHand", "rIndex1",
-    "rIndex2", "rMid1", "rMid2", "rPinky1", "rPinky2",
-    "rRing1", "rRing2", "rShin", "rShldr", "rThigh",
-    "rThumb1", "rThumb2", "rightEye"
-  ]
+use_combined_model: true
 
-  joint_v_max: [
-    2, 2, 2, 2, 2, 
-    2, 2, 2, 2, 2,
-    2, 2, 2, 2, 2, 
-    2, 2, 2, 2, 2,
-    2, 2, 2, 2, 2, 
-    2, 2, 2, 2, 2,
-    2, 2, 2, 2, 2, 
-    2, 2, 2, 2, 2,
-    2, 2, 2
-  ]
+# Names of joints in correct outputted order
+joint_names: [
+  "abdomen", "chest", "head", "hip", "lButtock", 
+  "lCollar", "lFoot", "lForeArm", "lHand", "lIndex1",
+  "lIndex2", "lMid1", "lMid2", "lPinky1", "lPinky2",
+  "lRing1", "lRing2", "lShin", "lShldr", "lThigh",
+  "lThumb1", "lThumb2", "leftEye", "neck", "rButtock",
+  "rCollar", "rFoot", "rForeArm", "rHand", "rIndex1",
+  "rIndex2", "rMid1", "rMid2", "rPinky1", "rPinky2",
+  "rRing1", "rRing2", "rShin", "rShldr", "rThigh",
+  "rThumb1", "rThumb2", "rightEye"
+]
 
-  joint_a_max: [
-    20, 20, 25, 20, 20, 
-    20, 30, 50, 50, 50,
-    50, 50, 50, 50, 50,
-    50, 50, 30, 50, 30,
-    50, 50, 25, 25, 20,
-    20, 30, 50, 50, 50,
-    50, 50, 50, 50, 50,
-    50, 50, 30, 50, 30,
-    50, 50, 25
-  ]
+joint_v_max: [
+  2, 2, 2, 2, 2, 
+  2, 2, 2, 2, 2,
+  2, 2, 2, 2, 2, 
+  2, 2, 2, 2, 2,
+  2, 2, 2, 2, 2, 
+  2, 2, 2, 2, 2,
+  2, 2, 2, 2, 2, 
+  2, 2, 2, 2, 2,
+  2, 2, 2
+]
 
-  bodies:
-    - lUpperArm: 
-      - proximal: "lShldr"
-      - distal: "lForeArm"
-      - thickness: 0.2
-    - lLowerArm:
-      - proximal: "lForeArm"
-      - distal: "lHand"
-      - thickness: 0.132
-    - lHand:
-      - proximal: "lHand"
-      - distal: "lHand"
-      - thickness: 0.206
-    - rUpperArm: 
-      - proximal: "rShldr"
-      - distal: "rForeArm"
-      - thickness: 0.2
-    - rLowerArm:
-      - proximal: "rForeArm"
-      - distal: "rHand"
-      - thickness: 0.132
-    - rHand:
-      - proximal: "rHand"
-      - distal: "rHand"
-      - thickness: 0.206
-    - torso:
-      - proximal: "hip"
-      - distal: "neck"
-      - thickness: 0.434
-    - head:
-      - proximal: "head"
-      - distal: "head"
-      - thickness: 0.434
+joint_a_max: [
+  20, 20, 25, 20, 20, 
+  20, 30, 50, 50, 50,
+  50, 50, 50, 50, 50,
+  50, 50, 30, 50, 30,
+  50, 50, 25, 25, 20,
+  20, 30, 50, 50, 50,
+  50, 50, 50, 50, 50,
+  50, 50, 30, 50, 30,
+  50, 50, 25
+]
 
-  extremities:
-  - name: "lArm"
-    base: "lShldr"
-    end: "lHand"
-    length: 0.8
-    thickness: 0.0
-    
-  - name: "rArm"
-    base: "rShldr"
-    end: "rHand"
-    length: 0.8
-    thickness: 0.0
+bodies:
+  - lUpperArm: 
+    - proximal: "lShldr"
+    - distal: "lForeArm"
+    - thickness: 0.2
+  - lLowerArm:
+    - proximal: "lForeArm"
+    - distal: "lHand"
+    - thickness: 0.132
+  - lHand:
+    - proximal: "lHand"
+    - distal: "lHand"
+    - thickness: 0.206
+  - rUpperArm: 
+    - proximal: "rShldr"
+    - distal: "rForeArm"
+    - thickness: 0.2
+  - rLowerArm:
+    - proximal: "rForeArm"
+    - distal: "rHand"
+    - thickness: 0.132
+  - rHand:
+    - proximal: "rHand"
+    - distal: "rHand"
+    - thickness: 0.206
+  - torso:
+    - proximal: "hip"
+    - distal: "neck"
+    - thickness: 0.434
+  - head:
+    - proximal: "head"
+    - distal: "head"
+    - thickness: 0.434
+
+extremities:
+- name: "lArm"
+  base: "lShldr"
+  end: "lHand"
+  length: 0.8
+  thickness: 0.0
+  
+- name: "rArm"
+  base: "rShldr"
+  end: "rHand"
+  length: 0.8
+  thickness: 0.0

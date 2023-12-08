@@ -117,31 +117,51 @@ SafetyShield::SafetyShield(double sample_time, std::string trajectory_config_fil
         joint_names[body["proximal"].as<std::string>()], joint_names[body["distal"].as<std::string>()]);
     thickness[body["name"].as<std::string>()] = body["thickness"].as<double>();
   }
-  // Build extremities
-  const YAML::Node& extremities = human_config["extremities"];
-  std::vector<std::string> extremity_base_names;
-  std::vector<std::string> extremity_end_names;
+
+  bool use_combined_model = human_config["use_combined_model"].as<bool>();
+  std::vector<std::string> extremity_base_names, extremity_end_names;
   std::vector<double> extremity_length, extremity_thickness;
-  for (YAML::const_iterator it = extremities.begin(); it != extremities.end(); ++it) {
-    const YAML::Node& extremity = *it;
-    extremity_base_names.push_back(extremity["base"].as<std::string>());
-    extremity_end_names.push_back(extremity["end"].as<std::string>());
-    extremity_length.push_back(extremity["length"].as<double>());
-    extremity_thickness.push_back(extremity["thickness"].as<double>());
+  if (!use_combined_model) {
+    // Build extremities
+    const YAML::Node& extremities = human_config["extremities"];
+    for (YAML::const_iterator it = extremities.begin(); it != extremities.end(); ++it) {
+      const YAML::Node& extremity = *it;
+      extremity_base_names.push_back(extremity["base"].as<std::string>());
+      extremity_end_names.push_back(extremity["end"].as<std::string>());
+      extremity_length.push_back(extremity["length"].as<double>());
+      extremity_thickness.push_back(extremity["thickness"].as<double>());
+    }
   }
-  human_reach_ = new HumanReach(joint_names.size(),
+
+  bool use_kalman_filter = human_config["use_kalman_filter"].as<bool>();
+  double s_w, s_v, initial_pos_var, initial_vel_var;
+  if (use_kalman_filter) {
+    s_w = human_config["s_w"].as<double>();
+    s_v = human_config["s_v"].as<double>();
+    initial_pos_var = human_config["initial_pos_var"].as<double>();
+    initial_vel_var = human_config["initial_vel_var"].as<double>();
+  }
+  human_reach_ = createHumanReach(
+    use_combined_model,
+    use_kalman_filter,
+    joint_names.size(),
     joint_names,
     body_link_joints, 
     thickness, 
     joint_v_max, 
     joint_a_max,
+    measurement_error_pos, 
+    measurement_error_vel, 
+    delay,
     extremity_base_names, 
     extremity_end_names, 
     extremity_length,
     extremity_thickness,
-    measurement_error_pos, 
-    measurement_error_vel, 
-    delay);
+    s_w,
+    s_v,
+    initial_pos_var,
+    initial_vel_var
+  );
   ///////////// Build verifier
   verify_ = new safety_shield::VerifyISO();
   /////////// Other settings

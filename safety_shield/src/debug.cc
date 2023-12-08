@@ -1,5 +1,7 @@
 #include <string>
 #include <vector>
+#include <chrono>
+#include <ctime>
 
 #include "reach_lib.hpp"
 #include "safety_shield/human_reach.h"
@@ -34,6 +36,7 @@ int main() {
   }
 
   spdlog::info("Debug started.");
+  auto start = std::chrono::system_clock::now();
   double t = 0.0;
   for (int ep = 0; ep < 5; ep++) {
     for (int i = 0; i < 100; i++) {  // i < 100; i<10000
@@ -53,6 +56,9 @@ int main() {
     }
     shield.reset(init_x, init_y, init_z, init_roll, init_pitch, init_yaw, init_qpos, t, shield_type);
   }
-  spdlog::info("Debug finished.");
+  // Some computation here
+  auto end = std::chrono::system_clock::now();
+  std::chrono::duration<double> elapsed_seconds = end-start;
+  spdlog::info("Debug finished, elapsed time: {}", elapsed_seconds.count());
   return 0;
 }

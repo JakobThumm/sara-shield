@@ -2,6 +2,13 @@
 measurement_error_pos: 0.1
 measurement_error_vel: 1.0
 delay: 0.01
+use_kalman_filter: true
+s_w: 2.0e+2
+s_v: 1.0e-6
+initial_pos_var: 0.003
+initial_vel_var: 0.5
+
+use_combined_model: true
 
 # Names of joints in correct outputted order
 joint_names: [
