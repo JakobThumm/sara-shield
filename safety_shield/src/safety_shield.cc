@@ -417,6 +417,14 @@ Motion SafetyShield::computesPotentialTrajectory(bool v, const std::vector<doubl
       calculateMaxAccJerk(prev_speed, a_max_ltt_, j_max_ltt_, a_max_manoeuvre, j_max_manoeuvre);
     }
 
+    // If there is a new LTT for the first time (new_ltt_processed_ == false), set the safe path to stop the robot.
+    // This is to prevent the robot from advancing the old LTT on a PFL trajectory instead of moving to the new LTT.
+    if (!new_ltt_processed_ && shield_type_ == ShieldType::PFL) {
+        planSafetyShield(safe_path_.getPosition(), safe_path_.getVelocity(), safe_path_.getAcceleration(),
+                           0, a_max_manoeuvre, j_max_manoeuvre, failsafe_path_);
+        safe_path_ = failsafe_path_;
+    }
+
     // Desired movement, one timestep
     //  if not already on the repair path, plan a repair path
     if (!recovery_path_.isCurrent()) {
@@ -506,7 +514,9 @@ bool SafetyShield::planPFLFailsafe(double a_max_manoeuvre, double j_max_manoeuvr
     v_limit = recovery_path_.getVelocity();
   }
   // This is the PFL failsafe path that ends in a velocity that is under v_iso.
-  planning_success = planSafetyShield(recovery_path_.getPosition(), recovery_path_.getVelocity(), recovery_path_.getAcceleration(), v_limit, a_max_manoeuvre, j_max_manoeuvre, failsafe_path_2_);
+  double eps_ds = 0.001;
+  // Plan to be slightly lower than v_limit to eliminate numerical errors
+  planning_success = planSafetyShield(recovery_path_.getPosition(), recovery_path_.getVelocity(), recovery_path_.getAcceleration(), v_limit - eps_ds, a_max_manoeuvre, j_max_manoeuvre, failsafe_path_2_);
   // If the entire long-term trajectory is under iso-velocity, we dont need to check the velocity of the failsafe-path
   if(!is_under_iso_velocity) {
     // Check if the entire failsafe path is under iso-velocity
@@ -592,17 +602,7 @@ Motion SafetyShield::step(double cycle_begin_time) {
       bool is_plannable = checkCurrentMotionForReplanning(current_motion);
       if (is_plannable) {
         // Check if the starting position of the last replanning was very close to the current position
-        bool last_close = true;
-        if (new_ltt_ == true) {
-          for (int i = 0; i < current_motion.getAngle().size(); i++) {
-            if (std::abs(current_motion.getAngle()[i] - last_replan_start_motion_.getAngle()[i]) > 0.01) {
-              last_close = false;
-              break;
-            }
-          }
-        } else {
-          last_close = false;
-        }
+        bool last_close = new_ltt_ && abs(path_s_ - last_replan_s_) < sample_time_;
         // Only replan if the current joint position is different from the last.
         bool success = true;
         if (!last_close) {
@@ -610,7 +610,7 @@ Motion SafetyShield::step(double cycle_begin_time) {
                                                 current_motion.getAcceleration(), new_goal_motion_.getAngle(),
                                                 new_long_term_trajectory_);
           if (success) {
-            last_replan_start_motion_ = current_motion;
+            last_replan_s_ = path_s_;
           }
         }
         if (success) {
@@ -705,12 +705,8 @@ void SafetyShield::newLongTermTrajectory(const std::vector<double>& goal_positio
     new_goal_ = true;
     new_ltt_ = false;
     new_ltt_processed_ = false;
-    std::vector<double> dummy_q;
-    for (int i = 0; i < nb_joints_; i++) {
-      // fill with high values to guarantee this is not close to current joint position
-      dummy_q.push_back(-1234567);
-    }
-    last_replan_start_motion_ = Motion(cycle_begin_time_, dummy_q);
+    // High negative number to make sure we replan the LTT.
+    // last_replan_s_ = -1E9;
   } catch (const std::exception& exc) {
     spdlog::error("Exception in SafetyShield::newLongTermTrajectory: {}", exc.what());
   }
