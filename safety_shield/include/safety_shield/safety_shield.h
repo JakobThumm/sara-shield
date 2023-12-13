@@ -258,12 +258,9 @@ class SafetyShield {
   bool new_ltt_processed_ = false;
 
   /**
-   * @brief the last starting position of the replanning
-   *
-   * If the last starting position of the replanning is very close to this position, we can skip the replanning and use
-   * the previously planned trajectory.
+   * @brief Last s value when replanning happend.
    */
-  Motion last_replan_start_motion_;
+  double last_replan_s_ = -1.0;
 
   /**
    * @brief the time when the loop begins
