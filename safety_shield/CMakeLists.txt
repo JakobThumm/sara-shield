@@ -44,14 +44,14 @@ add_subdirectory(external/yaml-cpp)
 
 target_include_directories(${PROJECT_NAME}
         PUBLIC external/pybind11/include
-        PUBLIC external/ReachLib/include
+        PUBLIC external/SaRA/ReachLib/include
         PUBLIC external/LongTermPlanner/include
         PUBLIC external/spdlog/include
         PUBLIC external/yaml-cpp/include
         )
 
 target_link_directories(${PROJECT_NAME}
-        PUBLIC external/ReachLib/src
+        PUBLIC external/SaRA/ReachLib/src
         PUBLIC external/LongTermPlanner/src
         PUBLIC external/spdlog/src
         PUBLIC external/yaml-cpp/src
