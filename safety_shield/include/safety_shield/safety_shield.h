@@ -198,17 +198,17 @@ class SafetyShield {
   std::vector<double> q_max_allowed_;
 
   /**
-   * @brief maximum velocity allowed
+   * @brief maximum joint velocity allowed
    */
   std::vector<double> v_max_allowed_;
 
   /**
-   * @brief maximum acceleration allowed
+   * @brief maximum joint acceleration allowed
    */
   std::vector<double> a_max_allowed_;
 
   /**
-   * @brief maximum jerk allowed
+   * @brief maximum joint jerk allowed
    */
   std::vector<double> j_max_allowed_;
 

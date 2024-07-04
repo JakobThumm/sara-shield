@@ -52,6 +52,22 @@ class LongTermTraj {
    */
   std::vector<Motion> long_term_traj_;
 
+  
+  /**
+   * @brief maximum joint velocity allowed
+   */
+  std::vector<double> v_max_allowed_;
+
+  /**
+   * @brief maximum joint acceleration allowed
+   */
+  std::vector<double> a_max_allowed_;
+
+  /**
+   * @brief maximum joint jerk allowed
+   */
+  std::vector<double> j_max_allowed_;
+
   /**
    * @brief Maximum joint acceleration for next k steps.
    */
@@ -92,7 +108,8 @@ class LongTermTraj {
   /**
    * @brief Construct a new Long Term Traj object.
    */
-  LongTermTraj() : current_pos_(0), starting_index_(0), length_(1), sample_time_(0.01) {
+  LongTermTraj() : current_pos_(0), starting_index_(0), length_(1), sample_time_(0.01),
+                    v_max_allowed_({1.0}), a_max_allowed_({1.0}), j_max_allowed_({1.0}) {
     long_term_traj_.push_back(Motion(1));
     for (int i = 0; i < 2; i++) {
       alpha_i_.push_back(1.0);
@@ -103,11 +120,19 @@ class LongTermTraj {
    * @brief Construct a new Long Term Traj object.
    *
    * @param long_term_traj Vector of motions that make up the LTT.
+   * @param sample_time Sample time of the LTT.
+   * @param starting_index Index of the first motion in the LTT
+   * @param v_max_allowed Maximum allowed joint velocities
+   * @param a_max_allowed Maximum allowed joint accelerations
+   * @param j_max_allowed Maximum allowed joint jerks
    * @param sliding_window_k Size of sliding window for max acc and jerk calculation
+   * @param alpha_i_max Maximum Carthesian acceleration
    */
-  LongTermTraj(const std::vector<Motion>& long_term_traj, double sample_time, int starting_index = 0,
+  LongTermTraj(const std::vector<Motion>& long_term_traj, double sample_time, int starting_index,
+               std::vector<double> v_max_allowed, std::vector<double> a_max_allowed, std::vector<double> j_max_allowed,
                int sliding_window_k = 10, double alpha_i_max = 1.0)
-      : long_term_traj_(long_term_traj), sample_time_(sample_time), current_pos_(0), starting_index_(starting_index) {
+      : long_term_traj_(long_term_traj), sample_time_(sample_time), current_pos_(0), starting_index_(starting_index),
+        v_max_allowed_(v_max_allowed), a_max_allowed_(a_max_allowed), j_max_allowed_(j_max_allowed) {
     length_ = long_term_traj.size();
     calculate_max_acc_jerk_window(long_term_traj_, sliding_window_k);
     for (int i = 0; i < long_term_traj_[0].getNbModules(); i++) {
@@ -119,11 +144,17 @@ class LongTermTraj {
    * @brief constructor for maximum velocity functionality of LTT
    *
    * @param long_term_traj Vector of motions that make up the LTT.
+   * @param sample_time Sample time of the LTT.
+   * @param robot_reach The robot that executes this trajectory. Needed for forward kinematics
+   * @param starting_index Index of the first motion in the LTT
+   * @param v_max_allowed Maximum allowed joint velocities
+   * @param a_max_allowed Maximum allowed joint accelerations
+   * @param j_max_allowed Maximum allowed joint jerks
    * @param sliding_window_k Size of sliding window for max acc and jerk calculation
-   * @param robot_reach needed for forward kinematics
    */
-  LongTermTraj(const std::vector<Motion>& long_term_traj, double sample_time, RobotReach& robot_reach,
-               int starting_index = 0, int sliding_window_k = 10);
+  LongTermTraj(const std::vector<Motion>& long_term_traj, double sample_time, RobotReach& robot_reach, int starting_index,
+               std::vector<double> v_max_allowed, std::vector<double> a_max_allowed, std::vector<double> j_max_allowed, int sliding_window_k = 10);
+  
   /**
    * @brief Destroy the Long Term Traj object
    */
@@ -137,13 +168,16 @@ class LongTermTraj {
    * @param ds the percentage of the maximum path velocity, 0 = stand still, 1 = full velocity
    * @param dds the derivative of ds to time, 1 = accelerate from v=0 to full velocity in 1 second
    * @param ddds the derivative of dds to time
-   * @param v_max_allowed vector of maximum allowed velocities
-   * @param a_max_allowed vector of maximum allowed accelerations
-   * @param j_max_allowed vector of maximum allowed jerks
    * @return Motion
    */
-  Motion interpolate(double s, double ds, double dds, double ddds, std::vector<double>& v_max_allowed,
-                     std::vector<double>& a_max_allowed, std::vector<double>& j_max_allowed);
+  Motion interpolate(double s, double ds, double dds, double ddds);
+
+  /**
+   * @brief Increment the current pos
+   */
+  inline void increasePosition() {
+    current_pos_ = std::min(current_pos_ + 1, length_ - 1);
+  }
 
   /**
    * @brief Set the Long Term Trajectory object
@@ -165,6 +199,42 @@ class LongTermTraj {
     long_term_traj_ = long_term_traj;
     length_ = long_term_traj_.size();
     sample_time_ = sample_time;
+  }
+
+  /**
+   * @brief Set the starting position of the LTT.
+   *
+   * @param starting_index index at which the LTT starts.
+   */
+  inline void setStartingIndex(int starting_index) {
+    starting_index_ = starting_index;
+  }
+
+  /**
+   * @brief Set the maximum allowed joint velocities
+   * 
+   * @param v_max_allowed 
+   */
+  inline void setVMaxAllowed(const std::vector<double>& v_max_allowed) {
+    v_max_allowed_ = v_max_allowed;
+  }
+
+  /**
+   * @brief Set the maximum allowed joint accelerations
+   * 
+   * @param a_max_allowed 
+   */
+  inline void setAMaxAllowed(const std::vector<double>& a_max_allowed) {
+    a_max_allowed_ = a_max_allowed;
+  }
+
+  /**
+   * @brief Set the maximum allowed joint jerks
+   * 
+   * @param j_max_allowed 
+   */
+  inline void setJMaxAllowed(const std::vector<double>& j_max_allowed) {
+    j_max_allowed_ = j_max_allowed;
   }
 
   /**
@@ -228,10 +298,39 @@ class LongTermTraj {
   }
 
   /**
-   * @brief Increment the current pos
+   * @brief Get the starting index of the LTT
+   * 
+   * @return int 
    */
-  inline void increasePosition() {
-    current_pos_ = std::min(current_pos_ + 1, length_ - 1);
+  inline int getStartingIndex() const {
+    return starting_index_;
+  }
+
+  /**
+   * @brief Get the maximum allowed joint velocities.
+   * 
+   * @return std::vector<double> 
+   */
+  inline std::vector<double> getVMaxAllowed() const {
+    return v_max_allowed_;
+  }
+
+  /**
+   * @brief Get the maximum allowed joint accelerations.
+   * 
+   * @return std::vector<double> 
+   */
+  inline std::vector<double> getAMaxAllowed() const {
+    return a_max_allowed_;
+  }
+
+  /**
+   * @brief Get the maximum allowed joint jerks.
+   * 
+   * @return std::vector<double> 
+   */
+  inline std::vector<double> getJMaxAllowed() const {
+    return j_max_allowed_;
   }
 
   /**

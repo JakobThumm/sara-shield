@@ -89,9 +89,16 @@ SafetyShield::SafetyShield(double sample_time, std::string trajectory_config_fil
   std::vector<Motion> long_term_traj;
   long_term_traj.push_back(Motion(0.0, init_qpos));
   if (shield_type_ == ShieldType::SSM || shield_type_ == ShieldType::OFF) {
-    long_term_trajectory_ = LongTermTraj(long_term_traj, sample_time_, path_s_discrete_, sliding_window_k_, alpha_i_max_);
+    long_term_trajectory_ = LongTermTraj(
+      long_term_traj, sample_time_, path_s_discrete_,
+      v_max_allowed_, a_max_allowed_, j_max_allowed_,
+      sliding_window_k_, alpha_i_max_
+    );
   } else {
-    long_term_trajectory_ = LongTermTraj(long_term_traj, sample_time_, *robot_reach_, path_s_discrete_, sliding_window_k_);
+    long_term_trajectory_ = LongTermTraj(
+      long_term_traj, sample_time_, *robot_reach_, path_s_discrete_,
+      v_max_allowed_, a_max_allowed_, j_max_allowed_, sliding_window_k_
+    );
   }
   //////////// Build human reach
   YAML::Node human_config = YAML::LoadFile(mocap_config_file);
@@ -211,9 +218,16 @@ void SafetyShield::reset(double init_x, double init_y, double init_z, double ini
   std::vector<Motion> long_term_traj;
   long_term_traj.push_back(Motion(0.0, init_qpos));
   if (shield_type_ == ShieldType::SSM || shield_type_ == ShieldType::OFF) {
-    long_term_trajectory_ = LongTermTraj(long_term_traj, sample_time_, path_s_discrete_, sliding_window_k_, alpha_i_max_);
+    long_term_trajectory_ = LongTermTraj(
+      long_term_traj, sample_time_, path_s_discrete_,
+      v_max_allowed_, a_max_allowed_, j_max_allowed_,
+      sliding_window_k_, alpha_i_max_
+    );
   } else {
-    long_term_trajectory_ = LongTermTraj(long_term_traj, sample_time_, *robot_reach_, path_s_discrete_, sliding_window_k_);
+    long_term_trajectory_ = LongTermTraj(
+      long_term_traj, sample_time_, *robot_reach_, path_s_discrete_,
+      v_max_allowed_, a_max_allowed_, j_max_allowed_, sliding_window_k_
+    );
   }
   Motion goal_motion = computesPotentialTrajectory(is_safe_, prev_dq);
   next_motion_ = determineNextMotion(is_safe_);
@@ -470,9 +484,9 @@ Motion SafetyShield::computesPotentialTrajectory(bool v, const std::vector<doubl
     potential_path_.getFinalMotion(s_d, ds_d, dds_d);
     Motion goal_motion;
     if (new_ltt_) {
-      goal_motion = new_long_term_trajectory_.interpolate(s_d, ds_d, dds_d, ddds_d, v_max_allowed_, a_max_allowed_, j_max_allowed_);
+      goal_motion = new_long_term_trajectory_.interpolate(s_d, ds_d, dds_d, ddds_d);
     } else {
-      goal_motion = long_term_trajectory_.interpolate(s_d, ds_d, dds_d, ddds_d, v_max_allowed_, a_max_allowed_, j_max_allowed_);
+      goal_motion = long_term_trajectory_.interpolate(s_d, ds_d, dds_d, ddds_d);
     } 
     goal_motion.setTime(potential_path_.getPhase(3));
     return goal_motion;
@@ -558,11 +572,10 @@ Motion SafetyShield::determineNextMotion(bool is_safe) {
 
     // Interpolate from new long term buffer
     if (new_ltt_) {
-      next_motion = new_long_term_trajectory_.interpolate(s_d, ds_d, dds_d, ddds_d, v_max_allowed_, a_max_allowed_,
-                                                          j_max_allowed_);
+      next_motion = new_long_term_trajectory_.interpolate(s_d, ds_d, dds_d, ddds_d);
     } else {
       next_motion =
-          long_term_trajectory_.interpolate(s_d, ds_d, dds_d, ddds_d, v_max_allowed_, a_max_allowed_, j_max_allowed_);
+          long_term_trajectory_.interpolate(s_d, ds_d, dds_d, ddds_d);
     }
     // Set potential path as new verified safe path
     safe_path_ = potential_path_;
@@ -574,7 +587,7 @@ Motion SafetyShield::determineNextMotion(bool is_safe) {
     dds_d = safe_path_.getAcceleration();
     ddds_d = safe_path_.getJerk();
     next_motion =
-        long_term_trajectory_.interpolate(s_d, ds_d, dds_d, ddds_d, v_max_allowed_, a_max_allowed_, j_max_allowed_);
+        long_term_trajectory_.interpolate(s_d, ds_d, dds_d, ddds_d);
   }
   /// !!! Set s to the new path position !!!
   path_s_ = s_d;
@@ -670,12 +683,10 @@ Motion SafetyShield::getCurrentMotion() {
   Motion current_pos;
   if (!recovery_path_.isCurrent()) {
     current_pos = long_term_trajectory_.interpolate(failsafe_path_.getPosition(), failsafe_path_.getVelocity(),
-                                                    failsafe_path_.getAcceleration(), failsafe_path_.getJerk(),
-                                                    v_max_allowed_, a_max_allowed_, j_max_allowed_);
+                                                    failsafe_path_.getAcceleration(), failsafe_path_.getJerk());
   } else {
     current_pos = long_term_trajectory_.interpolate(recovery_path_.getPosition(), recovery_path_.getVelocity(),
-                                                    recovery_path_.getAcceleration(), recovery_path_.getJerk(),
-                                                    v_max_allowed_, a_max_allowed_, j_max_allowed_);
+                                                    recovery_path_.getAcceleration(), recovery_path_.getJerk());
   }
   return current_pos;
 }
@@ -768,9 +779,16 @@ bool SafetyShield::calculateLongTermTrajectory(const std::vector<double>& start_
     new_time += sample_time_;
   }
   if (shield_type_ == ShieldType::OFF || shield_type_ == ShieldType::SSM) {
-    ltt = LongTermTraj(new_traj, sample_time_, path_s_discrete_, sliding_window_k_, alpha_i_max_);
+    ltt = LongTermTraj(
+      new_traj, sample_time_, path_s_discrete_, 
+      v_max_allowed_, a_max_allowed_, j_max_allowed_,
+      sliding_window_k_, alpha_i_max_
+    );
   } else {
-    ltt = LongTermTraj(new_traj, sample_time_, *robot_reach_, path_s_discrete_, sliding_window_k_);
+    ltt = LongTermTraj(
+      new_traj, sample_time_, *robot_reach_, path_s_discrete_,
+      v_max_allowed_, a_max_allowed_, j_max_allowed_, sliding_window_k_
+    );
   }
   return true;
 }

@@ -92,7 +92,7 @@ class LongTermTrajTestIdx : public ::testing::Test {
     a3.push_back(91);
     Motion m3(3, p0, v0, a3, j0);
     mo_vec.push_back(m3);
-    long_term_trajectory_ = LongTermTraj(mo_vec, 0.001, 3);
+    long_term_trajectory_ = LongTermTraj(mo_vec, 0.001, 3, {100.0, 100.0}, {1000.0, 1000.0}, {10000.0, 10000.0});
   }
 };
 
@@ -138,9 +138,9 @@ protected:
             std::vector<double> q = {dub, dub+1, dub+2, dub+3, dub+4, dub+5};
             mo_vec.push_back(Motion(0, q, q));
         }
-
-        long_term_trajectory_approximate = LongTermTraj(mo_vec, 0.001, robot_reach_approximate);
-        long_term_trajectory_exact = LongTermTraj(mo_vec, 0.001, robot_reach_exact);
+        std::vector<double> large_values = {10000.0, 10000.0, 10000.0, 10000.0, 10000.0, 10000.0};
+        long_term_trajectory_approximate = LongTermTraj(mo_vec, 0.001, robot_reach_approximate, 0, large_values, large_values, large_values);
+        long_term_trajectory_exact = LongTermTraj(mo_vec, 0.001, robot_reach_exact, 0, large_values, large_values, large_values);
     }
 };
 
