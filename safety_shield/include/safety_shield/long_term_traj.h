@@ -170,7 +170,7 @@ class LongTermTraj {
    * @param ddds the derivative of dds to time
    * @return Motion
    */
-  Motion interpolate(double s, double ds, double dds, double ddds);
+  Motion interpolate(double s, double ds, double dds, double ddds) const;
 
   /**
    * @brief Increment the current pos
@@ -372,8 +372,8 @@ class LongTermTraj {
    *
    * @param index of motion in LTT
    */
-  inline Motion& getMotion(unsigned long index) {
-    return long_term_traj_[index];
+  inline Motion getMotion(unsigned long index) const {
+    return long_term_traj_.at(index);
   }
 
   /**
@@ -385,7 +385,7 @@ class LongTermTraj {
    * @brief gets maximum of cartesian velocity until s is reached
    * @param s look at Motions until trajectory_time s
    */
-  double getMaxofMaximumCartesianVelocityWithS(double s);
+  double getMaxofMaximumCartesianVelocityWithS(double s) const;
 };
 }  // namespace safety_shield
 #endif  // LONG_TERM_TRAJ_H

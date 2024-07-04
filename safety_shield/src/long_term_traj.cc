@@ -46,7 +46,7 @@ LongTermTraj::LongTermTraj(
   }
 }
 
-Motion LongTermTraj::interpolate(double s, double ds, double dds, double ddds) {
+Motion LongTermTraj::interpolate(double s, double ds, double dds, double ddds) const {
   // Example: s=2.465, sample_time = 0.004 --> ind = 616.25
   assert(sample_time_ != 0);
   double ind = s / sample_time_;
@@ -169,7 +169,7 @@ double LongTermTraj::getMaxofMaximumCartesianVelocity() const {
   return max_cart_vel_;
 }
 
-double LongTermTraj::getMaxofMaximumCartesianVelocityWithS(double s) {
+double LongTermTraj::getMaxofMaximumCartesianVelocityWithS(double s) const {
   unsigned long i = getCurrentPos();
   double max = getMotion(i).getMaximumCartesianVelocity();
   while (i < length_) {
