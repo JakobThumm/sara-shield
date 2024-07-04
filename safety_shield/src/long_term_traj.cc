@@ -2,9 +2,17 @@
 
 namespace safety_shield {
 
-LongTermTraj::LongTermTraj(const std::vector<Motion>& long_term_traj, double sample_time, RobotReach& robot_reach,
-                           int starting_index, int sliding_window_k)
-    : long_term_traj_(long_term_traj), sample_time_(sample_time), current_pos_(0), starting_index_(starting_index) {
+LongTermTraj::LongTermTraj(
+  const std::vector<Motion>& long_term_traj,
+  double sample_time,
+  RobotReach& robot_reach,
+  int starting_index,
+  std::vector<double> v_max_allowed,
+  std::vector<double> a_max_allowed,
+  std::vector<double> j_max_allowed,
+  int sliding_window_k
+) : long_term_traj_(long_term_traj), sample_time_(sample_time), current_pos_(0), starting_index_(starting_index),
+      v_max_allowed_(v_max_allowed), a_max_allowed_(a_max_allowed), j_max_allowed_(j_max_allowed) {
   length_ = long_term_traj.size();
   calculate_max_acc_jerk_window(long_term_traj_, sliding_window_k);
   // Initialize alpha_i_ with 0
@@ -38,8 +46,7 @@ LongTermTraj::LongTermTraj(const std::vector<Motion>& long_term_traj, double sam
   }
 }
 
-Motion LongTermTraj::interpolate(double s, double ds, double dds, double ddds, std::vector<double>& v_max_allowed,
-                                 std::vector<double>& a_max_allowed, std::vector<double>& j_max_allowed) {
+Motion LongTermTraj::interpolate(double s, double ds, double dds, double ddds) const {
   // Example: s=2.465, sample_time = 0.004 --> ind = 616.25
   assert(sample_time_ != 0);
   double ind = s / sample_time_;
@@ -66,12 +73,12 @@ Motion LongTermTraj::interpolate(double s, double ds, double dds, double ddds, s
     // Calculate LTT velocity
     double v_max_int = dq1[i] + dt * ddq1[i] + 1.0 / 2 * dt * dt * dddq1[i];
     double v_int = v_max_int * ds;
-    dq[i] = std::clamp(v_int, -v_max_allowed[i], v_max_allowed[i]);
+    dq[i] = std::clamp(v_int, -v_max_allowed_[i], v_max_allowed_[i]);
     // Calculate Acceleration
     double a_max_int = ddq1[i] + dt * dddq1[i];
     double a_int = v_max_int * dds + ds * ds * a_max_int;
-    ddq[i] = std::clamp(a_int, -a_max_allowed[i], a_max_allowed[i]);
-    dddq[i] = dddq1[i] * ds * ds * ds + 3.0 * a_max_int * dds * ds + v_max_int * ddds;
+    ddq[i] = std::clamp(a_int, -a_max_allowed_[i], a_max_allowed_[i]);
+    dddq[i] = std::clamp(dddq1[i] * ds * ds * ds + 3.0 * a_max_int * dds * ds + v_max_int * ddds, -j_max_allowed_[i], j_max_allowed_[i]);
   }
   return Motion(0.0, q, dq, ddq, dddq, s);
 }
@@ -162,7 +169,7 @@ double LongTermTraj::getMaxofMaximumCartesianVelocity() const {
   return max_cart_vel_;
 }
 
-double LongTermTraj::getMaxofMaximumCartesianVelocityWithS(double s) {
+double LongTermTraj::getMaxofMaximumCartesianVelocityWithS(double s) const {
   unsigned long i = getCurrentPos();
   double max = getMotion(i).getMaximumCartesianVelocity();
   while (i < length_) {

@@ -57,16 +57,35 @@ PYBIND11_MODULE(safety_shield_py, handle) {
   // Long-term trajectory class
   py::class_<safety_shield::LongTermTraj>(handle, "LongTermTraj")
     .def(py::init<>())
-    .def(py::init<std::vector<safety_shield::Motion>, double, int, int, double>(), py::arg("long_term_traj"), py::arg("sample_time"), py::arg("starting_index") = 0, py::arg("sliding_window_k") = 10, py::arg("alpha_i_max") = 1.0)
-    .def("interpolate", &safety_shield::LongTermTraj::interpolate, py::arg("s"), py::arg("ds"), py::arg("dds"), py::arg("ddds"), py::arg("v_max_allowed"), py::arg("a_max_allowed"), py::arg("j_max_allowed"))
+    .def(py::init<std::vector<safety_shield::Motion>, double, int,
+      std::vector<double>, std::vector<double>, std::vector<double>, int, double>(),
+        py::arg("long_term_traj"), py::arg("sample_time"), py::arg("starting_index"), 
+        py::arg("v_max_allowed"), py::arg("a_max_allowed"), py::arg("j_max_allowed"),
+        py::arg("sliding_window_k") = 10, py::arg("alpha_i_max") = 1.0)
+    /* I think this requires introducing RobotReach into the bindings as well.
+    .def(py::init<std::vector<safety_shield::Motion>, double, safety_shield::RobotReach, int,
+      std::vector<double>, std::vector<double>, std::vector<double>, int>(),
+        py::arg("long_term_traj"), py::arg("sample_time"), py::arg("robot_reach"), py::arg("starting_index"), 
+        py::arg("v_max_allowed"), py::arg("a_max_allowed"), py::arg("j_max_allowed"),
+        py::arg("sliding_window_k") = 10)
+    */
+    .def("interpolate", &safety_shield::LongTermTraj::interpolate, py::arg("s"), py::arg("ds"), py::arg("dds"), py::arg("ddds"))
     .def("setLongTermTrajectory", py::overload_cast<const std::vector<safety_shield::Motion>&>(&safety_shield::LongTermTraj::setLongTermTrajectory), py::arg("long_term_traj"))
     .def("setLongTermTrajectory", py::overload_cast<const std::vector<safety_shield::Motion>&, double>(&safety_shield::LongTermTraj::setLongTermTrajectory), py::arg("long_term_traj"), py::arg("sample_time"))
+    .def("setStartingIndex", &safety_shield::LongTermTraj::setStartingIndex, py::arg("starting_index"))
+    .def("setVMaxAllowed", &safety_shield::LongTermTraj::setVMaxAllowed, py::arg("v_max_allowed"))
+    .def("setAMaxAllowed", &safety_shield::LongTermTraj::setAMaxAllowed, py::arg("a_max_allowed"))
+    .def("setJMaxAllowed", &safety_shield::LongTermTraj::setJMaxAllowed, py::arg("j_max_allowed"))
     .def("getLength", &safety_shield::LongTermTraj::getLength)
     .def("getCurrentPos", &safety_shield::LongTermTraj::getCurrentPos)
     .def("getCurrentMotion", &safety_shield::LongTermTraj::getCurrentMotion)
     .def("getNextMotion", &safety_shield::LongTermTraj::getNextMotion)
     .def("getNextMotionAtIndex", &safety_shield::LongTermTraj::getNextMotionAtIndex, py::arg("index"))
     .def("getTrajectoryIndex", &safety_shield::LongTermTraj::getTrajectoryIndex, py::arg("index"))
+    .def("getStartingIndex", &safety_shield::LongTermTraj::getStartingIndex)
+    .def("getVMaxAllowed", &safety_shield::LongTermTraj::getVMaxAllowed)
+    .def("getAMaxAllowed", &safety_shield::LongTermTraj::getAMaxAllowed)
+    .def("getJMaxAllowed", &safety_shield::LongTermTraj::getJMaxAllowed)
     .def("increasePosition", &safety_shield::LongTermTraj::increasePosition)
     .def("getMaxAccelerationWindow", &safety_shield::LongTermTraj::getMaxAccelerationWindow)
     .def("getMaxJerkWindow", &safety_shield::LongTermTraj::getMaxJerkWindow)
