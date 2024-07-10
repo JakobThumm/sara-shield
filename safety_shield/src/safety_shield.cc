@@ -610,40 +610,10 @@ Motion SafetyShield::step(double cycle_begin_time) {
     // Get current motion
     Motion current_motion = getCurrentMotion();
     std::vector<double> alpha_i;
-    // If the new LTT was processed at least once and is labeled safe, replace old LTT with new one.
-    if (new_ltt_ && new_ltt_processed_) {
-      if (is_safe_ || current_motion.isStopped()) {
-        long_term_trajectory_ = new_long_term_trajectory_;
-        new_ltt_ = false;
-        new_goal_ = false;
-      }
-    }
+    evaluateNewLTTProcessed(current_motion);
     // Check if there is a new goal motion
     if (new_goal_) {
-      // Check if current motion has acceleration and jerk values that lie in the plannable ranges
-      bool is_plannable = checkCurrentMotionForReplanning(current_motion);
-      if (is_plannable) {
-        // Check if the starting position of the last replanning was very close to the current position
-        bool last_close = new_ltt_ && abs(path_s_ - last_replan_s_) < sample_time_;
-        // Only replan if the current joint position is different from the last.
-        bool success = true;
-        if (!last_close) {
-          success = calculateLongTermTrajectory(current_motion.getAngle(), current_motion.getVelocity(),
-                                                current_motion.getAcceleration(), new_goal_motion_.getAngle(),
-                                                new_long_term_trajectory_);
-          if (success) {
-            last_replan_s_ = path_s_;
-          }
-        }
-        if (success) {
-          new_ltt_ = true;
-          new_ltt_processed_ = false;
-        } else {
-          new_ltt_ = false;
-        }
-      } else {
-        new_ltt_ = false;
-      }
+      newGoalPlanning(current_motion);
     }
     if (new_ltt_) {
       alpha_i = new_long_term_trajectory_.getAlphaI();
@@ -656,36 +626,7 @@ Motion SafetyShield::step(double cycle_begin_time) {
     }
     // Compute a new potential trajectory
     Motion goal_motion = computesPotentialTrajectory(is_safe_, next_motion_.getVelocity());
-    if (shield_type_ != ShieldType::OFF) {
-      // Check motion for joint limits (goal motion needed here as it is end of failsafe)
-      if (!checkMotionForJointLimits(goal_motion)) {
-        is_safe_ = false;
-      } else {
-        // Compute the robot reachable set for the potential trajectory
-        std::vector<double> time_points = calcTimePointsForEquidistantIntervals(current_motion.getTime(), goal_motion.getTime(), reachability_set_duration_);
-        std::vector<Motion> interval_edges_motions = getMotionsFromCurrentLTTandPath(time_points);
-        robot_capsules_time_intervals_ = robot_reach_->reachTimeIntervals(interval_edges_motions, alpha_i);
-        // Compute the human reachable sets for the potential trajectory
-        // humanReachabilityAnalysis(t_command, t_brake)
-        human_capsules_time_intervals_ = human_reach_->humanReachabilityAnalysisTimeIntervals(cycle_begin_time_, time_points);
-        // Verify if the robot and human reachable sets are collision free
-        int collision_index = -1;
-        is_safe_ = verify_->verify_human_reach_time_intervals(robot_capsules_time_intervals_, human_capsules_time_intervals_, collision_index);
-        // for visualization in hrgym, reachability sets of last timestep are used
-        if (is_safe_) {
-          robot_capsules_ = robot_capsules_time_intervals_[robot_capsules_time_intervals_.size()-1];
-          human_capsules_ = human_capsules_time_intervals_[human_capsules_time_intervals_.size()-1];
-        } else {
-          robot_capsules_ = robot_capsules_time_intervals_[collision_index];
-          human_capsules_ = human_capsules_time_intervals_[collision_index];
-        }
-        if (shield_type_ == ShieldType::PFL) {
-          is_safe_ = is_safe_ || is_under_v_limit_;
-        }
-      }
-    } else {
-      is_safe_ = true;
-    }
+    is_safe_ = verifySafety(current_motion, goal_motion, alpha_i);
     // Select the next motion based on the verified safety
     next_motion_ = determineNextMotion(is_safe_);
     next_motion_.setTime(cycle_begin_time);
@@ -695,6 +636,82 @@ Motion SafetyShield::step(double cycle_begin_time) {
     spdlog::error("Exception in SafetyShield::getNextCycle: {}", exc.what());
     return Motion();
   }
+}
+
+void SafetyShield::evaluateNewLTTProcessed(Motion& current_motion) {
+  // If the new LTT was processed at least once and is labeled safe (stopped = safe for replanning), replace old LTT with new one.
+  if (new_ltt_ && new_ltt_processed_ && (is_safe_ || current_motion.isStopped())) {
+    long_term_trajectory_ = new_long_term_trajectory_;
+    new_ltt_ = false;
+    new_goal_ = false;
+  }
+}
+
+void SafetyShield::newGoalPlanning(Motion& current_motion) {
+  assert(new_goal_); // This function should only be called if there is a new goal to plan to.
+  // Check if current motion has acceleration and jerk values that lie in the plannable ranges
+  if (!checkCurrentMotionForReplanning(current_motion)) {
+    new_ltt_ = false;
+    return;
+  }
+  // Check if the starting position of the last replanning was very close to the current position
+  bool last_close = new_ltt_ && abs(path_s_ - last_replan_s_) < sample_time_;
+  // Only replan if the current joint position is different from the last.
+  bool new_ltt_calculated = false;
+  if (!last_close) {
+    new_ltt_calculated = calculateLongTermTrajectory(
+      current_motion.getAngle(),
+      current_motion.getVelocity(),
+      current_motion.getAcceleration(), 
+      new_goal_motion_.getAngle(),
+      new_long_term_trajectory_
+    );
+  }
+  // A replanning happend, so set the last replan position to the current position
+  if (!last_close && new_ltt_calculated) {
+    last_replan_s_ = path_s_;
+  }
+  // If we calculated a new LTT, we need to process it in the next step
+  // If the last replan was close to the current position, we treat this like a new plan
+  if (last_close || new_ltt_calculated) {
+    new_ltt_ = true;
+    new_ltt_processed_ = false;
+  } else {
+    new_ltt_ = false;
+  }
+}
+
+bool SafetyShield::verifySafety(Motion& current_motion, Motion& goal_motion, const std::vector<double>& alpha_i) {
+  if (shield_type_ == ShieldType::OFF) {
+    return true;
+  }
+  // Check motion for joint limits (goal motion needed here as it is end of failsafe)
+  if (!checkMotionForJointLimits(goal_motion)) {
+    return false;
+  }
+  bool is_safe = false;
+  // Compute the robot reachable set for the potential trajectory
+  std::vector<double> time_points = calcTimePointsForEquidistantIntervals(current_motion.getTime(), goal_motion.getTime(), reachability_set_duration_);
+  std::vector<Motion> interval_edges_motions = getMotionsFromCurrentLTTandPath(time_points);
+  robot_capsules_time_intervals_ = robot_reach_->reachTimeIntervals(interval_edges_motions, alpha_i);
+  // Compute the human reachable sets for the potential trajectory
+  // humanReachabilityAnalysis(t_command, t_brake)
+  human_capsules_time_intervals_ = human_reach_->humanReachabilityAnalysisTimeIntervals(cycle_begin_time_, time_points);
+  // Verify if the robot and human reachable sets are collision free
+  int collision_index = -1;
+  is_safe = verify_->verify_human_reach_time_intervals(robot_capsules_time_intervals_, human_capsules_time_intervals_, collision_index);
+  // for visualization in hrgym, reachability sets of last timestep are used
+  if (is_safe) {
+    robot_capsules_ = robot_capsules_time_intervals_[robot_capsules_time_intervals_.size()-1];
+    human_capsules_ = human_capsules_time_intervals_[human_capsules_time_intervals_.size()-1];
+  } else {
+    robot_capsules_ = robot_capsules_time_intervals_[collision_index];
+    human_capsules_ = human_capsules_time_intervals_[collision_index];
+  }
+  if (shield_type_ == ShieldType::PFL) {
+    is_safe = is_safe || is_under_v_limit_;
+  }
+  return is_safe;
 }
 
 Motion SafetyShield::getCurrentMotion() {

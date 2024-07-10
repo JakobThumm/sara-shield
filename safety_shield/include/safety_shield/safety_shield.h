@@ -514,6 +514,44 @@ class SafetyShield {
   Motion step(double cycle_begin_time);
 
   /**
+   * @brief Evaluate if the new long term trajectory is processed and safe to use.
+   * @details Should be called in the `step()` function.
+   *  This function sets the following internal attributes:
+   *    - long_term_trajectory_: Will be overridden by the new long term trajectory if it is safe.
+   *    - new_ltt_: Will be set to false if the new LTT is safe.
+   *    - new_ltt_processed_: Will be set to false if the new LTT is safe.
+   * @param current_motion current motion we are in.
+   */
+  void evaluateNewLTTProcessed(Motion& current_motion);
+
+  /**
+   * @brief Evaluate if replanning a new LTT is necessary and plan one if needed.
+   * @details Should be called in the `step()` function if the new_goal_ flag is set, i.e.,
+   *  the user requested a new goal to move to.
+   *  This function sets the following internal attributes:
+   *    - new_long_term_trajectory_: The newly calculated LTT
+   *    - new_ltt_: Flag that indicates that a new LTT is available
+   *    - new_ltt_processed_: Flag that indicates that the new LTT was passed to the safety verification at least once.
+   * 
+   * @param current_motion current motion we are in.
+   */
+  void newGoalPlanning(Motion& current_motion);
+
+  /**
+   * @brief verify the safety of the movement from the current motion to the goal motion.
+   * 
+   * @details If the shield mode is OFF, the function will always return true.
+   * This function sets robot_capsules_ and human_capsules_ needed for plotting.
+   * 
+   * @param[in] current_motion Current motion the robot is in.
+   * @param[in] goal_motion Goal motion the robot wants to move to.
+   * @param[in] alpha_i Maximum cartesian acceleration of robot joints
+   * @return true if safe
+   * @return false if unsafe
+   */
+  bool verifySafety(Motion& current_motion, Motion& goal_motion, const std::vector<double>& alpha_i);
+
+  /**
    * @brief Calculates a new trajectory from current joint state to desired goal state.
    * Sets new trajectory as desired new long term trajectory.
    * @param goal_position Desired joint angles to move to
