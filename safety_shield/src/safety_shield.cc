@@ -610,40 +610,10 @@ Motion SafetyShield::step(double cycle_begin_time) {
     // Get current motion
     Motion current_motion = getCurrentMotion();
     std::vector<double> alpha_i;
-    // If the new LTT was processed at least once and is labeled safe, replace old LTT with new one.
-    if (new_ltt_ && new_ltt_processed_) {
-      if (is_safe_ || current_motion.isStopped()) {
-        long_term_trajectory_ = new_long_term_trajectory_;
-        new_ltt_ = false;
-        new_goal_ = false;
-      }
-    }
+    evaluateNewLTTProcessed(current_motion);
     // Check if there is a new goal motion
     if (new_goal_) {
-      // Check if current motion has acceleration and jerk values that lie in the plannable ranges
-      bool is_plannable = checkCurrentMotionForReplanning(current_motion);
-      if (is_plannable) {
-        // Check if the starting position of the last replanning was very close to the current position
-        bool last_close = new_ltt_ && abs(path_s_ - last_replan_s_) < sample_time_;
-        // Only replan if the current joint position is different from the last.
-        bool success = true;
-        if (!last_close) {
-          success = calculateLongTermTrajectory(current_motion.getAngle(), current_motion.getVelocity(),
-                                                current_motion.getAcceleration(), new_goal_motion_.getAngle(),
-                                                new_long_term_trajectory_);
-          if (success) {
-            last_replan_s_ = path_s_;
-          }
-        }
-        if (success) {
-          new_ltt_ = true;
-          new_ltt_processed_ = false;
-        } else {
-          new_ltt_ = false;
-        }
-      } else {
-        new_ltt_ = false;
-      }
+      newGoalPlanning(current_motion);
     }
     if (new_ltt_) {
       alpha_i = new_long_term_trajectory_.getAlphaI();
@@ -694,6 +664,49 @@ Motion SafetyShield::step(double cycle_begin_time) {
   } catch (const std::exception& exc) {
     spdlog::error("Exception in SafetyShield::getNextCycle: {}", exc.what());
     return Motion();
+  }
+}
+
+void SafetyShield::evaluateNewLTTProcessed(Motion& current_motion) {
+  // If the new LTT was processed at least once and is labeled safe (stopped = safe for replanning), replace old LTT with new one.
+  if (new_ltt_ && new_ltt_processed_ && (is_safe_ || current_motion.isStopped())) {
+    long_term_trajectory_ = new_long_term_trajectory_;
+    new_ltt_ = false;
+    new_goal_ = false;
+  }
+}
+
+void SafetyShield::newGoalPlanning(Motion& current_motion) {
+  assert(new_goal_); // This function should only be called if there is a new goal to plan to.
+  // Check if current motion has acceleration and jerk values that lie in the plannable ranges
+  if (!checkCurrentMotionForReplanning(current_motion)) {
+    new_ltt_ = false;
+    return;
+  }
+  // Check if the starting position of the last replanning was very close to the current position
+  bool last_close = new_ltt_ && abs(path_s_ - last_replan_s_) < sample_time_;
+  // Only replan if the current joint position is different from the last.
+  bool new_ltt_calculated = false;
+  if (!last_close) {
+    new_ltt_calculated = calculateLongTermTrajectory(
+      current_motion.getAngle(),
+      current_motion.getVelocity(),
+      current_motion.getAcceleration(), 
+      new_goal_motion_.getAngle(),
+      new_long_term_trajectory_
+    );
+  }
+  // A replanning happend, so set the last replan position to the current position
+  if (!last_close && new_ltt_calculated) {
+    last_replan_s_ = path_s_;
+  }
+  // If we calculated a new LTT, we need to process it in the next step
+  // If the last replan was close to the current position, we treat this like a new plan
+  if (last_close || new_ltt_calculated) {
+    new_ltt_ = true;
+    new_ltt_processed_ = false;
+  } else {
+    new_ltt_ = false;
   }
 }
 
