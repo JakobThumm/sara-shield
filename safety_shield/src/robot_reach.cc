@@ -97,6 +97,16 @@ std::vector<reach_lib::Capsule> RobotReach::reach(Motion& start_config, Motion& 
   }
 }
 
+/// get for each robot motion the corresponding reachable set and collect in list
+std::vector<std::vector<reach_lib::Capsule>> RobotReach::reachTimeIntervals(std::vector<Motion> motions, std::vector<double> alpha_i) {
+  std::vector<std::vector<reach_lib::Capsule>> robot_reachable_sets;
+  for(int i = 0; i < motions.size() - 1; i++) {
+    std::vector<reach_lib::Capsule> timestep_i = reach(motions[i], motions[i+1], motions[i+1].getS() - motions[i].getS(), alpha_i);
+    robot_reachable_sets.push_back(timestep_i);
+  }
+  return robot_reachable_sets;
+}
+
 double RobotReach::maxVelocityOfMotion(const Motion& motion) {
   calculateAllTransformationMatricesAndCapsules(motion.getAngleRef());
   double max_capsule_vel = 0;

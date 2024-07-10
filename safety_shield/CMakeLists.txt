@@ -32,6 +32,7 @@ add_library(${PROJECT_NAME}
         src/verify_iso.cc
         src/kalman_filter.cc
         src/measurement_handler.cc
+        src/trajectory_utils.cc
         #src/advanced_verify_iso.cc
         )
 
@@ -63,6 +64,9 @@ install(TARGETS ${PROJECT_NAME} DESTINATION /usr/lib)
 
 add_executable(debug src/debug.cc)
 target_link_libraries(debug ${PROJECT_NAME} long_term_planner spdlog yaml-cpp)
+
+add_executable(hrgym_scenario_debug src/hrgym_scenario_debug.cc)
+target_link_libraries(hrgym_scenario_debug ${PROJECT_NAME} long_term_planner spdlog yaml-cpp)
 #############
 ## GTest ##
 #############
@@ -91,6 +95,9 @@ target_link_libraries(verify_iso_tests ${PROJECT_NAME} GTest::GTest GTest::Main)
 add_executable(safety_shield_tests tests/src/safety_shield_tests.cc)
 target_include_directories(safety_shield_tests PUBLIC tests/include)
 target_link_libraries(safety_shield_tests ${PROJECT_NAME} GTest::GTest GTest::Main)
+add_executable(trajectory_utils_tests tests/src/trajectory_utils_tests.cc)
+target_include_directories(trajectory_utils_tests PUBLIC tests/include)
+target_link_libraries(trajectory_utils_tests ${PROJECT_NAME} GTest::GTest GTest::Main)
 gtest_discover_tests(long_term_traj_tests)
 gtest_discover_tests(human_reach_tests)
 gtest_discover_tests(motion_tests)
@@ -98,6 +105,7 @@ gtest_discover_tests(path_tests)
 gtest_discover_tests(robot_reach_tests)
 gtest_discover_tests(verify_iso_tests)
 gtest_discover_tests(safety_shield_tests)
+gtest_discover_tests(trajectory_utils_tests)
 
 #catkin_add_gtest(verify_iso_test tests/capsule_tests.cc tests/verify_iso_fixture.h)
 #target_link_libraries(verify_iso_test ${catkin_LIBRARIES} ${PROJECT_NAME}_lib)

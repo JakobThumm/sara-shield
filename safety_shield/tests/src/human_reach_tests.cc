@@ -313,6 +313,7 @@ TEST_F(HumanReachTestError, HumanReachAnalysisAccTestError) {
   EXPECT_DOUBLE_EQ(a_cap[0].r_, r);
 }
 
+// Currently failing due to https://github.com/Sven-Schepp/SaRA/issues/14
 TEST_F(HumanReachTestPos, HumanReachAnalysisPos) {
   reach_lib::Point p1(0, 0, 0);
   reach_lib::Point p2(0.2, 0.2, 0.2);
@@ -340,6 +341,385 @@ TEST_F(HumanReachTestPos, HumanReachAnalysisPos) {
   EXPECT_DOUBLE_EQ(p_cap[0].p2_.y, next_pos.y);
   EXPECT_DOUBLE_EQ(p_cap[0].p2_.z, next_pos.z);
   EXPECT_DOUBLE_EQ(p_cap[0].r_, r);
+}
+
+/// time interval method is equal to standard reach if reachability set duration is equal or larger to s_diff (with single joint)
+TEST_F(HumanReachTimeIntervalTestSingleJoint, Equality) {
+  reach_lib::Point p(1, 2, 3);
+  std::vector<reach_lib::Point> human_joint_pos;
+  human_joint_pos.push_back(p);
+  double t_meas = 1.0;
+  human_reach_single_joint_standard_->measurement(human_joint_pos, t_meas);
+  human_reach_single_joint_time_interval_->measurement(human_joint_pos, t_meas);
+  double t_command = 1.01;
+  double t_break = 0.1;
+  double t_start_interval = 0;
+  double t_end_interval = t_break;
+  human_reach_single_joint_standard_->humanReachabilityAnalysis(t_command, t_break);
+  std::vector<std::vector<reach_lib::Capsule>> standard_capsules = human_reach_single_joint_standard_->getAllCapsules();
+  std::vector<double> time_intervals = {t_start_interval, t_end_interval};
+  std::vector<std::vector<std::vector<reach_lib::Capsule>>> time_interval_capsules = 
+    human_reach_single_joint_time_interval_->humanReachabilityAnalysisTimeIntervals(
+      t_command, time_intervals
+    );
+  EXPECT_TRUE(time_interval_capsules.size() == 1);
+  EXPECT_TRUE(time_interval_capsules[0].size() == 3);
+  for(int i = 0; i < 3; i++) {
+    EXPECT_TRUE(time_interval_capsules[0][i].size() == standard_capsules[i].size());
+    for(int j = 0; j < time_interval_capsules[0][i].size(); j++) {
+      EXPECT_DOUBLE_EQ(time_interval_capsules[0][i][j].p1_.x, standard_capsules[i][j].p1_.x);
+      EXPECT_DOUBLE_EQ(time_interval_capsules[0][i][j].p1_.y, standard_capsules[i][j].p1_.y);
+      EXPECT_DOUBLE_EQ(time_interval_capsules[0][i][j].p1_.z, standard_capsules[i][j].p1_.z);
+      EXPECT_DOUBLE_EQ(time_interval_capsules[0][i][j].p2_.x, standard_capsules[i][j].p2_.x);
+      EXPECT_DOUBLE_EQ(time_interval_capsules[0][i][j].p2_.y, standard_capsules[i][j].p2_.y);
+      EXPECT_DOUBLE_EQ(time_interval_capsules[0][i][j].p2_.z, standard_capsules[i][j].p2_.z);
+      EXPECT_DOUBLE_EQ(time_interval_capsules[0][i][j].r_, standard_capsules[i][j].r_);
+    }
+  }
+}
+
+/// time interval method is equal to standard reach if reachability set duration is equal or larger than s_diff (with test arm)
+TEST_F(HumanReachTimeIntervalTestArm, EqualityArm) {
+  reach_lib::Point p(1, 2, 3);
+  std::vector<reach_lib::Point> human_joint_pos;
+  for (int i = 0; i < human_reach_test_arm_standard_->getJointPos().size(); i++) {
+    human_joint_pos.push_back(p);
+  }
+  double t_meas = 1.0;
+  human_reach_test_arm_standard_->measurement(human_joint_pos, t_meas);
+  human_reach_test_arm_time_interval_->measurement(human_joint_pos, t_meas);
+  double t_command = 1.01;
+  double t_break = 0.1;
+  double t_start_interval = 0.0;
+  double t_end_interval = t_break;
+  human_reach_test_arm_standard_->humanReachabilityAnalysis(t_command, t_break);
+  std::vector<std::vector<reach_lib::Capsule>> standard_capsules = human_reach_test_arm_standard_->getAllCapsules();
+  std::vector<double> time_intervals = {t_start_interval, t_end_interval};
+  std::vector<std::vector<std::vector<reach_lib::Capsule>>> time_interval_capsules =
+    human_reach_test_arm_time_interval_->humanReachabilityAnalysisTimeIntervals(
+      t_command, time_intervals
+    );
+
+  EXPECT_TRUE(standard_capsules.size() == time_interval_capsules[0].size());
+  std::vector<std::vector<reach_lib::Capsule>> time_interval_capsules_0 = time_interval_capsules[0];
+  EXPECT_TRUE(standard_capsules[0].size() == time_interval_capsules_0[0].size());
+  EXPECT_TRUE(standard_capsules[1].size() == time_interval_capsules_0[1].size());
+  EXPECT_TRUE(standard_capsules[2].size() == time_interval_capsules_0[2].size());
+
+  EXPECT_NEAR(time_interval_capsules_0[0][0].p1_.x, standard_capsules[0][0].p1_.x, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_0[0][0].p1_.y, standard_capsules[0][0].p1_.y, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_0[0][0].p1_.z, standard_capsules[0][0].p1_.z, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_0[0][0].p2_.x, standard_capsules[0][0].p2_.x, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_0[0][0].p2_.y, standard_capsules[0][0].p2_.y, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_0[0][0].p2_.z, standard_capsules[0][0].p2_.z, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_0[0][0].r_, standard_capsules[0][0].r_, 1e-6);
+
+  EXPECT_NEAR(time_interval_capsules_0[1][0].p1_.x, standard_capsules[1][0].p1_.x, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_0[1][0].p1_.y, standard_capsules[1][0].p1_.y, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_0[1][0].p1_.z, standard_capsules[1][0].p1_.z, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_0[1][0].p2_.x, standard_capsules[1][0].p2_.x, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_0[1][0].p2_.y, standard_capsules[1][0].p2_.y, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_0[1][0].p2_.z, standard_capsules[1][0].p2_.z, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_0[1][0].r_, standard_capsules[1][0].r_, 1e-6);
+
+  EXPECT_NEAR(time_interval_capsules_0[1][1].p1_.x, standard_capsules[1][1].p1_.x, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_0[1][1].p1_.y, standard_capsules[1][1].p1_.y, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_0[1][1].p1_.z, standard_capsules[1][1].p1_.z, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_0[1][1].p2_.x, standard_capsules[1][1].p2_.x, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_0[1][1].p2_.y, standard_capsules[1][1].p2_.y, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_0[1][1].p2_.z, standard_capsules[1][1].p2_.z, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_0[1][1].r_, standard_capsules[1][1].r_, 1e-6);
+
+  EXPECT_NEAR(time_interval_capsules_0[1][2].p1_.x, standard_capsules[1][2].p1_.x, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_0[1][2].p1_.y, standard_capsules[1][2].p1_.y, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_0[1][2].p1_.z, standard_capsules[1][2].p1_.z, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_0[1][2].p2_.x, standard_capsules[1][2].p2_.x, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_0[1][2].p2_.y, standard_capsules[1][2].p2_.y, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_0[1][2].p2_.z, standard_capsules[1][2].p2_.z, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_0[1][2].r_, standard_capsules[1][2].r_, 1e-6);
+
+  EXPECT_NEAR(time_interval_capsules_0[2][0].p1_.x, standard_capsules[2][0].p1_.x, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_0[2][0].p1_.y, standard_capsules[2][0].p1_.y, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_0[2][0].p1_.z, standard_capsules[2][0].p1_.z, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_0[2][0].p2_.x, standard_capsules[2][0].p2_.x, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_0[2][0].p2_.y, standard_capsules[2][0].p2_.y, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_0[2][0].p2_.z, standard_capsules[2][0].p2_.z, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_0[2][0].r_, standard_capsules[2][0].r_, 1e-6);
+
+  EXPECT_NEAR(time_interval_capsules_0[2][1].p1_.x, standard_capsules[2][1].p1_.x, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_0[2][1].p1_.y, standard_capsules[2][1].p1_.y, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_0[2][1].p1_.z, standard_capsules[2][1].p1_.z, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_0[2][1].p2_.x, standard_capsules[2][1].p2_.x, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_0[2][1].p2_.y, standard_capsules[2][1].p2_.y, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_0[2][1].p2_.z, standard_capsules[2][1].p2_.z, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_0[2][1].r_, standard_capsules[2][1].r_, 1e-6);
+
+  EXPECT_NEAR(time_interval_capsules_0[2][2].p1_.x, standard_capsules[2][2].p1_.x, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_0[2][2].p1_.y, standard_capsules[2][2].p1_.y, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_0[2][2].p1_.z, standard_capsules[2][2].p1_.z, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_0[2][2].p2_.x, standard_capsules[2][2].p2_.x, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_0[2][2].p2_.y, standard_capsules[2][2].p2_.y, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_0[2][2].p2_.z, standard_capsules[2][2].p2_.z, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_0[2][2].r_, standard_capsules[2][2].r_, 1e-6);
+}
+
+
+/// time interval method with two intervals is equal to standard reach of the two separate intervals (with single joint)
+TEST_F(HumanReachTimeIntervalTestSingleJoint, IntervalTest) {
+ reach_lib::Point p(1, 2, 3);
+ std::vector<reach_lib::Point> human_joint_pos;
+ human_joint_pos.push_back(p);
+ double t_meas = 0.0;
+ human_reach_single_joint_standard_->measurement(human_joint_pos, t_meas);
+ human_reach_single_joint_time_interval_->measurement(human_joint_pos, t_meas);
+ double t_command = 0.0;
+ double t_break_1 = 0.05;
+ double t_break_2 = 0.1;
+ double current_motion = 0;
+ human_reach_single_joint_standard_->humanReachabilityAnalysis(t_command, t_break_1);
+ std::vector<std::vector<reach_lib::Capsule>> first_interval_capsules = human_reach_single_joint_standard_->getAllCapsules();
+ human_reach_single_joint_standard_->humanReachabilityAnalysis(t_command, t_break_2);
+ std::vector<std::vector<reach_lib::Capsule>> second_interval_capsules = human_reach_single_joint_standard_->getAllCapsules();
+ std::vector<double> time_intervals = {current_motion, t_break_1, t_break_2};
+ std::vector<std::vector<std::vector<reach_lib::Capsule>>> time_interval_capsules =
+  human_reach_single_joint_time_interval_->humanReachabilityAnalysisTimeIntervals(
+    t_command, time_intervals
+  );
+ EXPECT_TRUE(time_interval_capsules.size() == 2);
+ EXPECT_TRUE(time_interval_capsules[0].size() == 3);
+
+ /// equality of first interval
+ for(int i = 0; i < 3; i++) {
+   EXPECT_TRUE(time_interval_capsules[0][i].size() == first_interval_capsules[i].size());
+   for(int j = 0; j < time_interval_capsules[0][i].size(); j++) {
+     EXPECT_NEAR(time_interval_capsules[0][i][j].p1_.x, first_interval_capsules[i][j].p1_.x, 1e-6);
+     EXPECT_NEAR(time_interval_capsules[0][i][j].p1_.y, first_interval_capsules[i][j].p1_.y, 1e-6);
+     EXPECT_NEAR(time_interval_capsules[0][i][j].p1_.z, first_interval_capsules[i][j].p1_.z, 1e-6);
+     EXPECT_NEAR(time_interval_capsules[0][i][j].p2_.x, first_interval_capsules[i][j].p2_.x, 1e-6);
+     EXPECT_NEAR(time_interval_capsules[0][i][j].p2_.y, first_interval_capsules[i][j].p2_.y, 1e-6);
+     EXPECT_NEAR(time_interval_capsules[0][i][j].p2_.z, first_interval_capsules[i][j].p2_.z, 1e-6);
+     EXPECT_NEAR(time_interval_capsules[0][i][j].r_, first_interval_capsules[i][j].r_, 1e-6);
+   }
+ }
+
+ /// equality of second interval
+ for(int i = 0; i < 3; i++) {
+   EXPECT_TRUE(time_interval_capsules[1][i].size() == second_interval_capsules[i].size());
+   for(int j = 0; j < time_interval_capsules[1][i].size(); j++) {
+     EXPECT_NEAR(time_interval_capsules[1][i][j].p1_.x, second_interval_capsules[i][j].p1_.x, 1e-6);
+     EXPECT_NEAR(time_interval_capsules[1][i][j].p1_.y, second_interval_capsules[i][j].p1_.y, 1e-6);
+     EXPECT_NEAR(time_interval_capsules[1][i][j].p1_.z, second_interval_capsules[i][j].p1_.z, 1e-6);
+     EXPECT_NEAR(time_interval_capsules[1][i][j].p2_.x, second_interval_capsules[i][j].p2_.x, 1e-6);
+     EXPECT_NEAR(time_interval_capsules[1][i][j].p2_.y, second_interval_capsules[i][j].p2_.y, 1e-6);
+     EXPECT_NEAR(time_interval_capsules[1][i][j].p2_.z, second_interval_capsules[i][j].p2_.z, 1e-6);
+     EXPECT_NEAR(time_interval_capsules[1][i][j].r_, second_interval_capsules[i][j].r_, 1e-6);
+   }
+ }
+}
+
+/// time interval method with two intervals is equal to standard reach of the two separate intervals (with test arm)
+TEST_F(HumanReachTimeIntervalTestArm, IntervalTest1) {
+  reach_lib::Point p(1, 2, 3);
+  std::vector<reach_lib::Point> human_joint_pos;
+  for (int i = 0; i < human_reach_test_arm_standard_->getJointPos().size(); i++) {
+    human_joint_pos.push_back(p);
+  }
+  double t_meas = 0.0;
+  human_reach_test_arm_standard_->measurement(human_joint_pos, t_meas);
+  human_reach_test_arm_time_interval_->measurement(human_joint_pos, t_meas);
+  double t_command = 0.0;
+  double t_break_1 = 0.05;
+  double t_break_2 = 0.1;
+  double current_motion = 0;
+  std::vector<double> time_intervals = {current_motion, t_break_1, t_break_2};
+  std::vector<double> first_interval = {current_motion, t_break_1};
+  // TODO: second interval?
+  std::vector<double> second_interval = {t_break_1, t_break_2}; //{current_motion, t_break_2};
+  std::vector<std::vector<std::vector<reach_lib::Capsule>>> first_interval_capsules =
+    human_reach_test_arm_time_interval_->humanReachabilityAnalysisTimeIntervals(
+      t_command, first_interval
+    );
+  std::vector<std::vector<std::vector<reach_lib::Capsule>>> second_interval_capsules =
+    human_reach_test_arm_time_interval_->humanReachabilityAnalysisTimeIntervals(
+      t_command, second_interval
+    );
+  std::vector<std::vector<std::vector<reach_lib::Capsule>>> time_interval_capsules =
+    human_reach_test_arm_time_interval_->humanReachabilityAnalysisTimeIntervals(
+      t_command, time_intervals
+    );
+  EXPECT_TRUE(time_interval_capsules.size() == 2);
+
+  /// test equality with first interval
+  for(int i = 0; i < 3; i++) {
+    EXPECT_TRUE(time_interval_capsules[0][i].size() == first_interval_capsules[0][i].size());
+    for(int j = 0; j < time_interval_capsules[0][i].size(); j++) {
+      EXPECT_NEAR(time_interval_capsules[0][i][j].p1_.x, first_interval_capsules[0][i][j].p1_.x, 1e-6);
+      EXPECT_NEAR(time_interval_capsules[0][i][j].p1_.y, first_interval_capsules[0][i][j].p1_.y, 1e-6);
+      EXPECT_NEAR(time_interval_capsules[0][i][j].p1_.z, first_interval_capsules[0][i][j].p1_.z, 1e-6);
+      EXPECT_NEAR(time_interval_capsules[0][i][j].p2_.x, first_interval_capsules[0][i][j].p2_.x, 1e-6);
+      EXPECT_NEAR(time_interval_capsules[0][i][j].p2_.y, first_interval_capsules[0][i][j].p2_.y, 1e-6);
+      EXPECT_NEAR(time_interval_capsules[0][i][j].p2_.z, first_interval_capsules[0][i][j].p2_.z, 1e-6);
+      EXPECT_NEAR(time_interval_capsules[0][i][j].r_, first_interval_capsules[0][i][j].r_, 1e-6);
+    }
+  }
+
+  /// test equality with second interval
+  for(int i = 0; i < 3; i++) {
+    EXPECT_TRUE(time_interval_capsules[1][i].size() == second_interval_capsules[0][i].size());
+    for(int j = 0; j < time_interval_capsules[1][i].size(); j++) {
+      EXPECT_NEAR(time_interval_capsules[1][i][j].p1_.x, second_interval_capsules[0][i][j].p1_.x, 1e-6);
+      EXPECT_NEAR(time_interval_capsules[1][i][j].p1_.y, second_interval_capsules[0][i][j].p1_.y, 1e-6);
+      EXPECT_NEAR(time_interval_capsules[1][i][j].p1_.z, second_interval_capsules[0][i][j].p1_.z, 1e-6);
+      EXPECT_NEAR(time_interval_capsules[1][i][j].p2_.x, second_interval_capsules[0][i][j].p2_.x, 1e-6);
+      EXPECT_NEAR(time_interval_capsules[1][i][j].p2_.y, second_interval_capsules[0][i][j].p2_.y, 1e-6);
+      EXPECT_NEAR(time_interval_capsules[1][i][j].p2_.z, second_interval_capsules[0][i][j].p2_.z, 1e-6);
+      EXPECT_NEAR(time_interval_capsules[1][i][j].r_, second_interval_capsules[0][i][j].r_, 1e-6);
+    }
+  }
+}
+
+/// time interval method with two intervals is equal to standard reach of the two separate intervals (with test arm)
+TEST_F(HumanReachTimeIntervalTestArm, IntervalTest2) {
+  reach_lib::Point p(1, 2, 3);
+  std::vector<reach_lib::Point> human_joint_pos;
+  for (int i = 0; i < human_reach_test_arm_standard_->getJointPos().size(); i++) {
+    human_joint_pos.push_back(p);
+  }
+  double t_meas = 0.0;
+  human_reach_test_arm_standard_->measurement(human_joint_pos, t_meas);
+  human_reach_test_arm_time_interval_->measurement(human_joint_pos, t_meas);
+  double t_command = 0.0;
+  double t_break_1 = 0.05;
+  double t_break_2 = 0.1;
+  double current_motion = 0;
+  human_reach_test_arm_standard_->humanReachabilityAnalysis(t_command, t_break_1);
+  std::vector<std::vector<reach_lib::Capsule>> first_interval_capsules = human_reach_test_arm_standard_->getAllCapsules();
+  human_reach_test_arm_standard_->humanReachabilityAnalysis(t_command, t_break_2);
+  std::vector<std::vector<reach_lib::Capsule>> second_interval_capsules = human_reach_test_arm_standard_->getAllCapsules();
+  std::vector<double> time_intervals = {current_motion, t_break_1, t_break_2};
+  std::vector<std::vector<std::vector<reach_lib::Capsule>>> time_interval_capsules =
+    human_reach_test_arm_time_interval_->humanReachabilityAnalysisTimeIntervals(
+      t_command, time_intervals
+    );
+  EXPECT_TRUE(time_interval_capsules.size() == 2);
+
+  /// test equality with first interval
+  std::vector<std::vector<reach_lib::Capsule>>  time_interval_capsules_0 = time_interval_capsules[0];
+  EXPECT_NEAR(time_interval_capsules_0[0][0].p1_.x, first_interval_capsules[0][0].p1_.x, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_0[0][0].p1_.y, first_interval_capsules[0][0].p1_.y, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_0[0][0].p1_.z, first_interval_capsules[0][0].p1_.z, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_0[0][0].p2_.x, first_interval_capsules[0][0].p2_.x, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_0[0][0].p2_.y, first_interval_capsules[0][0].p2_.y, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_0[0][0].p2_.z, first_interval_capsules[0][0].p2_.z, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_0[0][0].r_, first_interval_capsules[0][0].r_, 1e-6);
+
+  EXPECT_NEAR(time_interval_capsules_0[1][0].p1_.x, first_interval_capsules[1][0].p1_.x, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_0[1][0].p1_.y, first_interval_capsules[1][0].p1_.y, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_0[1][0].p1_.z, first_interval_capsules[1][0].p1_.z, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_0[1][0].p2_.x, first_interval_capsules[1][0].p2_.x, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_0[1][0].p2_.y, first_interval_capsules[1][0].p2_.y, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_0[1][0].p2_.z, first_interval_capsules[1][0].p2_.z, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_0[1][0].r_, first_interval_capsules[1][0].r_, 1e-6);
+
+  EXPECT_NEAR(time_interval_capsules_0[1][1].p1_.x, first_interval_capsules[1][1].p1_.x, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_0[1][1].p1_.y, first_interval_capsules[1][1].p1_.y, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_0[1][1].p1_.z, first_interval_capsules[1][1].p1_.z, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_0[1][1].p2_.x, first_interval_capsules[1][1].p2_.x, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_0[1][1].p2_.y, first_interval_capsules[1][1].p2_.y, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_0[1][1].p2_.z, first_interval_capsules[1][1].p2_.z, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_0[1][1].r_, first_interval_capsules[1][1].r_, 1e-6);
+
+  EXPECT_NEAR(time_interval_capsules_0[1][2].p1_.x, first_interval_capsules[1][2].p1_.x, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_0[1][2].p1_.y, first_interval_capsules[1][2].p1_.y, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_0[1][2].p1_.z, first_interval_capsules[1][2].p1_.z, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_0[1][2].p2_.x, first_interval_capsules[1][2].p2_.x, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_0[1][2].p2_.y, first_interval_capsules[1][2].p2_.y, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_0[1][2].p2_.z, first_interval_capsules[1][2].p2_.z, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_0[1][2].r_, first_interval_capsules[1][2].r_, 1e-6);
+
+  EXPECT_NEAR(time_interval_capsules_0[2][0].p1_.x, first_interval_capsules[2][0].p1_.x, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_0[2][0].p1_.y, first_interval_capsules[2][0].p1_.y, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_0[2][0].p1_.z, first_interval_capsules[2][0].p1_.z, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_0[2][0].p2_.x, first_interval_capsules[2][0].p2_.x, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_0[2][0].p2_.y, first_interval_capsules[2][0].p2_.y, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_0[2][0].p2_.z, first_interval_capsules[2][0].p2_.z, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_0[2][0].r_, first_interval_capsules[2][0].r_, 1e-6);
+
+  EXPECT_NEAR(time_interval_capsules_0[2][1].p1_.x, first_interval_capsules[2][1].p1_.x, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_0[2][1].p1_.y, first_interval_capsules[2][1].p1_.y, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_0[2][1].p1_.z, first_interval_capsules[2][1].p1_.z, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_0[2][1].p2_.x, first_interval_capsules[2][1].p2_.x, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_0[2][1].p2_.y, first_interval_capsules[2][1].p2_.y, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_0[2][1].p2_.z, first_interval_capsules[2][1].p2_.z, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_0[2][1].r_, first_interval_capsules[2][1].r_, 1e-6);
+
+  EXPECT_NEAR(time_interval_capsules_0[2][2].p1_.x, first_interval_capsules[2][2].p1_.x, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_0[2][2].p1_.y, first_interval_capsules[2][2].p1_.y, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_0[2][2].p1_.z, first_interval_capsules[2][2].p1_.z, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_0[2][2].p2_.x, first_interval_capsules[2][2].p2_.x, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_0[2][2].p2_.y, first_interval_capsules[2][2].p2_.y, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_0[2][2].p2_.z, first_interval_capsules[2][2].p2_.z, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_0[2][2].r_, first_interval_capsules[2][2].r_, 1e-6);
+
+  /// test equality with second interval
+  std::vector<std::vector<reach_lib::Capsule>>  time_interval_capsules_1 = time_interval_capsules[1];
+  EXPECT_NEAR(time_interval_capsules_1[0][0].p1_.x, second_interval_capsules[0][0].p1_.x, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_1[0][0].p1_.y, second_interval_capsules[0][0].p1_.y, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_1[0][0].p1_.z, second_interval_capsules[0][0].p1_.z, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_1[0][0].p2_.x, second_interval_capsules[0][0].p2_.x, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_1[0][0].p2_.y, second_interval_capsules[0][0].p2_.y, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_1[0][0].p2_.z, second_interval_capsules[0][0].p2_.z, 1e-6);
+  // Currently failing due to https://github.com/Sven-Schepp/SaRA/issues/14
+  EXPECT_NEAR(time_interval_capsules_1[0][0].r_, second_interval_capsules[0][0].r_, 1e-6);
+
+  EXPECT_NEAR(time_interval_capsules_1[1][0].p1_.x, second_interval_capsules[1][0].p1_.x, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_1[1][0].p1_.y, second_interval_capsules[1][0].p1_.y, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_1[1][0].p1_.z, second_interval_capsules[1][0].p1_.z, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_1[1][0].p2_.x, second_interval_capsules[1][0].p2_.x, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_1[1][0].p2_.y, second_interval_capsules[1][0].p2_.y, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_1[1][0].p2_.z, second_interval_capsules[1][0].p2_.z, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_1[1][0].r_, second_interval_capsules[1][0].r_, 1e-6);
+
+  EXPECT_NEAR(time_interval_capsules_1[1][1].p1_.x, second_interval_capsules[1][1].p1_.x, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_1[1][1].p1_.y, second_interval_capsules[1][1].p1_.y, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_1[1][1].p1_.z, second_interval_capsules[1][1].p1_.z, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_1[1][1].p2_.x, second_interval_capsules[1][1].p2_.x, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_1[1][1].p2_.y, second_interval_capsules[1][1].p2_.y, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_1[1][1].p2_.z, second_interval_capsules[1][1].p2_.z, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_1[1][1].r_, second_interval_capsules[1][1].r_, 1e-6);
+
+  EXPECT_NEAR(time_interval_capsules_1[1][2].p1_.x, second_interval_capsules[1][2].p1_.x, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_1[1][2].p1_.y, second_interval_capsules[1][2].p1_.y, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_1[1][2].p1_.z, second_interval_capsules[1][2].p1_.z, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_1[1][2].p2_.x, second_interval_capsules[1][2].p2_.x, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_1[1][2].p2_.y, second_interval_capsules[1][2].p2_.y, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_1[1][2].p2_.z, second_interval_capsules[1][2].p2_.z, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_1[1][2].r_, second_interval_capsules[1][2].r_, 1e-6);
+
+  EXPECT_NEAR(time_interval_capsules_1[2][0].p1_.x, second_interval_capsules[2][0].p1_.x, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_1[2][0].p1_.y, second_interval_capsules[2][0].p1_.y, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_1[2][0].p1_.z, second_interval_capsules[2][0].p1_.z, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_1[2][0].p2_.x, second_interval_capsules[2][0].p2_.x, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_1[2][0].p2_.y, second_interval_capsules[2][0].p2_.y, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_1[2][0].p2_.z, second_interval_capsules[2][0].p2_.z, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_1[2][0].r_, second_interval_capsules[2][0].r_, 1e-6);
+
+  EXPECT_NEAR(time_interval_capsules_1[2][1].p1_.x, second_interval_capsules[2][1].p1_.x, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_1[2][1].p1_.y, second_interval_capsules[2][1].p1_.y, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_1[2][1].p1_.z, second_interval_capsules[2][1].p1_.z, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_1[2][1].p2_.x, second_interval_capsules[2][1].p2_.x, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_1[2][1].p2_.y, second_interval_capsules[2][1].p2_.y, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_1[2][1].p2_.z, second_interval_capsules[2][1].p2_.z, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_1[2][1].r_, second_interval_capsules[2][1].r_, 1e-6);
+
+  EXPECT_NEAR(time_interval_capsules_1[2][2].p1_.x, second_interval_capsules[2][2].p1_.x, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_1[2][2].p1_.y, second_interval_capsules[2][2].p1_.y, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_1[2][2].p1_.z, second_interval_capsules[2][2].p1_.z, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_1[2][2].p2_.x, second_interval_capsules[2][2].p2_.x, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_1[2][2].p2_.y, second_interval_capsules[2][2].p2_.y, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_1[2][2].p2_.z, second_interval_capsules[2][2].p2_.z, 1e-6);
+  EXPECT_NEAR(time_interval_capsules_1[2][2].r_, second_interval_capsules[2][2].r_, 1e-6);
+
 }
 
 }  // namespace safety_shield

@@ -24,6 +24,8 @@
 
 #include "reach_lib.hpp"
 #include "safety_shield/robot_reach.h"
+#include "safety_shield/safety_shield.h"
+#include "safety_shield/trajectory_utils.h"
 
 #ifndef ROBOT_REACH_FIXTURE_H
 #define ROBOT_REACH_FIXTURE_H
@@ -82,6 +84,44 @@ class RobotReachTestVelocity : public ::testing::Test {
     double secure_radius = robot_config["secure_radius"].as<double>();
     robot_reach_ =
         new RobotReach(transformation_matrices, nb_joints, enclosures, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, secure_radius);
+  }
+};
+
+/**
+ * @brief Test fixture for time interval version of robot reach
+ */
+class RobotReachTestTimeIntervals : public ::testing::Test {
+ protected:
+  /**
+   * @brief The robot reach objects
+   */
+  RobotReach* robot_reach_single_joint_;
+  RobotReach* robot_reach_siciliano_;
+
+  /**
+   * @brief The safety shield object
+   */
+  SafetyShield safety_shield_;
+
+
+  /**
+   * @brief Create the robot reach objects
+   */
+  void SetUp() override {
+    robot_reach_single_joint_ = buildRobotReach("config/robot_reach_test_single_joint.yaml");
+    robot_reach_siciliano_ = buildRobotReach("config/robot_reach_test_siciliano.yaml");
+  }
+
+  RobotReach* buildRobotReach(const std::string& config_path) {
+    std::filesystem::path config_file =
+        std::filesystem::current_path().parent_path() / config_path;
+    YAML::Node robot_config = YAML::LoadFile(config_file.string());
+    std::string robot_name = robot_config["robot_name"].as<std::string>();
+    double nb_joints = robot_config["nb_joints"].as<int>();
+    std::vector<double> transformation_matrices = robot_config["transformation_matrices"].as<std::vector<double>>();
+    std::vector<double> enclosures = robot_config["enclosures"].as<std::vector<double>>();
+    double secure_radius = robot_config["secure_radius"].as<double>();
+    return new RobotReach(transformation_matrices, nb_joints, enclosures, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, secure_radius);
   }
 };
 

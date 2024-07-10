@@ -281,15 +281,24 @@ class HumanReach {
   void measurement(const std::vector<reach_lib::Point>& human_joint_pos, double time);
 
   /**
-   * @brief Calculate reachability analysis for given breaking time.
+   * @brief Calculate reachability analysis for a given braking time.
    *
    * Updates the values in human_p_, human_v_, human_a_.
    * Get the values afterwards with the getter functions!
    *
-   * @param[in] t_command Current time
-   * @param[in] t_brake Time horizon of reachability analysis
+   * @param[in] t_command Current time of command.
+   * @param[in] t_brake Time horizon of reachability analysis starting from t_command.
    */
   void humanReachabilityAnalysis(double t_command, double t_brake);
+
+
+  /**
+   * @brief Calculate reachability analysis for a given time interval.
+   * 
+   * @param t_a start time point of the interval of analysis expressed as the relative time from the last measurement.
+   * @param t_b end time point of the interval of analysis expressed as the relative time from the last measurement.
+   */
+  void updateModels(double t_a, double t_b);
 
   /**
    * @brief Get the capsules of a model
@@ -306,6 +315,16 @@ class HumanReach {
       throw HumanModelNotFoundException(model.get_mode());
     }
   }
+
+ /**
+   * @brief Calculate the reachable capsules for each time interval.
+   * 
+   * @param[in] t_command Current absolute time of the command. (t_command - t_measurement) gives us the initial time delay for the reachability analysis.
+   * @param[in] time_points The edges of the L time intervals, size = L + 1. This is the relative time to t_command.
+   * @returns list of reachable sets in all time intervals with size = [L time intervals, N human models, M human bodies]
+   */
+  std::vector<std::vector<std::vector<reach_lib::Capsule>>> humanReachabilityAnalysisTimeIntervals(
+    double t_command, const std::vector<double>& time_points);
 
   /**
    * @brief Get the Articulated Pos capsules
