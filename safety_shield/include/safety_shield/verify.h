@@ -61,6 +61,26 @@ class Verify {
                                   std::vector<std::vector<reach_lib::Capsule>> human_capsules) = 0;
 
   /**
+   * @brief For a given human capsule, find all robot capsules in contact and return their indices.
+   * 
+   * @param human_capsule Human capsule to check for contact with robot capsules.
+   * @param robot_capsules List of robot capsules.
+   * @returns List of indices of robot capsules in contact with the given human capsule.
+   */
+  virtual std::vector<int> find_human_robot_contact(const reach_lib::Capsule& human_capsule,
+      const std::vector<reach_lib::Capsule>& robot_capsules) = 0;
+
+  /**
+   * @brief For a given set of human capsule, find all robot capsules in contact and return their indices.
+   * 
+   * @param human_capsule Human capsule to check for contact with robot capsules.
+   * @param robot_capsules List of robot capsules.
+   * @returns Map that maps a list of robot link indices to the human capsule they are in contact with.
+   */
+  virtual std::map<int, std::vector<int>> find_all_human_robot_contacts(const std::vector<reach_lib::Capsule>& human_capsule,
+      const std::vector<reach_lib::Capsule>& robot_capsules) = 0;
+
+  /**
    * @brief Verify the robot motion against the reachable occupancy of the human for each separate time interval
    *
    * Pure virtual function.
@@ -78,6 +98,24 @@ class Verify {
     std::vector<std::vector<std::vector<reach_lib::Capsule>>> human_reachable_sets,
     int& collision_index
   ) = 0;
+
+  /**
+   * @brief Verify the robot motion against the reachable occupancy of the human for each separate time interval
+   *
+   * @param[in] robot_reachable_sets Reachable sets of the robot in each time interval. Size = [n_time_intervals, n_robot_links]
+   * @param[in] human_reachable_sets Reachable sets of the human in each time interval. Size = [n_time_intervals, n_human_models, n_human_bodies]
+   * @param[in] robot_link_velocities The maximal velocity of each robot link in each time interval. Size = [n_time_intervals, n_robot_links]
+   * @param[in] maximal_contact_velocities The maximal contact velocity for each human body part. Size = [n_human_models, n_human_bodies]
+   * @param[out] collision_index The index of the time step where the collision occured
+   *
+   * @returns True: if the robot capsules do not collide with one set of the human capsules in each time step, i.e., the motion is safe.
+   *          False: Otherwise
+   */
+  virtual bool verify_human_reach_velocity(const std::vector<std::vector<reach_lib::Capsule>>& robot_reachable_sets,
+    const std::vector<std::vector<std::vector<reach_lib::Capsule>>>& human_reachable_sets,
+    const std::vector<std::vector<double>>& robot_link_velocities,
+    const std::vector<std::vector<double>>& maximal_contact_velocities,
+    int& collision_index) = 0;
 };
 }  // namespace safety_shield
 
