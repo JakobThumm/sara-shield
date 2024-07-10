@@ -538,6 +538,20 @@ class SafetyShield {
   void newGoalPlanning(Motion& current_motion);
 
   /**
+   * @brief verify the safety of the movement from the current motion to the goal motion.
+   * 
+   * @details If the shield mode is OFF, the function will always return true.
+   * This function sets robot_capsules_ and human_capsules_ needed for plotting.
+   * 
+   * @param[in] current_motion Current motion the robot is in.
+   * @param[in] goal_motion Goal motion the robot wants to move to.
+   * @param[in] alpha_i Maximum cartesian acceleration of robot joints
+   * @return true if safe
+   * @return false if unsafe
+   */
+  bool verifySafety(Motion& current_motion, Motion& goal_motion, const std::vector<double>& alpha_i);
+
+  /**
    * @brief Calculates a new trajectory from current joint state to desired goal state.
    * Sets new trajectory as desired new long term trajectory.
    * @param goal_position Desired joint angles to move to

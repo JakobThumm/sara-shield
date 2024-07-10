@@ -626,36 +626,7 @@ Motion SafetyShield::step(double cycle_begin_time) {
     }
     // Compute a new potential trajectory
     Motion goal_motion = computesPotentialTrajectory(is_safe_, next_motion_.getVelocity());
-    if (shield_type_ != ShieldType::OFF) {
-      // Check motion for joint limits (goal motion needed here as it is end of failsafe)
-      if (!checkMotionForJointLimits(goal_motion)) {
-        is_safe_ = false;
-      } else {
-        // Compute the robot reachable set for the potential trajectory
-        std::vector<double> time_points = calcTimePointsForEquidistantIntervals(current_motion.getTime(), goal_motion.getTime(), reachability_set_duration_);
-        std::vector<Motion> interval_edges_motions = getMotionsFromCurrentLTTandPath(time_points);
-        robot_capsules_time_intervals_ = robot_reach_->reachTimeIntervals(interval_edges_motions, alpha_i);
-        // Compute the human reachable sets for the potential trajectory
-        // humanReachabilityAnalysis(t_command, t_brake)
-        human_capsules_time_intervals_ = human_reach_->humanReachabilityAnalysisTimeIntervals(cycle_begin_time_, time_points);
-        // Verify if the robot and human reachable sets are collision free
-        int collision_index = -1;
-        is_safe_ = verify_->verify_human_reach_time_intervals(robot_capsules_time_intervals_, human_capsules_time_intervals_, collision_index);
-        // for visualization in hrgym, reachability sets of last timestep are used
-        if (is_safe_) {
-          robot_capsules_ = robot_capsules_time_intervals_[robot_capsules_time_intervals_.size()-1];
-          human_capsules_ = human_capsules_time_intervals_[human_capsules_time_intervals_.size()-1];
-        } else {
-          robot_capsules_ = robot_capsules_time_intervals_[collision_index];
-          human_capsules_ = human_capsules_time_intervals_[collision_index];
-        }
-        if (shield_type_ == ShieldType::PFL) {
-          is_safe_ = is_safe_ || is_under_v_limit_;
-        }
-      }
-    } else {
-      is_safe_ = true;
-    }
+    is_safe_ = verifySafety(current_motion, goal_motion, alpha_i);
     // Select the next motion based on the verified safety
     next_motion_ = determineNextMotion(is_safe_);
     next_motion_.setTime(cycle_begin_time);
@@ -708,6 +679,39 @@ void SafetyShield::newGoalPlanning(Motion& current_motion) {
   } else {
     new_ltt_ = false;
   }
+}
+
+bool SafetyShield::verifySafety(Motion& current_motion, Motion& goal_motion, const std::vector<double>& alpha_i) {
+  if (shield_type_ == ShieldType::OFF) {
+    return true;
+  }
+  // Check motion for joint limits (goal motion needed here as it is end of failsafe)
+  if (!checkMotionForJointLimits(goal_motion)) {
+    return false;
+  }
+  bool is_safe = false;
+  // Compute the robot reachable set for the potential trajectory
+  std::vector<double> time_points = calcTimePointsForEquidistantIntervals(current_motion.getTime(), goal_motion.getTime(), reachability_set_duration_);
+  std::vector<Motion> interval_edges_motions = getMotionsFromCurrentLTTandPath(time_points);
+  robot_capsules_time_intervals_ = robot_reach_->reachTimeIntervals(interval_edges_motions, alpha_i);
+  // Compute the human reachable sets for the potential trajectory
+  // humanReachabilityAnalysis(t_command, t_brake)
+  human_capsules_time_intervals_ = human_reach_->humanReachabilityAnalysisTimeIntervals(cycle_begin_time_, time_points);
+  // Verify if the robot and human reachable sets are collision free
+  int collision_index = -1;
+  is_safe = verify_->verify_human_reach_time_intervals(robot_capsules_time_intervals_, human_capsules_time_intervals_, collision_index);
+  // for visualization in hrgym, reachability sets of last timestep are used
+  if (is_safe) {
+    robot_capsules_ = robot_capsules_time_intervals_[robot_capsules_time_intervals_.size()-1];
+    human_capsules_ = human_capsules_time_intervals_[human_capsules_time_intervals_.size()-1];
+  } else {
+    robot_capsules_ = robot_capsules_time_intervals_[collision_index];
+    human_capsules_ = human_capsules_time_intervals_[collision_index];
+  }
+  if (shield_type_ == ShieldType::PFL) {
+    is_safe = is_safe || is_under_v_limit_;
+  }
+  return is_safe;
 }
 
 Motion SafetyShield::getCurrentMotion() {
