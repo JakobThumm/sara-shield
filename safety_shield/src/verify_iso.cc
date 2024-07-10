@@ -31,4 +31,29 @@ bool VerifyISO::verify_human_reach(const std::vector<reach_lib::Capsule>& robot_
     return false;
   }
 }
+
+/// checks safety for each time interval
+bool VerifyISO::verify_human_reach_time_intervals(
+  const std::vector<std::vector<reach_lib::Capsule>>& robot_reachable_sets,
+  std::vector<std::vector<std::vector<reach_lib::Capsule>>> human_reachable_sets,
+  int& collision_index) {
+  assert(robot_reachable_sets.size() == human_reachable_sets.size());
+  try {
+    for (int i = 0; i < robot_reachable_sets.size(); i++) {
+      if (!verify_human_reach(robot_reachable_sets[i], human_reachable_sets[i])) {
+        // returns false if at least in one time step, there is a collision
+        collision_index = i;
+        return false;
+      }
+    }
+    // returns true if it was safe in all time intervals
+    collision_index = -1;
+    return true;
+  } catch (const std::exception& exc) {
+    spdlog::error("Exception in VerifyISO::improved_verify_human_reach: {}", exc.what());
+    collision_index = 0;
+    return false;
+  }
+}
+
 }  // namespace safety_shield

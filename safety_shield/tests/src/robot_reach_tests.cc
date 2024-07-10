@@ -501,6 +501,151 @@ TEST_F(RobotReachTestVelocity, JacobianSicilianoTest5) {
   EXPECT_NEAR(jacobian(5, 2), expect(5, 2), 1e-8);
 }
 
+/// time interval method is equal to standard reach if reachability set interval size is equal or larger to s_diff (with single joint robot)
+TEST_F(RobotReachTestTimeIntervals, EqualityTest0) {
+  Motion start_config(0, std::vector<double>{0.0}, 0);
+  Motion goal_config(0.1, std::vector<double>{M_PI / 8.0}, 0.1);
+  std::vector<double> alpha_i{1.0};
+  double s_diff = 0.1;
+  std::vector<reach_lib::Capsule> standardCapsules = robot_reach_single_joint_->reach(start_config, goal_config, s_diff, alpha_i);
+  std::vector<std::vector<reach_lib::Capsule>> timeIntervalCapsules = robot_reach_single_joint_->reachTimeIntervals({start_config, goal_config}, alpha_i);
+  EXPECT_TRUE(timeIntervalCapsules.size() == 1);
+  reach_lib::Capsule result = timeIntervalCapsules[0][0];
+  reach_lib::Capsule expect = standardCapsules[0];
+  EXPECT_EQ(result.p1_.x, expect.p1_.x);
+  EXPECT_EQ(result.p1_.y, expect.p1_.y);
+  EXPECT_EQ(result.p1_.z, expect.p1_.z);
+  EXPECT_EQ(result.p2_.x, expect.p2_.x);
+  EXPECT_EQ(result.p2_.y, expect.p2_.y);
+  EXPECT_EQ(result.p2_.z, expect.p2_.z);
+  EXPECT_EQ(result.r_, expect.r_);
+}
+
+
+/// time interval method is equal to standard reach if reachability set interval size is equal or larger than s_diff (with siciliano robot)
+TEST_F(RobotReachTestTimeIntervals, EqualityTest1) {
+  Motion start_config(0, std::vector<double>{0.0, 0.0, 0.0}, 0);
+  Motion goal_config(0.1, std::vector<double>{M_PI / 8.0, M_PI / 8.0, M_PI / 8.0}, 0.1);
+  std::vector<double> alpha_i{1.0, 1.0, 1.0};
+  double s_diff = 0.1;
+  std::vector<reach_lib::Capsule> standardCapsules = robot_reach_siciliano_->reach(start_config, goal_config, s_diff, alpha_i);
+  std::vector<safety_shield::Motion> interval_edges_motions = {start_config, goal_config};
+  std::vector<std::vector<reach_lib::Capsule>> timeIntervalCapsules = robot_reach_siciliano_->reachTimeIntervals(interval_edges_motions, alpha_i);
+  EXPECT_TRUE(timeIntervalCapsules.size() == 1);
+  for (int i = 0; i < standardCapsules.size(); i++) {
+    reach_lib::Capsule result = timeIntervalCapsules[0][i];
+    reach_lib::Capsule expect = standardCapsules[i];
+    EXPECT_EQ(result.p1_.x, expect.p1_.x);
+    EXPECT_EQ(result.p1_.y, expect.p1_.y);
+    EXPECT_EQ(result.p1_.z, expect.p1_.z);
+    EXPECT_EQ(result.p2_.x, expect.p2_.x);
+    EXPECT_EQ(result.p2_.y, expect.p2_.y);
+    EXPECT_EQ(result.p2_.z, expect.p2_.z);
+    EXPECT_EQ(result.r_, expect.r_);
+  }
+}
+
+/// time interval method with two intervals is equal to standard reach of the two separate intervals (with single joint robot)
+TEST_F(RobotReachTestTimeIntervals, EqualityTest2) {
+  Motion start_config(0, std::vector<double>{0.0}, 0);
+  Motion mid_config(0.05, std::vector<double>{M_PI / 16.0}, 0.05);
+  Motion goal_config(0.1, std::vector<double>{M_PI / 8.0}, 0.1);
+  std::vector<double> alpha_i{1.0};
+  double s_diff = 0.1;
+  std::vector<reach_lib::Capsule> standardCapsules = robot_reach_single_joint_->reach(start_config, goal_config, s_diff, alpha_i);
+  std::vector<safety_shield::Motion> interval_edges_motions = {start_config, mid_config, goal_config};
+  std::vector<std::vector<reach_lib::Capsule>> timeIntervalCapsules = robot_reach_single_joint_->reachTimeIntervals(interval_edges_motions, alpha_i);
+  EXPECT_TRUE(timeIntervalCapsules.size() == 2);
+  for (int i = 0; i < standardCapsules.size(); i++) {
+    for (int j = 0; j < timeIntervalCapsules.size(); j++) {
+      reach_lib::Capsule result = timeIntervalCapsules[j][i];
+      reach_lib::Capsule expect = standardCapsules[i];
+      // Rotation only around p1, so p1 should be equal.
+      EXPECT_DOUBLE_EQ(result.p1_.x, expect.p1_.x);
+      EXPECT_DOUBLE_EQ(result.p1_.y, expect.p1_.y);
+      EXPECT_DOUBLE_EQ(result.p1_.z, expect.p1_.z);
+      // p2 and r should be different.
+      EXPECT_NE(result.p2_.x, expect.p2_.x);
+      // Rotation around y
+      EXPECT_DOUBLE_EQ(result.p2_.y, expect.p2_.y);
+      EXPECT_NE(result.p2_.z, expect.p2_.z);
+      EXPECT_NE(result.r_, expect.r_);
+    }
+  }
+}
+
+/// time interval method with two intervals is equal to standard reach of the two separate intervals (with single joint robot)
+TEST_F(RobotReachTestTimeIntervals, IntervalTest1) {
+  Motion start_config(0, std::vector<double>{0.0}, 0);
+  Motion middle_config(0.05, std::vector<double>{M_PI / 16.0}, 0.05);
+  Motion goal_config(0.1, std::vector<double>{M_PI / 8.0}, 0.1);
+  std::vector<double> alpha_i{1.0};
+  std::vector<reach_lib::Capsule> firstIntervalCapsules = robot_reach_single_joint_->reach(start_config, middle_config, 0.05, alpha_i);
+  std::vector<reach_lib::Capsule> secondIntervalCapsules = robot_reach_single_joint_->reach(middle_config, goal_config, 0.05, alpha_i);
+  std::vector<std::vector<reach_lib::Capsule>> timeIntervalCapsules = robot_reach_single_joint_->reachTimeIntervals({start_config, middle_config, goal_config}, alpha_i);
+  EXPECT_TRUE(timeIntervalCapsules.size() == 2);
+
+  /// equality of first interval
+  reach_lib::Capsule result1 = timeIntervalCapsules[0][0];
+  reach_lib::Capsule expect1 = firstIntervalCapsules[0];
+  EXPECT_EQ(result1.p1_.x, expect1.p1_.x);
+  EXPECT_EQ(result1.p1_.y, expect1.p1_.y);
+  EXPECT_EQ(result1.p1_.z, expect1.p1_.z);
+  EXPECT_EQ(result1.p2_.x, expect1.p2_.x);
+  EXPECT_EQ(result1.p2_.y, expect1.p2_.y);
+  EXPECT_EQ(result1.p2_.z, expect1.p2_.z);
+  EXPECT_EQ(result1.r_, expect1.r_);
+
+  /// equality of second interval
+  reach_lib::Capsule result2 = timeIntervalCapsules[1][0];
+  reach_lib::Capsule expect2 = secondIntervalCapsules[0];
+  EXPECT_EQ(result2.p1_.x, expect2.p1_.x);
+  EXPECT_EQ(result2.p1_.y, expect2.p1_.y);
+  EXPECT_EQ(result2.p1_.z, expect2.p1_.z);
+  EXPECT_EQ(result2.p2_.x, expect2.p2_.x);
+  EXPECT_EQ(result2.p2_.y, expect2.p2_.y);
+  EXPECT_EQ(result2.p2_.z, expect2.p2_.z);
+  EXPECT_EQ(result2.r_, expect2.r_);
+}
+
+/// time interval method with two intervals is equal to standard reach of the two separate intervals (with siciliano robot)
+TEST_F(RobotReachTestTimeIntervals, IntervalTest2) {
+  Motion start_config(0, std::vector<double>{0.0, 0.0, 0.0}, 0);
+  Motion middle_config(0.1, std::vector<double>{M_PI / 16.0, M_PI / 16.0, M_PI / 16.0}, 0.05);
+  Motion goal_config(0.1, std::vector<double>{M_PI / 8.0, M_PI / 8.0, M_PI / 8.0}, 0.1);
+  std::vector<double> alpha_i{1.0, 1.0, 1.0};
+  std::vector<reach_lib::Capsule> firstIntervalCapsules = robot_reach_siciliano_->reach(start_config, middle_config, 0.05, alpha_i);
+  std::vector<reach_lib::Capsule> secondIntervalCapsules = robot_reach_siciliano_->reach(middle_config, goal_config, 0.05, alpha_i);
+  std::vector<std::vector<reach_lib::Capsule>> timeIntervalCapsules = robot_reach_siciliano_->reachTimeIntervals({start_config, middle_config, goal_config}, alpha_i);
+  EXPECT_TRUE(timeIntervalCapsules.size() == 2);
+
+  /// equality of first interval
+  for (int i = 0; i < firstIntervalCapsules.size(); i++) {
+    reach_lib::Capsule result = timeIntervalCapsules[0][i];
+    reach_lib::Capsule expect = firstIntervalCapsules[i];
+    EXPECT_EQ(result.p1_.x, expect.p1_.x);
+    EXPECT_EQ(result.p1_.y, expect.p1_.y);
+    EXPECT_EQ(result.p1_.z, expect.p1_.z);
+    EXPECT_EQ(result.p2_.x, expect.p2_.x);
+    EXPECT_EQ(result.p2_.y, expect.p2_.y);
+    EXPECT_EQ(result.p2_.z, expect.p2_.z);
+    EXPECT_EQ(result.r_, expect.r_);
+  }
+
+  /// equality of second interval
+  for (int i = 0; i < secondIntervalCapsules.size(); i++) {
+    reach_lib::Capsule result = timeIntervalCapsules[1][i];
+    reach_lib::Capsule expect = secondIntervalCapsules[i];
+    EXPECT_EQ(result.p1_.x, expect.p1_.x);
+    EXPECT_EQ(result.p1_.y, expect.p1_.y);
+    EXPECT_EQ(result.p1_.z, expect.p1_.z);
+    EXPECT_EQ(result.p2_.x, expect.p2_.x);
+    EXPECT_EQ(result.p2_.y, expect.p2_.y);
+    EXPECT_EQ(result.p2_.z, expect.p2_.z);
+    EXPECT_EQ(result.r_, expect.r_);
+  }
+}
+
 }  // namespace safety_shield
 
 int main(int argc, char** argv) {

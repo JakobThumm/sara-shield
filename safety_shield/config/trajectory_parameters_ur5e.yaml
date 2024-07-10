@@ -19,9 +19,15 @@ q3: [0.0]
 q4: [0.0]
 q5: [0.0]
 q6: [0.0]
+
 alpha_i_max: 5.0
+
 # safety-rated speed specified by iso-norm
 v_safe: 0.05
+
 # APPROXIMATE == 0
 # EXACT == 1
 velocity_method: 0
+
+# interval of time step depending on sampling time
+reachability_sets_interval_size: 5

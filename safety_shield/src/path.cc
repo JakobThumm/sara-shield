@@ -45,15 +45,16 @@ void Path::getFinalMotion(double& final_pos, double& final_vel, double& final_ac
   double l_time = 0;
   for (int i = 0; i < 3; i++) {
     double dt = (phases_[i] - l_time);
-    final_pos += final_vel * dt + final_acc * dt * dt / 2 + phases_[i + 3] * dt * dt * dt / 6;
-    final_vel += final_acc * dt + phases_[i + 3] * dt * dt / 2;
-    final_acc += phases_[i + 3] * dt;
+    double current_jerk = phases_[i + 3];
+    // Constant jerk motion
+    final_pos += final_vel * dt + final_acc * dt * dt / 2 + current_jerk * dt * dt * dt / 6;
+    final_vel += final_acc * dt + current_jerk * dt * dt / 2;
+    final_acc += current_jerk * dt;
     l_time = phases_[i];
   }
 }
 
 void Path::getMotionUnderVel(double v_limit, double& time, double& pos, double& vel, double& acc, double& jerk) {
-  // TODO: does that make sense, it time correct?
   if (vel_ < v_limit) {
     time = phases_[0];
     pos = pos_;
@@ -72,26 +73,30 @@ void Path::getMotionUnderVel(double v_limit, double& time, double& pos, double& 
     prev_vel = next_vel;
     prev_acc = next_acc;
 
-    // compute like in getFinalMotion()
+    // compute next pos, vel, acc
     double dt = (phases_[i] - l_time);
-    next_pos += next_vel * dt + next_acc * dt * dt / 2 + phases_[i + 3] * dt * dt * dt / 6;
-    next_vel += next_acc * dt + phases_[i + 3] * dt * dt / 2;
-    next_acc += phases_[i + 3] * dt;
+    double current_jerk = phases_[i + 3];
+    // Constant jerk motion
+    next_pos += prev_vel * dt + prev_acc * dt * dt / 2 + current_jerk * dt * dt * dt / 6;
+    next_vel += prev_acc * dt + current_jerk * dt * dt / 2;
+    next_acc += current_jerk * dt;
     l_time = phases_[i];
 
     // if in this phase, next_vel falls below vel, recompute values but with correct time via formula
-    double epsilon = 1e-6;
+    double epsilon = 1e-8;
     if (next_vel < v_limit + epsilon) {
+      double dt_limit = 0;
       jerk = phases_[i + 3];
+      // Solve v_limit = prev_vel + prev_acc * dt + jerk * dt^2 / 2 for dt
       double square = std::sqrt(prev_acc * prev_acc - 2 * jerk * (prev_vel - v_limit));
       double left = (-prev_acc - square) / jerk;
       double right = (-prev_acc + square) / jerk;
       if (left > 0 && right > 0) {
-        dt = std::min(left, right);
+        dt_limit = std::min(left, right);
       } else if (left > 0) {
-        dt = left;
+        dt_limit = left;
       } else if (right > 0) {
-        dt = right;
+        dt_limit = right;
       } else {
         // already under v_iso
         time = -10;
@@ -103,10 +108,10 @@ void Path::getMotionUnderVel(double v_limit, double& time, double& pos, double& 
           return;
         }
       }
-      time = phases_[i] + dt;
-      pos = prev_vel * dt + prev_acc * dt * dt / 2 + jerk * dt * dt * dt / 6 + prev_pos;
-      acc = jerk * dt + prev_acc;
-      vel = prev_acc * dt + 0.5 * jerk * dt * dt + prev_vel;
+      time = phases_[i] + dt_limit;
+      pos = prev_vel * dt_limit + prev_acc * dt_limit * dt_limit / 2 + jerk * dt_limit * dt_limit * dt_limit / 6 + prev_pos;
+      vel = prev_acc * dt_limit + 0.5 * jerk * dt_limit * dt_limit + prev_vel;
+      acc = jerk * dt_limit + prev_acc;
       return;
     }
   }

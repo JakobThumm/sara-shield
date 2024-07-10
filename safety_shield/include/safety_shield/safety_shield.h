@@ -37,6 +37,7 @@
 #include "safety_shield/robot_reach.h"
 #include "safety_shield/verify.h"
 #include "safety_shield/verify_iso.h"
+#include "safety_shield/trajectory_utils.h"
 #include "spdlog/spdlog.h"
 
 #ifndef safety_shield_H
@@ -269,12 +270,23 @@ class SafetyShield {
 
   //////// Reachable sets of human and robot //////
   /**
-   * @brief Vector of robot reachable set capsules (get updated in every step()).
+   * @brief robot reachable set capsules for every time interval (gets updated in every step())
+   * first index is time interval; second index is robot capsule
+   */
+  std::vector<std::vector<reach_lib::Capsule>> robot_capsules_time_intervals_;
+
+  /**
+   * @brief Vector of robot reachable set capsules of last time interval (for visualization in hrgym)
    */
   std::vector<reach_lib::Capsule> robot_capsules_;
 
   /**
-   * @brief Vector of human reachable set capsules (get updated in every step()).
+   * @brief human reachable sets for every time interval (gets updated in every step())
+   */
+  std::vector<std::vector<std::vector<reach_lib::Capsule>>> human_capsules_time_intervals_;
+
+  /**
+   * @brief Vector of human reachable set capsules of last time interval (for visualization in hrgym)
    */
   std::vector<std::vector<reach_lib::Capsule>> human_capsules_;
 
@@ -288,6 +300,18 @@ class SafetyShield {
    * @brief maximum cartesian velocity allowed at collision in m/s
    */
   double v_safe_ = 0.10;
+
+  /**
+   * @brief Defines the length of a time interval used for human and robot reachability analysis.
+   * Each time interval consists of this many shield time steps.
+   * A good value is 5
+   */
+  double reachability_set_interval_size_ = 10000;
+
+  /**
+   * @brief duration is interval size * sampling time of safety shield
+   */
+  double reachability_set_duration_;
 
  protected:
   /**
@@ -402,7 +426,7 @@ class SafetyShield {
 
  public:
   /**
-   * @brief Default contructor
+   * @brief Default constructor
    *
    */
   SafetyShield();
@@ -449,7 +473,8 @@ class SafetyShield {
    */
   SafetyShield(double sample_time, std::string trajectory_config_file, std::string robot_config_file,
                std::string mocap_config_file, double init_x, double init_y, double init_z, double init_roll,
-               double init_pitch, double init_yaw, const std::vector<double>& init_qpos, ShieldType shield_type = ShieldType::SSM);
+               double init_pitch, double init_yaw, const std::vector<double>& init_qpos,
+               ShieldType shield_type = ShieldType::SSM);
 
   /**
    * @brief A SafetyShield destructor
@@ -509,6 +534,14 @@ class SafetyShield {
    * @throws TrajectoryException Incorrect LTT
    */
   void setLongTermTrajectory(LongTermTraj& traj);
+
+  /**
+   * @brief Calculate the list of motions on the LTT based on the current path and the given time points.
+   * 
+   * @param time_points Time points to return the list of motions at.
+   * @return std::vector<Motion> 
+   */
+  std::vector<Motion> getMotionsFromCurrentLTTandPath(const std::vector<double>& time_points);
 
   /**
    * @brief Receive a new human measurement
@@ -579,6 +612,7 @@ class SafetyShield {
   inline ShieldType getShieldType() {
     return shield_type_;
   }
+
 };
 }  // namespace safety_shield
 

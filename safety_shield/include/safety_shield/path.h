@@ -219,7 +219,9 @@ class Path {
   void getFinalMotion(double& final_pos, double& final_vel, double& final_acc);
 
   /**
-   * @brief computes s-values when Path falls under v_limit
+   * @brief Computes s-values when path falls under v_limit.
+   * 
+   * @details Not used in the current implementation and therefore not tested.
    * @param[in] v_limit
    * @param[out] time
    * @param[out] position

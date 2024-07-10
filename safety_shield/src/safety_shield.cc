@@ -16,7 +16,8 @@ SafetyShield::SafetyShield(int nb_joints, double sample_time, double max_s_stop,
                            const std::vector<double>& v_max_allowed, const std::vector<double>& a_max_allowed,
                            const std::vector<double>& j_max_allowed, const std::vector<double>& a_max_path,
                            const std::vector<double>& j_max_path, const LongTermTraj& long_term_trajectory,
-                           RobotReach* robot_reach, HumanReach* human_reach, Verify* verify, ShieldType shield_type)
+                           RobotReach* robot_reach, HumanReach* human_reach,
+                           Verify* verify, ShieldType shield_type)
     : nb_joints_(nb_joints),
       max_s_stop_(max_s_stop),
       v_max_allowed_(v_max_allowed),
@@ -49,6 +50,7 @@ SafetyShield::SafetyShield(int nb_joints, double sample_time, double max_s_stop,
   std::vector<double> q_max(nb_joints, -3.141);
   ltp_ =
       long_term_planner::LongTermPlanner(nb_joints, sample_time, q_min, q_max, v_max_allowed, a_max_path, j_max_path);
+  reachability_set_duration_ = reachability_set_interval_size_ * sample_time_;
   spdlog::info("Safety shield created.");
 }
 
@@ -100,6 +102,13 @@ SafetyShield::SafetyShield(double sample_time, std::string trajectory_config_fil
       v_max_allowed_, a_max_allowed_, j_max_allowed_, sliding_window_k_
     );
   }
+  if(trajectory_config["reachability_set_interval_size"]) {
+    reachability_set_interval_size_ = trajectory_config["reachability_set_interval_size"].as<double>();
+  } else {
+    reachability_set_interval_size_ = 10000;
+  }
+
+  reachability_set_duration_ = reachability_set_interval_size_ * sample_time_;
   //////////// Build human reach
   YAML::Node human_config = YAML::LoadFile(mocap_config_file);
   double measurement_error_pos = human_config["measurement_error_pos"].as<double>();
@@ -653,14 +662,23 @@ Motion SafetyShield::step(double cycle_begin_time) {
         is_safe_ = false;
       } else {
         // Compute the robot reachable set for the potential trajectory
-        robot_capsules_ =
-            robot_reach_->reach(current_motion, goal_motion, (goal_motion.getS() - current_motion.getS()), alpha_i);
+        std::vector<double> time_points = calcTimePointsForEquidistantIntervals(current_motion.getTime(), goal_motion.getTime(), reachability_set_duration_);
+        std::vector<Motion> interval_edges_motions = getMotionsFromCurrentLTTandPath(time_points);
+        robot_capsules_time_intervals_ = robot_reach_->reachTimeIntervals(interval_edges_motions, alpha_i);
         // Compute the human reachable sets for the potential trajectory
         // humanReachabilityAnalysis(t_command, t_brake)
-        human_reach_->humanReachabilityAnalysis(cycle_begin_time_, goal_motion.getTime());
-        human_capsules_ = human_reach_->getAllCapsules();
+        human_capsules_time_intervals_ = human_reach_->humanReachabilityAnalysisTimeIntervals(cycle_begin_time_, time_points);
         // Verify if the robot and human reachable sets are collision free
-        is_safe_ = verify_->verify_human_reach(robot_capsules_, human_capsules_); 
+        int collision_index = -1;
+        is_safe_ = verify_->verify_human_reach_time_intervals(robot_capsules_time_intervals_, human_capsules_time_intervals_, collision_index);
+        // for visualization in hrgym, reachability sets of last timestep are used
+        if (is_safe_) {
+          robot_capsules_ = robot_capsules_time_intervals_[robot_capsules_time_intervals_.size()-1];
+          human_capsules_ = human_capsules_time_intervals_[human_capsules_time_intervals_.size()-1];
+        } else {
+          robot_capsules_ = robot_capsules_time_intervals_[collision_index];
+          human_capsules_ = human_capsules_time_intervals_[collision_index];
+        }
         if (shield_type_ == ShieldType::PFL) {
           is_safe_ = is_safe_ || is_under_v_limit_;
         }
@@ -791,6 +809,14 @@ bool SafetyShield::calculateLongTermTrajectory(const std::vector<double>& start_
     );
   }
   return true;
+}
+
+std::vector<Motion> SafetyShield::getMotionsFromCurrentLTTandPath(const std::vector<double>& time_points) {
+  LongTermTraj& ltt = long_term_trajectory_;
+  if (new_ltt_) {
+    ltt = new_long_term_trajectory_;
+  }
+  return getMotionsOfAllTimeStepsFromPath(ltt, potential_path_, time_points);
 }
 
 }  // namespace safety_shield
