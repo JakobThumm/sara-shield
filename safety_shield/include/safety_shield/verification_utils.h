@@ -56,7 +56,7 @@ bool robotHumanCollision(const std::vector<reach_lib::Capsule>& robot_capsules,
  * @param robot_capsules List of robot capsules.
  * @returns List of indices of robot capsules in contact with the given human capsule.
  */
-std::vector<int> find_human_robot_contact(const reach_lib::Capsule& human_capsule,
+std::vector<int> findHumanRobotContact(const reach_lib::Capsule& human_capsule,
     const std::vector<reach_lib::Capsule>& robot_capsules);
 
 /**
@@ -67,8 +67,40 @@ std::vector<int> find_human_robot_contact(const reach_lib::Capsule& human_capsul
  * @returns Map that maps a list of robot link indices to the human capsule they are in contact with.
  *        The key is the human capsule index and the value is a list of robot link indices.
  */
-std::map<int, std::vector<int>> find_all_human_robot_contacts(const std::vector<reach_lib::Capsule>& human_capsule,
+std::map<int, std::vector<int>> findAllHumanRobotContacts(const std::vector<reach_lib::Capsule>& human_capsule,
     const std::vector<reach_lib::Capsule>& robot_capsules);
 
-}
+/**
+ * @brief Checks if a contact map is empty.
+ * 
+ * @param contact_map map that contains list of integers for each key.
+ * @return true if all lists are empty, false otherwise.
+ */
+inline bool checkNoContactsInMap(const std::map<int, std::vector<int>>& contact_map) {
+  for (const auto& contact : contact_map) {
+    if (!contact.second.empty()) {
+      return false;
+    }
+  }
+  return true;
+};
+
+/**
+ * @brief Check if any link that gets into contact with the human is too fast.
+ * 
+ * @param human_robot_contacts Maps the human capsule index to the list of robot link indices in contact.
+ *  Key is the human capsule index, value is the list of robot link indices.
+ * @param robot_link_velocities Robot link velocities at the time of contact.
+ * @param maximal_contact_velocities Maximal admissible human velocities.
+ * @return true All robot links are slower than the maximal contact velocity.
+ * @return false Otherwise.
+ */
+bool checkVelocitySafety(
+  const std::map<int, std::vector<int>>& human_robot_contacts,
+  const std::vector<double>& robot_link_velocities,
+  const std::vector<double>& maximal_contact_velocities
+);
+
+}  // namespace safety_shield
+
 #endif // VERIFICATION_UTILS_H

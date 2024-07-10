@@ -16,7 +16,7 @@ bool robotHumanCollision(const std::vector<reach_lib::Capsule>& robot_capsules,
   return false;
 }
 
-std::vector<int> find_human_robot_contact(const reach_lib::Capsule& human_capsule,
+std::vector<int> findHumanRobotContact(const reach_lib::Capsule& human_capsule,
       const std::vector<reach_lib::Capsule>& robot_capsules) {
   std::vector<int> human_robot_collisions;
   for (int i = 0; i < robot_capsules.size(); i++) {
@@ -28,14 +28,28 @@ std::vector<int> find_human_robot_contact(const reach_lib::Capsule& human_capsul
   return human_robot_collisions;
 }
 
-std::map<int, std::vector<int>> find_all_human_robot_contacts(const std::vector<reach_lib::Capsule>& human_capsule,
+std::map<int, std::vector<int>> findAllHumanRobotContacts(const std::vector<reach_lib::Capsule>& human_capsule,
       const std::vector<reach_lib::Capsule>& robot_capsules) {
   std::map<int, std::vector<int>> human_robot_contacts;
   for (int i = 0; i < human_capsule.size(); i++) {
-    human_robot_contacts[i] = find_human_robot_contact(human_capsule[i], robot_capsules);
+    human_robot_contacts[i] = findHumanRobotContact(human_capsule[i], robot_capsules);
   }
   return human_robot_contacts;
 }
 
-
+bool checkVelocitySafety(
+  const std::map<int, std::vector<int>>& human_robot_contacts,
+  const std::vector<double>& robot_link_velocities,
+  const std::vector<double>& maximal_contact_velocities
+) {
+  for (const auto& contact : human_robot_contacts) {
+    int human_capsule_index = contact.first;
+    for (const auto& robot_link_index : contact.second) {
+      if (robot_link_velocities[robot_link_index] > maximal_contact_velocities[human_capsule_index]) {
+        return false;
+      }
+    }
+  }
+  return true;
 }
+}  // namespace safety_shield

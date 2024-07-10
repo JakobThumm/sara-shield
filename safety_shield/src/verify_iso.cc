@@ -60,20 +60,19 @@ bool VerifyISO::verify_human_reach_velocity(const std::vector<std::vector<reach_
   try {
     for (int i = 0; i < n_time_intervals; i++) {
       for (int m = 0; m < n_human_models; m++) {
-        std::map<int, std::vector<int>> human_robot_contacts = find_all_human_robot_contacts(human_reachable_sets[i][m], robot_reachable_sets[i]);
-        /*
-        if (verify_human_reach(robot_reachable_sets[i], human_reachable_sets[i])) {
-          // No collision in this time interval possible.
-          continue;
+        std::map<int, std::vector<int>> human_robot_contacts = findAllHumanRobotContacts(human_reachable_sets[i][m], robot_reachable_sets[i]);
+        bool is_safe = checkVelocitySafety(human_robot_contacts, robot_link_velocities[i], maximal_contact_velocities[m]);
+        if (!is_safe) {
+          collision_index = i;
+          return false;
         }
-        */
       }
     }
     // returns true if it was safe in all time intervals
     collision_index = -1;
     return true;
   } catch (const std::exception& exc) {
-    spdlog::error("Exception in VerifyISO::improved_verify_human_reach: {}", exc.what());
+    spdlog::error("Exception in VerifyISO::verify_human_reach_velocity: {}", exc.what());
     collision_index = 0;
     return false;
   }
