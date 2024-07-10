@@ -33,6 +33,7 @@ add_library(${PROJECT_NAME}
         src/kalman_filter.cc
         src/measurement_handler.cc
         src/trajectory_utils.cc
+        src/verification_utils.cc
         #src/advanced_verify_iso.cc
         )
 
@@ -98,6 +99,9 @@ target_link_libraries(safety_shield_tests ${PROJECT_NAME} GTest::GTest GTest::Ma
 add_executable(trajectory_utils_tests tests/src/trajectory_utils_tests.cc)
 target_include_directories(trajectory_utils_tests PUBLIC tests/include)
 target_link_libraries(trajectory_utils_tests ${PROJECT_NAME} GTest::GTest GTest::Main)
+add_executable(verification_utils_tests tests/src/verification_utils_tests.cc)
+target_include_directories(verification_utils_tests PUBLIC tests/include)
+target_link_libraries(verification_utils_tests ${PROJECT_NAME} GTest::GTest GTest::Main)
 gtest_discover_tests(long_term_traj_tests)
 gtest_discover_tests(human_reach_tests)
 gtest_discover_tests(motion_tests)
@@ -106,6 +110,7 @@ gtest_discover_tests(robot_reach_tests)
 gtest_discover_tests(verify_iso_tests)
 gtest_discover_tests(safety_shield_tests)
 gtest_discover_tests(trajectory_utils_tests)
+gtest_discover_tests(verification_utils_tests)
 
 #catkin_add_gtest(verify_iso_test tests/capsule_tests.cc tests/verify_iso_fixture.h)
 #target_link_libraries(verify_iso_test ${catkin_LIBRARIES} ${PROJECT_NAME}_lib)

@@ -37,17 +37,6 @@ class VerifyISO : public Verify {
   VerifyISO() : Verify() {}
 
   /**
-   * @brief Check a set of robot capsules if they collide with a set of human capsules
-   *
-   * @param[in] robot_capsules The robot capsules
-   * @param[in] human_capsules The human occupancy capsules
-   *
-   * @returns Whether a collision between any two capsules of the robot and human set occured
-   */
-  bool robotHumanCollision(const std::vector<reach_lib::Capsule>& robot_capsules,
-                           const std::vector<reach_lib::Capsule>& human_capsules);
-
-  /**
    * @brief Verify the robot motion againt the reachability analysis of the human in position, velocity, and
    * acceleration
    *
@@ -60,28 +49,6 @@ class VerifyISO : public Verify {
    */
   bool verify_human_reach(const std::vector<reach_lib::Capsule>& robot_capsules,
                           std::vector<std::vector<reach_lib::Capsule>> human_capsules);
-
-  /**
-   * @brief For a given human capsule, find all robot capsules in contact and return their indices.
-   * 
-   * @param human_capsule Human capsule to check for contact with robot capsules.
-   * @param robot_capsules List of robot capsules.
-   * @returns List of indices of robot capsules in contact with the given human capsule.
-   */
-  std::vector<int> find_human_robot_contact(const reach_lib::Capsule& human_capsule,
-      const std::vector<reach_lib::Capsule>& robot_capsules);
-
-  /**
-   * @brief For a given set of human capsule, find all robot capsules in contact and return their indices.
-   * 
-   * @param human_capsule Human capsule to check for contact with robot capsules.
-   * @param robot_capsules List of robot capsules.
-   * @returns Map that maps a list of robot link indices to the human capsule they are in contact with.
-   *        The key is the human capsule index and the value is a list of robot link indices.
-   */
-  std::map<int, std::vector<int>> find_all_human_robot_contacts(const std::vector<reach_lib::Capsule>& human_capsule,
-      const std::vector<reach_lib::Capsule>& robot_capsules);
-
 
   /**
    * @brief Verify the robot motion against the reachable occupancy of the human for each separate time interval

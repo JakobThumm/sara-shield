@@ -40,3 +40,8 @@ TEST(TrajectoryUtilsTests, CalcTimePointsForEquidistantIntervalsTest2) {
   EXPECT_NEAR(time_points_other[1], 0.007, 1e-6);
   EXPECT_NEAR(time_points_other[2], 0.01, 1e-6);
 }
+
+int main(int argc, char **argv) {
+  testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
+}

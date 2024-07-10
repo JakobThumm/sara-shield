@@ -18,6 +18,7 @@
 #include <vector>
 
 #include "reach_lib.hpp"
+#include "safety_shield/verification_utils.h"
 
 #ifndef VERIFY_H
 #define VERIFY_H
@@ -35,18 +36,6 @@ class Verify {
   Verify() {}
 
   /**
-   * @brief Check two capsules for collision
-   *
-   * @param[in] cap1 Capsule 1
-   * @param[in] cap2 Capsule 2
-   *
-   * @returns true if capsules collide, false else
-   */
-  inline bool capsuleCollisionCheck(const reach_lib::Capsule& cap1, const reach_lib::Capsule& cap2) {
-    return reach_lib::intersections::capsule_capsule_intersection(cap1, cap2);
-  }
-
-  /**
    * @brief Verify the robot motion against the reachable occupancy of the human in position, velocity, and acceleration
    *
    * Pure virtual function.
@@ -59,26 +48,6 @@ class Verify {
    */
   virtual bool verify_human_reach(const std::vector<reach_lib::Capsule>& robot_capsules,
                                   std::vector<std::vector<reach_lib::Capsule>> human_capsules) = 0;
-
-  /**
-   * @brief For a given human capsule, find all robot capsules in contact and return their indices.
-   * 
-   * @param human_capsule Human capsule to check for contact with robot capsules.
-   * @param robot_capsules List of robot capsules.
-   * @returns List of indices of robot capsules in contact with the given human capsule.
-   */
-  virtual std::vector<int> find_human_robot_contact(const reach_lib::Capsule& human_capsule,
-      const std::vector<reach_lib::Capsule>& robot_capsules) = 0;
-
-  /**
-   * @brief For a given set of human capsule, find all robot capsules in contact and return their indices.
-   * 
-   * @param human_capsule Human capsule to check for contact with robot capsules.
-   * @param robot_capsules List of robot capsules.
-   * @returns Map that maps a list of robot link indices to the human capsule they are in contact with.
-   */
-  virtual std::map<int, std::vector<int>> find_all_human_robot_contacts(const std::vector<reach_lib::Capsule>& human_capsule,
-      const std::vector<reach_lib::Capsule>& robot_capsules) = 0;
 
   /**
    * @brief Verify the robot motion against the reachable occupancy of the human for each separate time interval
@@ -95,7 +64,7 @@ class Verify {
    */
   virtual bool verify_human_reach_time_intervals(
     const std::vector<std::vector<reach_lib::Capsule>>& robot_reachable_sets,
-    std::vector<std::vector<std::vector<reach_lib::Capsule>>> human_reachable_sets,
+    const std::vector<std::vector<std::vector<reach_lib::Capsule>>>& human_reachable_sets,
     int& collision_index
   ) = 0;
 
