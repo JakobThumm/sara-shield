@@ -37,6 +37,24 @@ TEST(VerifyTest, FindAllHumanRobotContactsTest) {
   // Human capsule 1 should intersect with robot capsule 0
   EXPECT_EQ(human_robot_contacts[1][0], 0);
 }
+
+TEST(VerifyTest, CheckVelocitySafetyTest) {
+  std::map<int, std::vector<int>> human_robot_contacts;
+  human_robot_contacts[0] = {0};
+  human_robot_contacts[1] = {0, 1};
+  human_robot_contacts[2] = {};
+  std::vector<double> robot_link_velocities = {0.1, 0.2, 0.3};
+  std::vector<double> maximal_contact_velocities = {0.2, 0.3, 0.4};
+  EXPECT_TRUE(checkVelocitySafety(human_robot_contacts, robot_link_velocities, maximal_contact_velocities));
+  maximal_contact_velocities = {0.1, 0.2, 0.3};
+  EXPECT_TRUE(checkVelocitySafety(human_robot_contacts, robot_link_velocities, maximal_contact_velocities));
+  maximal_contact_velocities = {0.09, 0.3, 0.4};
+  EXPECT_FALSE(checkVelocitySafety(human_robot_contacts, robot_link_velocities, maximal_contact_velocities));
+  maximal_contact_velocities = {0.2, 0.15, 0.4};
+  EXPECT_FALSE(checkVelocitySafety(human_robot_contacts, robot_link_velocities, maximal_contact_velocities));
+  maximal_contact_velocities = {0.2, 0.3, 0.0};
+  EXPECT_TRUE(checkVelocitySafety(human_robot_contacts, robot_link_velocities, maximal_contact_velocities));
+}
 } // namespace safety_shield
 
 int main(int argc, char **argv) {
