@@ -113,6 +113,8 @@ class LongTermTraj {
    * 
    * @details capsule_velocities_[motion][capsule]
    *    This is used in clamping prevention for the velocity criterion. 
+   * @details This is saved here and not as part of the motions as the motion does not have a notion of a capsule.
+   *    I.e., it does not depend on `RobotReach` and therefore does not have access to `RobotReach::CapsuleVelocity`.
    */
   std::vector<std::vector<RobotReach::CapsuleVelocity>> capsule_velocities_;
 

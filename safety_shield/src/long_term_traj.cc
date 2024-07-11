@@ -155,16 +155,20 @@ void LongTermTraj::velocitiesOfAllMotions(RobotReach& robot_reach) {
   for (int i = 0; i < length_; i++) {
     capsule_velocities_[i].resize(nb_modules_);
     Motion& motion = long_term_traj_[i];
-    double motion_vel = 0;
+    double max_motion_vel = 0;
+    std::vector<double> motion_vels;
     robot_reach.calculateAllTransformationMatricesAndCapsules(motion.getAngleRef());
     for (int j = 0; j < nb_modules_; j++) {
       capsule_velocities_[i][j] = robot_reach.getVelocityOfCapsule(j, motion.getVelocityRef());
-      motion_vel = robot_reach.approximateVelOfCapsule(j, capsule_velocities_[i][j].v2.v, capsule_velocities_[i][j].v2.w);
+      double motion_vel = robot_reach.approximateVelOfCapsule(j, capsule_velocities_[i][j].v2.v, capsule_velocities_[i][j].v2.w);
+      motion_vels.push_back(motion_vel);
+      max_motion_vel = std::max(max_motion_vel, motion_vel);
     }
     // Max velocity of this motion
-    motion.setMaximumCartesianVelocity(motion_vel);
+    motion.setMaximumCartesianVelocity(max_motion_vel);
+    motion.setMaximumCartesianVelocities(motion_vels);
     // Max velocity of the entire LTT.
-    max_cart_vel_ = std::max(max_cart_vel_, motion_vel);
+    max_cart_vel_ = std::max(max_cart_vel_, max_motion_vel);
   }
 }
 

@@ -67,9 +67,14 @@ class Motion {
   std::vector<double> dddq_;
 
   /**
-   * @brief maximum cartesian velocity of robot
+   * @brief The maximum Cartesian velocity over the entire robot in this time step.
    */
-  double maximumCartesianVelocity_;
+  double maximum_cartesian_velocity_;
+
+  /**
+   * @brief The maximum Cartesian velocities of the individual robot links in this time step.
+   */
+  std::vector<double> maximum_cartesian_velocities_;
 
  public:
   /**
@@ -330,19 +335,35 @@ class Motion {
   }
 
   /**
-   * @brief Sets the maximum cartesian velocity
+   * @brief Set the maximum Cartesian velocity over the entire robot in this time step.
    *
-   * @param vel the new velocity
+   * @param vel The maximum Cartesian velocity over the entire robot in this time step.
    */
   inline void setMaximumCartesianVelocity(double vel) {
-    maximumCartesianVelocity_ = vel;
+    maximum_cartesian_velocity_ = vel;
   }
 
   /**
-   * @brief returns maximum cartesian velocity
+   * @brief Set the maximum Cartesian velocities of the individual robot links in this time step.
+   * 
+   * @param vels The maximum Cartesian velocities of the individual robot links in this time step.
    */
-  inline double const getMaximumCartesianVelocity() {
-    return maximumCartesianVelocity_;
+  inline void setMaximumCartesianVelocities(const std::vector<double>& vels) {
+    maximum_cartesian_velocities_ = vels;
+  }
+
+  /**
+   * @brief returns the maximum Cartesian velocity over the entire robot in this time step.
+   */
+  inline double getMaximumCartesianVelocity() const {
+    return maximum_cartesian_velocity_;
+  }
+
+  /**
+   * @brief returns the maximum Cartesian velocities of the individual robot links in this time step.
+   */
+  inline std::vector<double> getMaximumCartesianVelocities() const {
+    return maximum_cartesian_velocities_;
   }
 
   /**
