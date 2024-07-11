@@ -10,7 +10,7 @@ TEST(VerifyTest, CapsuleCollisionTest) {
   EXPECT_FALSE(capsuleCollisionCheck(cap1, cap3));
 }
 
-TEST(VerifyTest, RobotHumanCollisionTest) {
+TEST(VerifyTest, RobotHumanCollisionTestFalse) {
   reach_lib::Capsule r_cap1(reach_lib::Point(0.0, 0.0, 0.0), reach_lib::Point(0.0, 0.0, 1.0), 0.1);
   reach_lib::Capsule r_cap2(reach_lib::Point(0.0, 0.0, 1.0), reach_lib::Point(0.0, 0.0, 2.0), 0.1);
   std::vector<reach_lib::Capsule> r_caps = {r_cap1, r_cap2};
@@ -18,6 +18,16 @@ TEST(VerifyTest, RobotHumanCollisionTest) {
   reach_lib::Capsule h_cap2(reach_lib::Point(1.0, 0.0, 1.0), reach_lib::Point(1.0, 0.0, 2.0), 0.5);
   std::vector<reach_lib::Capsule> h_caps = {h_cap1, h_cap2};
   EXPECT_FALSE(robotHumanCollision(r_caps, h_caps));
+}
+
+TEST(VerifyTest, RobotHumanCollisionTestTrue) {
+  reach_lib::Capsule r_cap1(reach_lib::Point(0.0, 0.0, 0.0), reach_lib::Point(0.0, 0.0, 1.0), 0.1);
+  reach_lib::Capsule r_cap2(reach_lib::Point(0.0, 0.0, 1.0), reach_lib::Point(0.0, 0.0, 2.0), 0.1);
+  std::vector<reach_lib::Capsule> r_caps = {r_cap1, r_cap2};
+  reach_lib::Capsule h_cap1(reach_lib::Point(1.0, 0.0, 0.0), reach_lib::Point(1.0, 0.0, 1.0), 0.5);
+  reach_lib::Capsule h_cap2(reach_lib::Point(1.0, 0.0, 1.0), reach_lib::Point(0.0, 0.0, 1.0), 0.5);
+  std::vector<reach_lib::Capsule> h_caps = {h_cap1, h_cap2};
+  EXPECT_TRUE(robotHumanCollision(r_caps, h_caps));
 }
 
 TEST(VerifyTest, FindAllHumanRobotContactsTest) {
