@@ -33,6 +33,7 @@ Motion LongTermTraj::interpolate(double s, double ds, double dds, double ddds) c
   std::vector<double> dq(q1.size());
   std::vector<double> ddq(q1.size());
   std::vector<double> dddq(q1.size());
+  std::vector<double> cartesian_velocities = getNextMotionAtIndex(ind1).getMaximumCartesianVelocities();
   for (int i = 0; i < q1.size(); i++) {
     // Linearly interpolate between lower and upper index of position
     q[i] = q1[i] + dt * dq1[i] + 1.0 / 2 * dt * dt * ddq1[i] + 1.0 / 6 * dt * dt * dt * dddq1[i];
@@ -45,8 +46,17 @@ Motion LongTermTraj::interpolate(double s, double ds, double dds, double ddds) c
     double a_int = v_max_int * dds + ds * ds * a_max_int;
     ddq[i] = std::clamp(a_int, -a_max_allowed_[i], a_max_allowed_[i]);
     dddq[i] = std::clamp(dddq1[i] * ds * ds * ds + 3.0 * a_max_int * dds * ds + v_max_int * ddds, -j_max_allowed_[i], j_max_allowed_[i]);
+    // Only update the cartesian velocities if they are available
+    if (cartesian_velocities.size() == q1.size()) {
+      cartesian_velocities[i] *= ds;
+    }
   }
-  return Motion(0.0, q, dq, ddq, dddq, s);
+  Motion m = Motion(0.0, q, dq, ddq, dddq, s);
+  if (cartesian_velocities.size() == q1.size()) {
+    m.setMaximumCartesianVelocities(cartesian_velocities);
+    m.setMaximumCartesianVelocity(getNextMotionAtIndex(ind1).getMaximumCartesianVelocity() * ds);
+  }
+  return m;
 }
 
 void LongTermTraj::calculate_max_acc_jerk_window(std::vector<Motion>& long_term_traj, int k) {
