@@ -25,7 +25,7 @@ TEST_F(VerifyIsoTest, VerifyHumanReachTest) {
   reach_lib::Capsule h_cap22(reach_lib::Point(1.0, 0.0, 1.0), reach_lib::Point(0.0, 0.0, 2.0), 0.5);
   std::vector<reach_lib::Capsule> h_caps2 = {h_cap21, h_cap22};
   std::vector<std::vector<reach_lib::Capsule>> h_caps_list = {h_caps1, h_caps2};
-  EXPECT_TRUE(verify_iso_.verify_human_reach(r_caps, h_caps_list));
+  EXPECT_TRUE(verify_iso_.verifyHumanReach(r_caps, h_caps_list));
 }
 
 }  // namespace safety_shield

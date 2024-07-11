@@ -46,7 +46,7 @@ class Verify {
    *
    * @returns Whether the robot movement is unsafe for the human
    */
-  virtual bool verify_human_reach(const std::vector<reach_lib::Capsule>& robot_capsules,
+  virtual bool verifyHumanReach(const std::vector<reach_lib::Capsule>& robot_capsules,
                                   std::vector<std::vector<reach_lib::Capsule>> human_capsules) = 0;
 
   /**
@@ -62,7 +62,7 @@ class Verify {
    *
    * @returns Whether the robot movement is unsafe for the human
    */
-  virtual bool verify_human_reach_time_intervals(
+  virtual bool verifyHumanReachTimeIntervals(
     const std::vector<std::vector<reach_lib::Capsule>>& robot_reachable_sets,
     const std::vector<std::vector<std::vector<reach_lib::Capsule>>>& human_reachable_sets,
     int& collision_index
@@ -80,7 +80,7 @@ class Verify {
    * @returns True: if the robot capsules do not collide with one set of the human capsules in each time step, i.e., the motion is safe.
    *          False: Otherwise
    */
-  virtual bool verify_human_reach_velocity(const std::vector<std::vector<reach_lib::Capsule>>& robot_reachable_sets,
+  virtual bool verifyHumanReachVelocity(const std::vector<std::vector<reach_lib::Capsule>>& robot_reachable_sets,
     const std::vector<std::vector<std::vector<reach_lib::Capsule>>>& human_reachable_sets,
     const std::vector<std::vector<double>>& robot_link_velocities,
     const std::vector<std::vector<double>>& maximal_contact_velocities,

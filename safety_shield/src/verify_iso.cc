@@ -2,7 +2,7 @@
 
 namespace safety_shield {
 
-bool VerifyISO::verify_human_reach(const std::vector<reach_lib::Capsule>& robot_capsules,
+bool VerifyISO::verifyHumanReach(const std::vector<reach_lib::Capsule>& robot_capsules,
                                    std::vector<std::vector<reach_lib::Capsule>> human_capsules) {
   try {
     for (const auto& capsule_list : human_capsules) {
@@ -13,13 +13,13 @@ bool VerifyISO::verify_human_reach(const std::vector<reach_lib::Capsule>& robot_
     }
     return false;
   } catch (const std::exception& exc) {
-    spdlog::error("Exception in VerifyISO::verify_human_reach: {}", exc.what());
+    spdlog::error("Exception in VerifyISO::verifyHumanReach: {}", exc.what());
     return false;
   }
 }
 
 /// checks safety for each time interval
-bool VerifyISO::verify_human_reach_time_intervals(
+bool VerifyISO::verifyHumanReachTimeIntervals(
   const std::vector<std::vector<reach_lib::Capsule>>& robot_reachable_sets,
   const std::vector<std::vector<std::vector<reach_lib::Capsule>>>& human_reachable_sets,
   int& collision_index
@@ -27,7 +27,7 @@ bool VerifyISO::verify_human_reach_time_intervals(
   assert(robot_reachable_sets.size() == human_reachable_sets.size());
   try {
     for (int i = 0; i < robot_reachable_sets.size(); i++) {
-      if (!verify_human_reach(robot_reachable_sets[i], human_reachable_sets[i])) {
+      if (!verifyHumanReach(robot_reachable_sets[i], human_reachable_sets[i])) {
         // returns false if at least in one time step, there is a collision
         collision_index = i;
         return false;
@@ -37,13 +37,13 @@ bool VerifyISO::verify_human_reach_time_intervals(
     collision_index = -1;
     return true;
   } catch (const std::exception& exc) {
-    spdlog::error("Exception in VerifyISO::improved_verify_human_reach: {}", exc.what());
+    spdlog::error("Exception in VerifyISO::improved_verifyHumanReach: {}", exc.what());
     collision_index = 0;
     return false;
   }
 }
 
-bool VerifyISO::verify_human_reach_velocity(const std::vector<std::vector<reach_lib::Capsule>>& robot_reachable_sets,
+bool VerifyISO::verifyHumanReachVelocity(const std::vector<std::vector<reach_lib::Capsule>>& robot_reachable_sets,
   const std::vector<std::vector<std::vector<reach_lib::Capsule>>>& human_reachable_sets,
   const std::vector<std::vector<double>>& robot_link_velocities,
   const std::vector<std::vector<double>>& maximal_contact_velocities,
@@ -72,7 +72,7 @@ bool VerifyISO::verify_human_reach_velocity(const std::vector<std::vector<reach_
     collision_index = -1;
     return true;
   } catch (const std::exception& exc) {
-    spdlog::error("Exception in VerifyISO::verify_human_reach_velocity: {}", exc.what());
+    spdlog::error("Exception in VerifyISO::verifyHumanReachVelocity: {}", exc.what());
     collision_index = 0;
     return false;
   }
