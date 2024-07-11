@@ -6,6 +6,23 @@ add_compile_options(-std=c++17)
 
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
+if(ENABLE_COVERAGE)
+  # set compiler flags
+  set(CMAKE_CXX_FLAGS "-O0 -coverage -fno-elide-constructors -fno-default-inline -fprofile-arcs")
+
+  # find required tools
+  find_program(LCOV lcov REQUIRED)
+  find_program(GENHTML genhtml REQUIRED)
+
+  # add coverage target
+  add_custom_target(coverage
+    # gather data
+    COMMAND ${LCOV} --directory . --capture --output-file coverage.info --exclude '/usr/*' --exclude '*external/*' --exclude '*tests/*'
+    # generate report
+    COMMAND ${GENHTML} --demangle-cpp -o coverage coverage.info
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
+endif()
+
 ## Find catkin macros and libraries
 #find_package(Eigen3 3.4 REQUIRED NO_MODULE)
 INCLUDE_DIRECTORIES ( "$ENV{EIGEN3_INCLUDE_DIR}" )
@@ -111,6 +128,8 @@ gtest_discover_tests(verify_iso_tests)
 gtest_discover_tests(safety_shield_tests)
 gtest_discover_tests(trajectory_utils_tests)
 gtest_discover_tests(verification_utils_tests)
+
+configure_file(${CMAKE_SOURCE_DIR}/CTestCustom.cmake ${CMAKE_BINARY_DIR})
 
 #catkin_add_gtest(verify_iso_test tests/capsule_tests.cc tests/verify_iso_fixture.h)
 #target_link_libraries(verify_iso_test ${catkin_LIBRARIES} ${PROJECT_NAME}_lib)
