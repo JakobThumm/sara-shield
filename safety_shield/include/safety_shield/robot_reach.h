@@ -41,12 +41,34 @@ class RobotReach {
   /**
    * @brief Velocity in SE3, where the first element is the linear velocity and the second the angular velocity
    */
-  typedef std::pair<Eigen::Vector3d, Eigen::Vector3d> SE3Vel;
+  struct SE3Vel {
+    SE3Vel() {}
+    SE3Vel(const Eigen::Vector3d& v, const Eigen::Vector3d& w) : v(v), w(w) {}
+    /**
+     * @brief Linear velocity.
+     */
+    Eigen::Vector3d v;
+    /**
+     * @brief Angular velocity.
+     */
+    Eigen::Vector3d w;
+  };
 
   /**
    * @brief Veloctiy in SE3 of the two points that define a capsule
    */
-  typedef std::pair<SE3Vel, SE3Vel> CapsuleVelocity;
+  struct CapsuleVelocity {
+    CapsuleVelocity() {}
+    CapsuleVelocity(const SE3Vel& v1, const SE3Vel& v2) : v1(v1), v2(v2) {}
+    /**
+     * @brief SE3 velocity of the first point.
+     */
+    SE3Vel v1;
+    /**
+     * @brief SE3 velocity of the second point.
+     */
+    SE3Vel v2;
+  };
 
  private:
   /**
@@ -276,6 +298,15 @@ class RobotReach {
    */
   inline std::vector<occupancy_containers::capsule::Capsule> getRobotCapsulesForVelocity() {
     return robot_capsules_for_velocity_;
+  }
+
+  /**
+   * @brief Get the Nb Joints object
+   * 
+   * @return int 
+   */
+  inline int getNbJoints() {
+    return nb_joints_;
   }
 };
 }  // namespace safety_shield
