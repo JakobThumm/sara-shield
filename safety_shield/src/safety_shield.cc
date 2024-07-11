@@ -699,7 +699,7 @@ bool SafetyShield::verifySafety(Motion& current_motion, Motion& goal_motion, con
   human_capsules_time_intervals_ = human_reach_->humanReachabilityAnalysisTimeIntervals(cycle_begin_time_, time_points);
   // Verify if the robot and human reachable sets are collision free
   int collision_index = -1;
-  is_safe = verify_->verify_human_reach_time_intervals(robot_capsules_time_intervals_, human_capsules_time_intervals_, collision_index);
+  is_safe = verify_->verifyHumanReachTimeIntervals(robot_capsules_time_intervals_, human_capsules_time_intervals_, collision_index);
   // for visualization in hrgym, reachability sets of last timestep are used
   if (is_safe) {
     robot_capsules_ = robot_capsules_time_intervals_[robot_capsules_time_intervals_.size()-1];
