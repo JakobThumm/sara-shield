@@ -43,6 +43,11 @@ class LongTermTraj {
   int length_;
 
   /**
+   * @brief Number of modules of the robot.
+   */
+  int nb_modules_;
+
+  /**
    * @brief Time between two timesteps.
    */
   double sample_time_;
@@ -94,9 +99,24 @@ class LongTermTraj {
   std::vector<double> alpha_i_;
 
   /**
+   * @brief maximum angular acceleration of robot joints (+ end effector!)
+   */
+  std::vector<double> beta_i_;
+
+  /**
    * @brief LTT-maximum of maximum cartesian velocity
    */
   double max_cart_vel_;
+
+  /**
+   * @brief The SE3 velocities of the robot for each capsule for each motion.
+   * 
+   * @details capsule_velocities_[motion][capsule]
+   *    This is used in clamping prevention for the velocity criterion. 
+   * @details This is saved here and not as part of the motions as the motion does not have a notion of a capsule.
+   *    I.e., it does not depend on `RobotReach` and therefore does not have access to `RobotReach::CapsuleVelocity`.
+   */
+  std::vector<std::vector<RobotReach::CapsuleVelocity>> capsule_velocities_;
 
   /**
    * @brief sets maximum cartesian velocity for all Motions in LTT
@@ -104,11 +124,18 @@ class LongTermTraj {
    */
   void velocitiesOfAllMotions(RobotReach& robot_reach);
 
+  /**
+   * @brief Calculates the max cartesian acceleration and jerk of each joint during the LTT.
+   * @sets alpha_i_
+   * @sets beta_i_
+   */
+  void calculateAlphaBeta();
+
  public:
   /**
    * @brief Construct a new Long Term Traj object.
    */
-  LongTermTraj() : current_pos_(0), starting_index_(0), length_(1), sample_time_(0.01),
+  LongTermTraj() : current_pos_(0), starting_index_(0), length_(1), nb_modules_(1), sample_time_(0.01),
                     v_max_allowed_({1.0}), a_max_allowed_({1.0}), j_max_allowed_({1.0}) {
     long_term_traj_.push_back(Motion(1));
     for (int i = 0; i < 2; i++) {
@@ -133,7 +160,9 @@ class LongTermTraj {
                int sliding_window_k = 10, double alpha_i_max = 1.0)
       : long_term_traj_(long_term_traj), sample_time_(sample_time), current_pos_(0), starting_index_(starting_index),
         v_max_allowed_(v_max_allowed), a_max_allowed_(a_max_allowed), j_max_allowed_(j_max_allowed) {
-    length_ = long_term_traj.size();
+    length_ = long_term_traj_.size();
+    assert (length_ > 0);
+    nb_modules_ = long_term_traj_[0].getNbModules();
     calculate_max_acc_jerk_window(long_term_traj_, sliding_window_k);
     for (int i = 0; i < long_term_traj_[0].getNbModules(); i++) {
       alpha_i_.push_back(alpha_i_max);
@@ -180,6 +209,16 @@ class LongTermTraj {
   }
 
   /**
+   * @brief Calculate the maximum acceleration and jerk for each timestep with a sliding window approach.
+   *
+   * Sets the `max_acceleration_window_` and `max_jerk_window_` values
+   *
+   * @param long_term_traj Long term trajectory
+   * @param k sliding window size
+   */
+  void calculate_max_acc_jerk_window(std::vector<Motion>& long_term_traj, int k);
+
+  /**
    * @brief Set the Long Term Trajectory object
    *
    * @param long_term_traj vector of motions to form the new long-term trajectory
@@ -187,6 +226,8 @@ class LongTermTraj {
   inline void setLongTermTrajectory(const std::vector<Motion>& long_term_traj) {
     long_term_traj_ = long_term_traj;
     length_ = long_term_traj_.size();
+    assert (length_ > 0);
+    nb_modules_ = long_term_traj_[0].getNbModules();
   }
 
   /**
@@ -198,6 +239,8 @@ class LongTermTraj {
   inline void setLongTermTrajectory(const std::vector<Motion>& long_term_traj, double sample_time) {
     long_term_traj_ = long_term_traj;
     length_ = long_term_traj_.size();
+    assert (length_ > 0);
+    nb_modules_ = long_term_traj_[0].getNbModules();
     sample_time_ = sample_time;
   }
 
@@ -247,6 +290,15 @@ class LongTermTraj {
   }
 
   /**
+   * @brief Get the number of modules (joints of the robot).
+   * 
+   * @return int 
+   */
+  inline int getNbModules() const {
+    return nb_modules_;
+  }
+
+  /**
    * @brief Get the current index of the LTT
    *
    * @return int current_pos_
@@ -278,6 +330,41 @@ class LongTermTraj {
   }
 
   /**
+   * @brief Get the floor index of the LTT at the given s position.
+   * 
+   * @param s continuous trajectory time
+   * @return int LTT index
+   */
+  inline int getLowerIndex(double s) const {
+    assert(sample_time_ != 0);
+    return getTrajectoryIndex(static_cast<int>(floor(s / sample_time_)));
+  }
+
+  /**
+   * @brief Get the ceil index of the LTT at the given s position.
+   * 
+   * @param s continuous trajectory time
+   * @return int LTT index
+   */
+  inline int getUpperIndex(double s) const {
+    assert(sample_time_ != 0);
+    return getTrajectoryIndex(static_cast<int>(ceil(s / sample_time_)));
+  }
+
+  /**
+   * @brief Get the floating-point remainder of the index given s position and the lower LTT index.
+   * 
+   * @param s continuous trajectory time
+   * @return int LTT index difference
+   */
+  inline double getModIndex(double s) const {
+    assert(sample_time_ != 0);
+    double ind = s / sample_time_;
+    double intpart;
+    return modf(ind, &intpart);
+  }
+
+  /**
    * @brief Get the motion at index from current pos
    *
    * @param index steps from current pos
@@ -290,8 +377,6 @@ class LongTermTraj {
   inline int getTrajectoryIndex(int index) const {
     int desired_pos = std::min(index - starting_index_, length_ - 1);
     if (desired_pos < current_pos_) {
-      // spdlog::debug("In LongTermTraj::getNextMotionAtIndex: desired_pos ({:08d}) < current_pos({:08d})", desired_pos,
-      // current_pos_);
       desired_pos = current_pos_;
     }
     return desired_pos;
@@ -343,8 +428,22 @@ class LongTermTraj {
     return max_acceleration_window_[getTrajectoryIndex(index)];
   }
 
+  /**
+   * @brief Get the Alpha I object
+   * 
+   * @return std::vector<double> 
+   */
   inline std::vector<double> getAlphaI() const {
     return alpha_i_;
+  }
+
+  /**
+   * @brief Get the Beta I object
+   * 
+   * @return std::vector<double> 
+   */
+  inline std::vector<double> getBetaI() const {
+    return beta_i_;
   }
 
   /**
@@ -358,22 +457,22 @@ class LongTermTraj {
   }
 
   /**
-   * @brief Calculate the maximum acceleration and jerk for each timestep with a sliding window approach.
-   *
-   * Sets the `max_acceleration_window_` and `max_jerk_window_` values
-   *
-   * @param long_term_traj Long term trajectory
-   * @param k sliding window size
-   */
-  void calculate_max_acc_jerk_window(std::vector<Motion>& long_term_traj, int k);
-
-  /**
    * @brief gets specific motion of LTT
    *
    * @param index of motion in LTT
    */
   inline Motion getMotion(unsigned long index) const {
     return long_term_traj_.at(index);
+  }
+
+  /**
+   * @brief Gets a const. pointer to a the velocity capsule given by the index
+   *
+   * @param index of motion in LTT
+   */
+  inline std::vector<std::vector<RobotReach::CapsuleVelocity>>::const_iterator getVelocityCapsuleIterator(int index) {
+    assert (index >= 0 && index < capsule_velocities_.size());
+    return capsule_velocities_.begin() + index;
   }
 
   /**

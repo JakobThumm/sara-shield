@@ -24,7 +24,7 @@ RobotReach::RobotReach(std::vector<double> transformation_matrices, int nb_joint
       }
     }
     transformation_matrices_.push_back(transformation_matrix);
-
+    link_lengths_.push_back(transformation_matrix.block<3,1>(0, 3).norm());
     // Fill capsules
     Eigen::Vector4d p1;
     Eigen::Vector4d p2;
@@ -60,41 +60,36 @@ reach_lib::Capsule RobotReach::transformCapsule(const int& n_joint, const Eigen:
 
 std::vector<reach_lib::Capsule> RobotReach::reach(Motion& start_config, Motion& goal_config, double s_diff,
                                                   std::vector<double> alpha_i) {
-  try {
-    assert(alpha_i.size() == nb_joints_);
-    Eigen::Matrix4d T_before = transformation_matrices_[0];
-    Eigen::Matrix4d T_after = transformation_matrices_[0];
-    std::vector<reach_lib::Capsule> reach_capsules;
-    std::vector<double> q1 = start_config.getAngle();
-    std::vector<double> q2 = goal_config.getAngle();
-    for (int i = 0; i < nb_joints_; i++) {
-      // build capsule before
-      forwardKinematic(q1[i], i, T_before);
-      reach_lib::Capsule before = transformCapsule(i, T_before);
-      // build capsule after
-      forwardKinematic(q2[i], i, T_after);
-      reach_lib::Capsule after = transformCapsule(i, T_after);
+  assert(alpha_i.size() == nb_joints_);
+  Eigen::Matrix4d T_before = transformation_matrices_[0];
+  Eigen::Matrix4d T_after = transformation_matrices_[0];
+  std::vector<reach_lib::Capsule> reach_capsules;
+  std::vector<double> q1 = start_config.getAngle();
+  std::vector<double> q2 = goal_config.getAngle();
+  for (int i = 0; i < nb_joints_; i++) {
+    // build capsule before
+    forwardKinematic(q1[i], i, T_before);
+    reach_lib::Capsule before = transformCapsule(i, T_before);
+    // build capsule after
+    forwardKinematic(q2[i], i, T_after);
+    reach_lib::Capsule after = transformCapsule(i, T_after);
 
-      // Calculate center of ball enclosing point p1 before and after
-      reach_lib::Point p_1_k = (before.p1_ + after.p1_) * 0.5;
-      // Calculate center of ball enclosing point p2 before and after
-      reach_lib::Point p_2_k = (before.p2_ + after.p2_) * 0.5;
-      // Calculate radius of ball enclosing point p1 before and after
-      double r_1 = reach_lib::Point::norm(before.p1_ - after.p1_) / 2.0 + alpha_i[i] * s_diff * s_diff / 8.0 +
-                   robot_capsules_[i].r_;
-      // Calculate radius of ball enclosing point p2 before and after
-      double r_2 = reach_lib::Point::norm(before.p2_ - after.p2_) / 2.0 + alpha_i[i] * s_diff * s_diff / 8.0 +
-                   robot_capsules_[i].r_;
-      // Final radius is maximum of r_1 and r_2 plus the radius expansion for modelling errors.
-      double radius = std::max(r_1, r_2) + secure_radius_;
-      // Enclosure capsule radius is max of ball around p1 and ball around p2
-      reach_capsules.push_back(reach_lib::Capsule(p_1_k, p_2_k, radius));
-    }
-    return reach_capsules;
-  } catch (const std::exception& exc) {
-    spdlog::error("Exception in RobotReach::reach: {}", exc.what());
-    return {};
+    // Calculate center of ball enclosing point p1 before and after
+    reach_lib::Point p_1_k = (before.p1_ + after.p1_) * 0.5;
+    // Calculate center of ball enclosing point p2 before and after
+    reach_lib::Point p_2_k = (before.p2_ + after.p2_) * 0.5;
+    // Calculate radius of ball enclosing point p1 before and after
+    double r_1 = reach_lib::Point::norm(before.p1_ - after.p1_) / 2.0 + alpha_i[i] * s_diff * s_diff / 8.0 +
+                  robot_capsules_[i].r_;
+    // Calculate radius of ball enclosing point p2 before and after
+    double r_2 = reach_lib::Point::norm(before.p2_ - after.p2_) / 2.0 + alpha_i[i] * s_diff * s_diff / 8.0 +
+                  robot_capsules_[i].r_;
+    // Final radius is maximum of r_1 and r_2 plus the radius expansion for modelling errors.
+    double radius = std::max(r_1, r_2) + secure_radius_;
+    // Enclosure capsule radius is max of ball around p1 and ball around p2
+    reach_capsules.push_back(reach_lib::Capsule(p_1_k, p_2_k, radius));
   }
+  return reach_capsules;
 }
 
 /// get for each robot motion the corresponding reachable set and collect in list
@@ -117,6 +112,38 @@ double RobotReach::maxVelocityOfMotion(const Motion& motion) {
   return max_capsule_vel;
 }
 
+std::vector<double> RobotReach::calculateMaxVelErrors(
+  double dt, const std::vector<double>& dq_max,
+  const std::vector<double>& ddq_max, const std::vector<double>& dddq_max) const {
+  std::vector<double> max_vel_errors;
+  for (int i = 0; i < nb_joints_; i++) {
+    max_vel_errors.push_back(calculateMaxVelError(i, dt, dq_max, ddq_max, dddq_max));
+  }
+  return max_vel_errors;
+}
+
+double RobotReach::calculateMaxVelError(int link_index, double dt, const std::vector<double>& dq_max,
+  const std::vector<double>& ddq_max, const std::vector<double>& dddq_max) const {
+  double max_vel_error = 0;
+  int N = link_index + 1;
+  for (int k = 0; k < N; k++) {
+    for (int i = k; i < N; i++) {
+      // sum up the vector dq_max from 0 to i-1
+      double dq_sum = 0;
+      for (int j = 0; j <= i; j++) {
+        dq_sum += dq_max[j];
+      }
+      double ddq_sum = 0;
+      for (int j = 0; j <= i; j++) {
+        ddq_sum += ddq_max[j];
+      }
+      max_vel_error += link_lengths_[i] * (dddq_max[k] + ddq_max[k] * dq_sum + dq_max[k] * (ddq_sum + dq_sum * dq_sum));
+    }
+  }
+  max_vel_error *= dt*dt/8.0;
+  return max_vel_error;
+}
+
 void RobotReach::calculateAllTransformationMatricesAndCapsules(const std::vector<double>& q) {
   robot_capsules_for_velocity_.clear();
   z_vectors_.clear();
@@ -132,7 +159,7 @@ void RobotReach::calculateAllTransformationMatricesAndCapsules(const std::vector
   }
 }
 
-RobotReach::CapsuleVelocity RobotReach::getVelocityOfCapsule(const int capsule, std::vector<double> q_dot) {
+RobotReach::CapsuleVelocity RobotReach::getVelocityOfCapsule(const int capsule, std::vector<double> q_dot){
   Eigen::VectorXd velocity = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(q_dot.data(), q_dot.size());
   // Point 1
   Eigen::Matrix<double, 6, Eigen::Dynamic> jacobian1 = getJacobian(capsule, robot_capsules_for_velocity_[capsule].p1_);
@@ -140,20 +167,20 @@ RobotReach::CapsuleVelocity RobotReach::getVelocityOfCapsule(const int capsule, 
   RobotReach::SE3Vel vel1(result1.segment(0, 3), result1.segment(3, 3));
   // Point 2: v_2 = v_1 + \omega_1 \times (p_2 - p_1), \omega_2 = \omega_1
   RobotReach::SE3Vel vel2(
-    vel1.first + vel1.second.cross(pointTo3dVector(
+    vel1.v + vel1.w.cross(pointTo3dVector(
       robot_capsules_for_velocity_[capsule].p2_ - robot_capsules_for_velocity_[capsule].p1_
     )),
-    vel1.second);
+    vel1.w);
   return RobotReach::CapsuleVelocity(vel1, vel2);
 }
 
 double RobotReach::getMaxVelocityOfCapsule(const int capsule, std::vector<double> q_dot) {
   RobotReach::CapsuleVelocity capsule_velocity = getVelocityOfCapsule(capsule, q_dot);
   if (velocity_method_ == APPROXIMATE) {
-    return approximateVelOfCapsule(capsule, capsule_velocity.second.first, capsule_velocity.second.second);
+    return approximateVelOfCapsule(capsule, capsule_velocity.v2.v, capsule_velocity.v2.w);
   } else {
     // velocity_method_ == EXACT
-    return exactVelOfCapsule(capsule, capsule_velocity.second.first, capsule_velocity.second.second);
+    return exactVelOfCapsule(capsule, capsule_velocity.v2.v, capsule_velocity.v2.w);
   }
 }
 

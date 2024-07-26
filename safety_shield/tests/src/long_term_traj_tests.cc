@@ -234,7 +234,57 @@ TEST_F(LongTermTrajTest, InterpolateTest) {
   EXPECT_NEAR(motion_int3.getJerk()[0], 1.561990000000000, 1e-5);
 }
 
-TEST_F(LongTermTrajTestVelocity, overapproximation) {
+TEST_F(LongTermTrajTestIdx, getLowerIndexTest) {
+  // Sample time = 0.001
+  // Trajectory length = 4
+  // Starting index = 3
+  EXPECT_EQ(long_term_trajectory_.getLowerIndex(-0.1), 0);
+  EXPECT_EQ(long_term_trajectory_.getLowerIndex(0.0), 0);
+  EXPECT_EQ(long_term_trajectory_.getLowerIndex(0.0005), 0);
+  EXPECT_EQ(long_term_trajectory_.getLowerIndex(0.001), 0);
+  EXPECT_EQ(long_term_trajectory_.getLowerIndex(0.0015), 0);
+  EXPECT_EQ(long_term_trajectory_.getLowerIndex(0.002), 0);
+  EXPECT_EQ(long_term_trajectory_.getLowerIndex(0.003), 0);
+  EXPECT_EQ(long_term_trajectory_.getLowerIndex(0.004), 1);
+  EXPECT_EQ(long_term_trajectory_.getLowerIndex(0.0045), 1);
+  EXPECT_EQ(long_term_trajectory_.getLowerIndex(0.005), 2);
+  EXPECT_EQ(long_term_trajectory_.getLowerIndex(0.0059), 2);
+  EXPECT_EQ(long_term_trajectory_.getLowerIndex(0.006), 3);
+  EXPECT_EQ(long_term_trajectory_.getLowerIndex(0.0065), 3);
+  EXPECT_EQ(long_term_trajectory_.getLowerIndex(0.007), 3);
+  EXPECT_EQ(long_term_trajectory_.getLowerIndex(0.1), 3);
+  EXPECT_EQ(long_term_trajectory_.getLowerIndex(1.1), 3);
+}
+
+TEST_F(LongTermTrajTestIdx, getUpperIndexTest) {
+  // Sample time = 0.001
+  // Trajectory length = 4
+  // Starting index = 3
+  EXPECT_EQ(long_term_trajectory_.getUpperIndex(-0.1), 0);
+  EXPECT_EQ(long_term_trajectory_.getUpperIndex(0.0), 0);
+  EXPECT_EQ(long_term_trajectory_.getUpperIndex(0.0005), 0);
+  EXPECT_EQ(long_term_trajectory_.getUpperIndex(0.001), 0);
+  EXPECT_EQ(long_term_trajectory_.getUpperIndex(0.0015), 0);
+  EXPECT_EQ(long_term_trajectory_.getUpperIndex(0.002), 0);
+  EXPECT_EQ(long_term_trajectory_.getUpperIndex(0.003), 0);
+  EXPECT_EQ(long_term_trajectory_.getUpperIndex(0.004), 1);
+  EXPECT_EQ(long_term_trajectory_.getUpperIndex(0.0045), 2);
+  EXPECT_EQ(long_term_trajectory_.getUpperIndex(0.005), 2);
+  EXPECT_EQ(long_term_trajectory_.getUpperIndex(0.00501), 3);
+  EXPECT_EQ(long_term_trajectory_.getUpperIndex(1.1), 3);
+}
+
+TEST_F(LongTermTrajTestIdx, getModIndexTest) {
+  // Sample time = 0.001
+  // Trajectory length = 4
+  // Starting index = 3
+  EXPECT_NEAR(long_term_trajectory_.getModIndex(0.004), 0, 1e-9);
+  EXPECT_NEAR(long_term_trajectory_.getModIndex(0.0045), 0.5, 1e-9);
+  EXPECT_NEAR(long_term_trajectory_.getModIndex(0.00476), 0.76, 1e-9);
+  EXPECT_NEAR(long_term_trajectory_.getModIndex(0.005), 0, 1e-9);
+}
+
+TEST_F(LongTermTrajTestVelocity, OverapproximativeVelocityTest) {
   double sum_deviation = 0;
   double epsilon = 1e-5;
   for (int i = 0; i < long_term_trajectory_approximate.getLength(); i++) {

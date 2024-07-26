@@ -52,4 +52,26 @@ bool checkVelocitySafety(
   }
   return true;
 }
+
+std::vector<std::vector<double>> calculateMaxRobotLinkVelocitiesPerTimeInterval(
+  const std::vector<Motion>& robot_motions,
+  const std::vector<double>& link_radii,
+  const std::vector<double>& velocity_error
+) {
+  std::vector<std::vector<double>> max_velocities;
+  assert(robot_motions.size() > 0);
+  int n_links = robot_motions[0].getMaximumCartesianVelocities().size();
+  assert(velocity_error.size() == n_links);
+  assert(link_radii.size() == n_links);
+  for (int i = 1; i < robot_motions.size(); i++) {
+    std::vector<double> max_velocities_i;
+    for (int j = 0; j < n_links; j++) {
+      double delta_s = robot_motions[i].getS()-robot_motions[i-1].getS();
+      double max_v = std::max(robot_motions[i-1].getMaximumCartesianVelocities()[j], robot_motions[i].getMaximumCartesianVelocities()[j]);
+      max_velocities_i.push_back(max_v + velocity_error[j]);
+    }
+    max_velocities.push_back(max_velocities_i);
+  }
+  return max_velocities;
+}
 }  // namespace safety_shield

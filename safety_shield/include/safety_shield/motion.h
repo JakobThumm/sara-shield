@@ -67,9 +67,14 @@ class Motion {
   std::vector<double> dddq_;
 
   /**
-   * @brief maximum cartesian velocity of robot
+   * @brief The maximum Cartesian velocity over the entire robot in this time step.
    */
-  double maximumCartesianVelocity_;
+  double maximum_cartesian_velocity_;
+
+  /**
+   * @brief The maximum Cartesian velocities of the individual robot links in this time step.
+   */
+  std::vector<double> maximum_cartesian_velocities_;
 
  public:
   /**
@@ -147,7 +152,7 @@ class Motion {
    * @return true when motion is at a complete stop
    * @return false when motion is not at a complete stop
    */
-  inline bool isStopped(double threshold = 1e-4) {
+  inline bool isStopped(double threshold = 1e-4) const {
     for (int i = 0; i < nb_modules_; i++) {
       if (std::abs(dq_[i]) > threshold || std::abs(ddq_[i]) > threshold || std::abs(dddq_[i]) > threshold) {
         return false;
@@ -164,7 +169,7 @@ class Motion {
    * @return true Position is the same
    * @return false Position is not the same
    */
-  inline bool hasSamePos(Motion *motion, double threshold = 1e-3) {
+  inline bool hasSamePos(Motion *motion, double threshold = 1e-3) const {
     assert(motion->getNbModules() == nb_modules_);
     // Check if traj starts at the same position
     for (int i = 0; i < nb_modules_; i++) {
@@ -183,7 +188,7 @@ class Motion {
    * @return true Velocity is the same
    * @return false Velocity is not the same
    */
-  inline bool hasSameVel(Motion *motion, double threshold = 1e-4) {
+  inline bool hasSameVel(Motion *motion, double threshold = 1e-4) const {
     assert(motion->getNbModules() == nb_modules_);
     // Check if traj starts at the same position
     for (int i = 0; i < nb_modules_; i++) {
@@ -202,7 +207,7 @@ class Motion {
    * @return true acceleration is the same
    * @return false acceleration is not the same
    */
-  inline bool hasSameAcc(Motion *motion, double threshold = 1e-4) {
+  inline bool hasSameAcc(Motion *motion, double threshold = 1e-4) const {
     assert(motion->getNbModules() == nb_modules_);
     // Check if traj starts at the same position
     for (int i = 0; i < nb_modules_; i++) {
@@ -217,7 +222,7 @@ class Motion {
    * @brief Returns the number of modules
    * @return the number of modules
    */
-  inline int getNbModules() {
+  inline int getNbModules() const {
     return nb_modules_;
   }
 
@@ -226,7 +231,7 @@ class Motion {
    *
    * @return the time of the motion
    */
-  inline double getTime() {
+  inline double getTime() const {
     return time_;
   }
 
@@ -235,7 +240,7 @@ class Motion {
    *
    * @return double
    */
-  inline double getS() {
+  inline double getS() const {
     return s_;
   }
 
@@ -244,7 +249,7 @@ class Motion {
    *
    * @return the angle of the motion
    */
-  inline std::vector<double> getAngle() {
+  inline std::vector<double> getAngle() const {
     return q_;
   }
 
@@ -253,7 +258,7 @@ class Motion {
    *
    * @return the velocity of the motion
    */
-  inline std::vector<double> getVelocity() {
+  inline std::vector<double> getVelocity() const {
     return dq_;
   }
 
@@ -262,7 +267,7 @@ class Motion {
    *
    * @return the acceleration of the motion
    */
-  inline std::vector<double> getAcceleration() {
+  inline std::vector<double> getAcceleration() const {
     return ddq_;
   }
 
@@ -271,7 +276,7 @@ class Motion {
    *
    * @return the jerk of the motion
    */
-  inline std::vector<double> getJerk() {
+  inline std::vector<double> getJerk() const {
     return dddq_;
   }
 
@@ -330,19 +335,35 @@ class Motion {
   }
 
   /**
-   * @brief Sets the maximum cartesian velocity
+   * @brief Set the maximum Cartesian velocity over the entire robot in this time step.
    *
-   * @param vel the new velocity
+   * @param vel The maximum Cartesian velocity over the entire robot in this time step.
    */
   inline void setMaximumCartesianVelocity(double vel) {
-    maximumCartesianVelocity_ = vel;
+    maximum_cartesian_velocity_ = vel;
   }
 
   /**
-   * @brief returns maximum cartesian velocity
+   * @brief Set the maximum Cartesian velocities of the individual robot links in this time step.
+   * 
+   * @param vels The maximum Cartesian velocities of the individual robot links in this time step.
    */
-  inline double const getMaximumCartesianVelocity() {
-    return maximumCartesianVelocity_;
+  inline void setMaximumCartesianVelocities(const std::vector<double>& vels) {
+    maximum_cartesian_velocities_ = vels;
+  }
+
+  /**
+   * @brief returns the maximum Cartesian velocity over the entire robot in this time step.
+   */
+  inline double getMaximumCartesianVelocity() const {
+    return maximum_cartesian_velocity_;
+  }
+
+  /**
+   * @brief returns the maximum Cartesian velocities of the individual robot links in this time step.
+   */
+  inline std::vector<double> getMaximumCartesianVelocities() const {
+    return maximum_cartesian_velocities_;
   }
 
   /**

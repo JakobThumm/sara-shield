@@ -101,6 +101,38 @@ bool checkVelocitySafety(
   const std::vector<double>& maximal_contact_velocities
 );
 
+/**
+ * @brief Calculate the maximal Cartesian robot link velocities for each time interval.
+ * 
+ * @param robot_motions The motion of the robot at each edge of the time intervals.
+ * @param link_radii The radii of the robot links (capsules).
+ * @param velocity_error The maximal velocity error for each robot link.
+ * @return std::vector<std::vector<double>> Maximal Cartesian velocity of each robot link for each time interval.
+ */
+std::vector<std::vector<double>> calculateMaxRobotLinkVelocitiesPerTimeInterval(
+  const std::vector<Motion>& robot_motions,
+  const std::vector<double>& link_radii,
+  const std::vector<double>& velocity_error
+);
+
+/**
+ * @brief Calculate the velocity error for a given robot link.
+ * 
+ * @param alpha Maximal Cartesian acceleration of the robot link in the given time frame.
+ * @param beta Maximal angular velocity of the robot link in the given time frame.
+ * @param delta_s Distance travelled by the robot link measured by path length.
+ * @param r Radius of the robot capsule.
+ * @return double Velocity error for the given robot link.
+ */
+inline double calculateVelocityError(
+  double alpha,
+  double beta,
+  double delta_s,
+  double r
+) {
+  return 0.5 * delta_s * (alpha + beta * r);
+}
+
 }  // namespace safety_shield
 
 #endif // VERIFICATION_UTILS_H

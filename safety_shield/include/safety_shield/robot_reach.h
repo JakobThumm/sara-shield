@@ -41,12 +41,34 @@ class RobotReach {
   /**
    * @brief Velocity in SE3, where the first element is the linear velocity and the second the angular velocity
    */
-  typedef std::pair<Eigen::Vector3d, Eigen::Vector3d> SE3Vel;
+  struct SE3Vel {
+    SE3Vel() {}
+    SE3Vel(const Eigen::Vector3d& v, const Eigen::Vector3d& w) : v(v), w(w) {}
+    /**
+     * @brief Linear velocity.
+     */
+    Eigen::Vector3d v;
+    /**
+     * @brief Angular velocity.
+     */
+    Eigen::Vector3d w;
+  };
 
   /**
    * @brief Veloctiy in SE3 of the two points that define a capsule
    */
-  typedef std::pair<SE3Vel, SE3Vel> CapsuleVelocity;
+  struct CapsuleVelocity {
+    CapsuleVelocity() {}
+    CapsuleVelocity(const SE3Vel& v1, const SE3Vel& v2) : v1(v1), v2(v2) {}
+    /**
+     * @brief SE3 velocity of the first point.
+     */
+    SE3Vel v1;
+    /**
+     * @brief SE3 velocity of the second point.
+     */
+    SE3Vel v2;
+  };
 
  private:
   /**
@@ -58,6 +80,11 @@ class RobotReach {
    * @brief List of transforamtion matrices from joint to joint (fixed description, not including joint movements)
    */
   std::vector<Eigen::Matrix4d> transformation_matrices_;
+
+  /**
+   * @brief List of link lengths.
+   */
+  std::vector<double> link_lengths_;
 
   /**
    * @brief The enclosing capsules
@@ -205,6 +232,33 @@ class RobotReach {
   double maxVelocityOfMotion(const Motion& motion);
 
   /**
+   * @brief Calculate the maximal error in the Cartesian velocity of all robot links.
+   * Return the maximum error between two measurement points with temporal distance dt.
+   * 
+   * @param dt time difference between measurement points
+   * @param dq_max maximum joint velocity
+   * @param ddq_max maximum joint acceleration
+   * @param dddq_max maximum joint jerk
+   * @return std::vector<double> upper bound of the velocity error for each joint
+   */
+  std::vector<double> calculateMaxVelErrors(double dt,
+   const std::vector<double>& dq_max, const std::vector<double>& ddq_max, const std::vector<double>& dddq_max) const;
+
+  /**
+   * @brief Calculate the maximal error in the Cartesian velocity of a single robot link.
+   * Return the maximum error between two measurement points with temporal distance dt.
+   * 
+   * @param link_index index of the robot link
+   * @param dt time difference between measurement points
+   * @param dq_max maximum joint velocity
+   * @param ddq_max maximum joint acceleration
+   * @param dddq_max maximum joint jerk
+   * @return double upper bound of the velocity error for each joint
+   */
+  double calculateMaxVelError(int link_index, double dt,
+   const std::vector<double>& dq_max, const std::vector<double>& ddq_max, const std::vector<double>& dddq_max) const;
+
+  /**
    * @brief Calculate the cartesian velocity of both defining point of a specific capsule
    * @assumption calculateAlltransformationMatricesAndCapsules() was called before
    * @param capsule which capsule
@@ -276,6 +330,15 @@ class RobotReach {
    */
   inline std::vector<occupancy_containers::capsule::Capsule> getRobotCapsulesForVelocity() {
     return robot_capsules_for_velocity_;
+  }
+
+  /**
+   * @brief Get the Nb Joints object
+   * 
+   * @return int 
+   */
+  inline int getNbJoints() {
+    return nb_joints_;
   }
 };
 }  // namespace safety_shield
