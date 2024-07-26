@@ -697,9 +697,29 @@ bool SafetyShield::verifySafety(Motion& current_motion, Motion& goal_motion, con
   // Compute the human reachable sets for the potential trajectory
   // humanReachabilityAnalysis(t_command, t_brake)
   human_capsules_time_intervals_ = human_reach_->humanReachabilityAnalysisTimeIntervals(cycle_begin_time_, time_points);
-  // Verify if the robot and human reachable sets are collision free
   int collision_index = -1;
-  is_safe = verify_->verifyHumanReachTimeIntervals(robot_capsules_time_intervals_, human_capsules_time_intervals_, collision_index);
+  if (shield_type_ == ShieldType::PFL) {
+    // is_safe = is_safe || is_under_v_limit_;
+    std::vector<double> robot_link_radii;
+    // TODO find a better way to get the robot link radii
+    for (int i = 0; i < nb_joints_; i++) {
+      robot_link_radii.push_back(robot_capsules_time_intervals_[0][i].r_);
+    }
+    double dt = time_points[1] - time_points[0];
+    std::vector<double> velocity_errors = robot_reach_->calculateMaxVelErrors(dt, v_max_allowed_, a_max_allowed_, j_max_allowed_);
+    // TODO: Case new ltt!
+    std::vector<std::vector<double>> robot_link_velocities = calculateMaxRobotLinkVelocitiesPerTimeInterval(
+      interval_edges_motions,
+      robot_link_radii,
+      velocity_errors
+    );
+    // TODO
+    std::vector<std::vector<double>> maximal_contact_velocities;
+    is_safe_ = verify_->verifyHumanReachVelocity(robot_capsules_time_intervals_, human_capsules_time_intervals_, robot_link_velocities, maximal_contact_velocities, collision_index);
+  } else {
+    // Verify if the robot and human reachable sets are collision free
+    is_safe = verify_->verifyHumanReachTimeIntervals(robot_capsules_time_intervals_, human_capsules_time_intervals_, collision_index);
+  }
   // for visualization in hrgym, reachability sets of last timestep are used
   if (is_safe) {
     robot_capsules_ = robot_capsules_time_intervals_[robot_capsules_time_intervals_.size()-1];
@@ -707,9 +727,6 @@ bool SafetyShield::verifySafety(Motion& current_motion, Motion& goal_motion, con
   } else {
     robot_capsules_ = robot_capsules_time_intervals_[collision_index];
     human_capsules_ = human_capsules_time_intervals_[collision_index];
-  }
-  if (shield_type_ == ShieldType::PFL) {
-    is_safe = is_safe || is_under_v_limit_;
   }
   return is_safe;
 }

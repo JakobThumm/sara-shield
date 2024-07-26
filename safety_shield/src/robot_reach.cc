@@ -24,7 +24,7 @@ RobotReach::RobotReach(std::vector<double> transformation_matrices, int nb_joint
       }
     }
     transformation_matrices_.push_back(transformation_matrix);
-
+    link_lengths_.push_back(transformation_matrix.block<3,1>(0, 3).norm());
     // Fill capsules
     Eigen::Vector4d p1;
     Eigen::Vector4d p2;
@@ -110,6 +110,37 @@ double RobotReach::maxVelocityOfMotion(const Motion& motion) {
     max_capsule_vel = std::max(max_capsule_vel, capsule_vel);
   }
   return max_capsule_vel;
+}
+
+std::vector<double> RobotReach::calculateMaxVelErrors(
+  double dt, const std::vector<double>& dq_max,
+  const std::vector<double>& ddq_max, const std::vector<double>& dddq_max) const {
+  std::vector<double> max_vel_errors;
+  for (int i = 0; i < nb_joints_; i++) {
+    max_vel_errors.push_back(calculateMaxVelError(i, dt, dq_max, ddq_max, dddq_max));
+  }
+  return max_vel_errors;
+}
+
+double RobotReach::calculateMaxVelError(int N, double dt, const std::vector<double>& dq_max,
+  const std::vector<double>& ddq_max, const std::vector<double>& dddq_max) const {
+  double max_vel_error = 0;
+  for (int k = 0; k < N+1; k++) {
+    for (int i = k; i < N+1; i++) {
+      // sum up the vector dq_max from 0 to i-1
+      double dq_sum = 0;
+      for (int j = 0; j < i; j++) {
+        dq_sum += dq_max[j];
+      }
+      double ddq_sum = 0;
+      for (int j = 0; j < i; j++) {
+        ddq_sum += ddq_max[j];
+      }
+      max_vel_error += link_lengths_[i] * (dddq_max[k] + ddq_max[k] * dq_sum + dq_max[k] * (ddq_sum + dq_sum * dq_sum));
+    }
+  }
+  max_vel_error *= dt*dt/8.0;
+  return max_vel_error;
 }
 
 void RobotReach::calculateAllTransformationMatricesAndCapsules(const std::vector<double>& q) {
