@@ -122,18 +122,19 @@ std::vector<double> RobotReach::calculateMaxVelErrors(
   return max_vel_errors;
 }
 
-double RobotReach::calculateMaxVelError(int N, double dt, const std::vector<double>& dq_max,
+double RobotReach::calculateMaxVelError(int link_index, double dt, const std::vector<double>& dq_max,
   const std::vector<double>& ddq_max, const std::vector<double>& dddq_max) const {
   double max_vel_error = 0;
-  for (int k = 0; k < N+1; k++) {
-    for (int i = k; i < N+1; i++) {
+  int N = link_index + 1;
+  for (int k = 0; k < N; k++) {
+    for (int i = k; i < N; i++) {
       // sum up the vector dq_max from 0 to i-1
       double dq_sum = 0;
-      for (int j = 0; j < i; j++) {
+      for (int j = 0; j <= i; j++) {
         dq_sum += dq_max[j];
       }
       double ddq_sum = 0;
-      for (int j = 0; j < i; j++) {
+      for (int j = 0; j <= i; j++) {
         ddq_sum += ddq_max[j];
       }
       max_vel_error += link_lengths_[i] * (dddq_max[k] + ddq_max[k] * dq_sum + dq_max[k] * (ddq_sum + dq_sum * dq_sum));

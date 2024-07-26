@@ -248,14 +248,14 @@ class RobotReach {
    * @brief Calculate the maximal error in the Cartesian velocity of a single robot link.
    * Return the maximum error between two measurement points with temporal distance dt.
    * 
-   * @param N index of the robot link
+   * @param link_index index of the robot link
    * @param dt time difference between measurement points
    * @param dq_max maximum joint velocity
    * @param ddq_max maximum joint acceleration
    * @param dddq_max maximum joint jerk
    * @return double upper bound of the velocity error for each joint
    */
-  double calculateMaxVelError(int N, double dt,
+  double calculateMaxVelError(int link_index, double dt,
    const std::vector<double>& dq_max, const std::vector<double>& ddq_max, const std::vector<double>& dddq_max) const;
 
   /**

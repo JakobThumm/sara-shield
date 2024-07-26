@@ -280,6 +280,18 @@ TEST_F(RobotReachTest, ApproximateVelOfCapsuleTest1) {
   EXPECT_NEAR(v_approx, 0.11, 1e-8);
 }
 
+TEST_F(RobotReachTest, CalculateMaxVelErrorTest1) {
+  double d_1 = 0.1;
+  std::vector<double> dq_max = {1.0};
+  std::vector<double> ddq_max = {10.0};
+  std::vector<double> dddq_max = {200.0};
+  double dt = 0.05;
+  double epsilon_v = dt * dt / 8.0 * d_1 * (dddq_max[0] + ddq_max[0] * dq_max[0] + dq_max[0] * (ddq_max[0] + dq_max[0] * dq_max[0]));
+  std::vector<double> velocity_errors = robot_reach_->calculateMaxVelErrors(dt, dq_max, ddq_max, dddq_max); 
+  EXPECT_TRUE(velocity_errors.size() == 1);
+  EXPECT_NEAR(velocity_errors[0], epsilon_v, 1e-8);
+}
+
 // jacobian of tcp from siciliano p. 114
 // a1 = a2 = a3 = 1
 Eigen::Matrix<double, 6, Eigen::Dynamic> jacobian_tcp_siciliano(std::vector<double> q) {
