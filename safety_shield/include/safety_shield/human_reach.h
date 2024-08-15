@@ -102,6 +102,11 @@ class HumanReach {
   std::vector<reach_lib::Articulated*> human_models_;
 
   /**
+   * @brief Threshold on the energy of the robot element in an unconstrained contact for each body part.
+   */
+  std::vector<double> max_contact_energy_;
+
+  /**
    * @brief We need two measurements for velocity calculation.
    */
   bool has_second_meas_ = false;
@@ -147,6 +152,7 @@ class HumanReach {
       std::map<std::string, int> joint_names,
       std::map<std::string, reach_lib::jointPair>& body_link_joints, 
       const std::map<std::string, double>& thickness, 
+      const std::map<std::string, double>& max_contact_energy,
       std::vector<double>& max_v, 
       std::vector<double>& max_a,
       double measurement_error_pos, 
@@ -174,6 +180,7 @@ class HumanReach {
       std::map<std::string, int> joint_names,
       std::map<std::string, reach_lib::jointPair>& body_link_joints, 
       const std::map<std::string, double>& thickness, 
+      const std::map<std::string, double>& max_contact_energy,
       std::vector<double>& max_v, 
       std::vector<double>& max_a,
       double measurement_error_pos, 
@@ -207,6 +214,7 @@ class HumanReach {
       std::map<std::string, int> joint_names,
       std::map<std::string, reach_lib::jointPair>& body_link_joints, 
       const std::map<std::string, double>& thickness, 
+      const std::map<std::string, double>& max_contact_energy,
       std::vector<double>& max_v, 
       std::vector<double>& max_a,
       std::vector<std::string>& extremity_base_names, 
@@ -244,6 +252,7 @@ class HumanReach {
       std::map<std::string, int> joint_names,
       std::map<std::string, reach_lib::jointPair>& body_link_joints, 
       const std::map<std::string, double>& thickness, 
+      const std::map<std::string, double>& max_contact_energy,
       std::vector<double>& max_v, 
       std::vector<double>& max_a,
       std::vector<std::string>& extremity_base_names, 
@@ -466,6 +475,7 @@ HumanReach* createHumanReach(
       std::map<std::string, int> joint_names,
       std::map<std::string, reach_lib::jointPair>& body_link_joints, 
       const std::map<std::string, double>& thickness, 
+      const std::map<std::string, double>& max_contact_energy, 
       std::vector<double>& max_v, 
       std::vector<double>& max_a,
       double measurement_error_pos, 
@@ -479,6 +489,11 @@ HumanReach* createHumanReach(
       double s_v,
       double initial_pos_var,
       double initial_vel_var);
+      
+std::vector<double> buildMaxContactEnergy(
+  const std::map<std::string, reach_lib::jointPair>& body_link_joints, 
+  const std::map<std::string, double>& max_contact_energy
+);
 
 }  // namespace safety_shield
 #endif  // HUMAN_REACH_H

@@ -63,11 +63,13 @@ class HumanReachTest : public ::testing::Test {
     const YAML::Node& bodies = human_config["bodies"];
     std::map<std::string, reach_lib::jointPair> body_link_joints;
     std::map<std::string, double> thickness;
+    std::map<std::string, double> max_contact_energy;
     for (YAML::const_iterator it = bodies.begin(); it != bodies.end(); ++it) {
       const YAML::Node& body = *it;
       body_link_joints[body["name"].as<std::string>()] = reach_lib::jointPair(
           joint_names[body["proximal"].as<std::string>()], joint_names[body["distal"].as<std::string>()]);
       thickness[body["name"].as<std::string>()] = body["thickness"].as<double>();
+      max_contact_energy[body["name"].as<std::string>()] = body["max_contact_energy_unconstrained"].as<double>();
     }
     // Build extremities
     const YAML::Node& extremities = human_config["extremities"];
@@ -85,6 +87,7 @@ class HumanReachTest : public ::testing::Test {
       joint_names,
       body_link_joints, 
       thickness, 
+      max_contact_energy,
       joint_v_max, 
       joint_a_max,
       extremity_base_names, 
@@ -130,16 +133,19 @@ class HumanReachCombinedOnlyTest : public ::testing::Test {
     const YAML::Node& bodies = human_config["bodies"];
     std::map<std::string, reach_lib::jointPair> body_link_joints;
     std::map<std::string, double> thickness;
+    std::map<std::string, double> max_contact_energy;
     for (YAML::const_iterator it = bodies.begin(); it != bodies.end(); ++it) {
       const YAML::Node& body = *it;
       body_link_joints[body["name"].as<std::string>()] = reach_lib::jointPair(
           joint_names[body["proximal"].as<std::string>()], joint_names[body["distal"].as<std::string>()]);
       thickness[body["name"].as<std::string>()] = body["thickness"].as<double>();
+      max_contact_energy[body["name"].as<std::string>()] = body["max_contact_energy_unconstrained"].as<double>();
     }
     human_reach_ = new HumanReach(joint_names.size(),
       joint_names,
       body_link_joints, 
       thickness, 
+      max_contact_energy,
       joint_v_max, 
       joint_a_max,
       measurement_error_pos, 
@@ -181,16 +187,19 @@ class HumanReachCombinedOnlyArmTest : public ::testing::Test {
     const YAML::Node& bodies = human_config["bodies"];
     std::map<std::string, reach_lib::jointPair> body_link_joints;
     std::map<std::string, double> thickness;
+    std::map<std::string, double> max_contact_energy;
     for (YAML::const_iterator it = bodies.begin(); it != bodies.end(); ++it) {
       const YAML::Node& body = *it;
       body_link_joints[body["name"].as<std::string>()] = reach_lib::jointPair(
           joint_names[body["proximal"].as<std::string>()], joint_names[body["distal"].as<std::string>()]);
       thickness[body["name"].as<std::string>()] = body["thickness"].as<double>();
+      max_contact_energy[body["name"].as<std::string>()] = body["max_contact_energy_unconstrained"].as<double>();
     }
     human_reach_ = new HumanReach(joint_names.size(),
       joint_names,
       body_link_joints, 
       thickness, 
+      max_contact_energy,
       joint_v_max, 
       joint_a_max,
       measurement_error_pos, 
@@ -232,11 +241,13 @@ class HumanReachTestError : public ::testing::Test {
     const YAML::Node& bodies = human_config["bodies"];
     std::map<std::string, reach_lib::jointPair> body_link_joints;
     std::map<std::string, double> thickness;
+    std::map<std::string, double> max_contact_energy;
     for (YAML::const_iterator it = bodies.begin(); it != bodies.end(); ++it) {
       const YAML::Node& body = *it;
       body_link_joints[body["name"].as<std::string>()] = reach_lib::jointPair(
           joint_names[body["proximal"].as<std::string>()], joint_names[body["distal"].as<std::string>()]);
       thickness[body["name"].as<std::string>()] = body["thickness"].as<double>();
+      max_contact_energy[body["name"].as<std::string>()] = body["max_contact_energy_unconstrained"].as<double>();
     }
     // Build extremities
     const YAML::Node& extremities = human_config["extremities"];
@@ -254,6 +265,7 @@ class HumanReachTestError : public ::testing::Test {
       joint_names,
       body_link_joints, 
       thickness, 
+      max_contact_energy,
       joint_v_max, 
       joint_a_max,
       extremity_base_names, 
@@ -299,11 +311,13 @@ class HumanReachTestPos : public ::testing::Test {
     const YAML::Node& bodies = human_config["bodies"];
     std::map<std::string, reach_lib::jointPair> body_link_joints;
     std::map<std::string, double> thickness;
+    std::map<std::string, double> max_contact_energy;
     for (YAML::const_iterator it = bodies.begin(); it != bodies.end(); ++it) {
       const YAML::Node& body = *it;
       body_link_joints[body["name"].as<std::string>()] = reach_lib::jointPair(
           joint_names[body["proximal"].as<std::string>()], joint_names[body["distal"].as<std::string>()]);
       thickness[body["name"].as<std::string>()] = body["thickness"].as<double>();
+      max_contact_energy[body["name"].as<std::string>()] = body["max_contact_energy_unconstrained"].as<double>();
     }
     // Build extremities
     const YAML::Node& extremities = human_config["extremities"];
@@ -321,6 +335,7 @@ class HumanReachTestPos : public ::testing::Test {
       joint_names,
       body_link_joints, 
       thickness, 
+      max_contact_energy,
       joint_v_max, 
       joint_a_max,
       extremity_base_names, 
@@ -367,11 +382,13 @@ class HumanReachTimeIntervalTestSingleJoint : public ::testing::Test {
     const YAML::Node& bodies = human_config["bodies"];
     std::map<std::string, reach_lib::jointPair> body_link_joints;
     std::map<std::string, double> thickness;
+    std::map<std::string, double> max_contact_energy;
     for (YAML::const_iterator it = bodies.begin(); it != bodies.end(); ++it) {
       const YAML::Node& body = *it;
       body_link_joints[body["name"].as<std::string>()] = reach_lib::jointPair(
           joint_names[body["proximal"].as<std::string>()], joint_names[body["distal"].as<std::string>()]);
       thickness[body["name"].as<std::string>()] = body["thickness"].as<double>();
+      max_contact_energy[body["name"].as<std::string>()] = body["max_contact_energy_unconstrained"].as<double>();
     }
     // Build extremities
     const YAML::Node& extremities = human_config["extremities"];
@@ -385,10 +402,10 @@ class HumanReachTimeIntervalTestSingleJoint : public ::testing::Test {
       extremity_length.push_back(extremity["length"].as<double>());
       extremity_thickness.push_back(extremity["thickness"].as<double>());
     }
-    human_reach_single_joint_standard_ = new HumanReach(joint_names.size(), joint_names, body_link_joints, thickness, joint_v_max,
+    human_reach_single_joint_standard_ = new HumanReach(joint_names.size(), joint_names, body_link_joints, thickness, max_contact_energy, joint_v_max,
                                   joint_a_max, extremity_base_names, extremity_end_names, extremity_length,
                                   extremity_thickness, measurement_error_pos, measurement_error_vel, delay);
-    human_reach_single_joint_time_interval_ = new HumanReach(joint_names.size(), joint_names, body_link_joints, thickness, joint_v_max,
+    human_reach_single_joint_time_interval_ = new HumanReach(joint_names.size(), joint_names, body_link_joints, thickness, max_contact_energy, joint_v_max,
                                            joint_a_max, extremity_base_names, extremity_end_names, extremity_length,
                                                         extremity_thickness, measurement_error_pos, measurement_error_vel, delay);
 
@@ -430,11 +447,13 @@ class HumanReachTimeIntervalTestArm : public ::testing::Test {
     const YAML::Node& bodies = human_config["bodies"];
     std::map<std::string, reach_lib::jointPair> body_link_joints;
     std::map<std::string, double> thickness;
+    std::map<std::string, double> max_contact_energy;
     for (YAML::const_iterator it = bodies.begin(); it != bodies.end(); ++it) {
       const YAML::Node& body = *it;
       body_link_joints[body["name"].as<std::string>()] = reach_lib::jointPair(
           joint_names[body["proximal"].as<std::string>()], joint_names[body["distal"].as<std::string>()]);
       thickness[body["name"].as<std::string>()] = body["thickness"].as<double>();
+      max_contact_energy[body["name"].as<std::string>()] = body["max_contact_energy_unconstrained"].as<double>();
     }
     // Build extremities
     const YAML::Node& extremities = human_config["extremities"];
@@ -452,6 +471,7 @@ class HumanReachTimeIntervalTestArm : public ::testing::Test {
                                   joint_names,
                                   body_link_joints,
                                   thickness,
+                                  max_contact_energy,
                                   joint_v_max,
                                   joint_a_max,
                                   extremity_base_names,
@@ -465,6 +485,7 @@ class HumanReachTimeIntervalTestArm : public ::testing::Test {
                                                            joint_names,
                                                            body_link_joints,
                                                            thickness,
+                                                           max_contact_energy,
                                                            joint_v_max,
                                                            joint_a_max,
                                                            extremity_base_names,

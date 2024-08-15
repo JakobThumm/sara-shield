@@ -127,11 +127,13 @@ SafetyShield::SafetyShield(double sample_time, std::string trajectory_config_fil
   const YAML::Node& bodies = human_config["bodies"];
   std::map<std::string, reach_lib::jointPair> body_link_joints;
   std::map<std::string, double> thickness;
+  std::map<std::string, double> max_contact_energy;
   for (YAML::const_iterator it = bodies.begin(); it != bodies.end(); ++it) {
     const YAML::Node& body = *it;
     body_link_joints[body["name"].as<std::string>()] = reach_lib::jointPair(
         joint_names[body["proximal"].as<std::string>()], joint_names[body["distal"].as<std::string>()]);
     thickness[body["name"].as<std::string>()] = body["thickness"].as<double>();
+    max_contact_energy[body["name"].as<std::string>()] = body["max_contact_energy_unconstrained"].as<double>();
   }
 
   bool use_combined_model = human_config["use_combined_model"].as<bool>();
@@ -164,6 +166,7 @@ SafetyShield::SafetyShield(double sample_time, std::string trajectory_config_fil
     joint_names,
     body_link_joints, 
     thickness, 
+    max_contact_energy,
     joint_v_max, 
     joint_a_max,
     measurement_error_pos, 

@@ -40,49 +40,49 @@ bodies:
     proximal: "lShldr"
     distal: "lForeArm"
     thickness: 0.2
-    max_contact_energy_unconstrained: 0.75
+    max_contact_energy_unconstrained: 0.25
 
   - name: "lLowerArm"
     proximal: "lForeArm"
     distal: "lHand"
     thickness: 0.132
-    max_contact_energy_unconstrained: 1
+    max_contact_energy_unconstrained: 0.5
 
   - name: "lHand"
     proximal: "lHand"
     distal: "lHand"
     thickness: 0.206
-    max_contact_energy_unconstrained: 1
+    max_contact_energy_unconstrained: 0.5
 
   - name: "rUpperArm" 
     proximal: "rShldr"
     distal: "rForeArm"
     thickness: 0.2
-    max_contact_energy_unconstrained: 0.75
+    max_contact_energy_unconstrained: 0.25
 
   - name: "rLowerArm"
     proximal: "rForeArm"
     distal: "rHand"
     thickness: 0.132
-    max_contact_energy_unconstrained: 1
+    max_contact_energy_unconstrained: 0.5
 
   - name: "rHand"
     proximal: "rHand"
     distal: "rHand"
     thickness: 0.206
-    max_contact_energy_unconstrained: 1
+    max_contact_energy_unconstrained: 0.5
 
   - name: "torso"
     proximal: "hip"
     distal: "neck"
     thickness: 0.434
-    max_contact_energy_unconstrained: 0.75
+    max_contact_energy_unconstrained: 0.25
   
   - name: "head"
     proximal: "head"
     distal: "head"
     thickness: 0.434
-    max_contact_energy_unconstrained: 0.2
+    max_contact_energy_unconstrained: 0.1
 
 extremities:
   - name: "lArm"
