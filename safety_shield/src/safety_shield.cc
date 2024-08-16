@@ -9,7 +9,7 @@ SafetyShield::SafetyShield()
       j_max_allowed_({0, 0, 0}),
       a_max_ltt_({0, 0, 0}),
       j_max_ltt_({0, 0, 0}) {
-  spdlog::info("Safety shield created.");
+  safety_shield_logger::info("Safety shield created.");
 }
 
 SafetyShield::SafetyShield(int nb_joints, double sample_time, double max_s_stop,
@@ -49,41 +49,54 @@ SafetyShield::SafetyShield(int nb_joints, double sample_time, double max_s_stop,
   std::vector<double> q_max(nb_joints, -3.141);
   ltp_ =
       long_term_planner::LongTermPlanner(nb_joints, sample_time, q_min, q_max, v_max_allowed, a_max_path, j_max_path);
-  spdlog::info("Safety shield created.");
+  safety_shield_logger::info("Safety shield created.");
 }
 
 SafetyShield::SafetyShield(double sample_time, std::string trajectory_config_file, std::string robot_config_file,
                            std::string mocap_config_file, double init_x, double init_y, double init_z, double init_roll,
                            double init_pitch, double init_yaw, const std::vector<double>& init_qpos,
                            ShieldType shield_type)
-    : sample_time_(sample_time), path_s_(0), path_s_discrete_(0), shield_type_(shield_type) {
+    : sample_time_(sample_time), path_s_(0), path_s_discrete_(0), shield_type_(shield_type), current_joint_angles_(init_qpos)  {
+
+  ConfigParser config_parser = ConfigParser();
+  config_parser.loadConfig(trajectory_config_file, robot_config_file, mocap_config_file);
+  safety_shield_logger::info(config_parser.toString());
+
   ///////////// Build robot reach
-  YAML::Node robot_config = YAML::LoadFile(robot_config_file);
-  std::string robot_name = robot_config["robot_name"].as<std::string>();
-  nb_joints_ = robot_config["nb_joints"].as<int>();
-  std::vector<double> transformation_matrices = robot_config["transformation_matrices"].as<std::vector<double>>();
-  std::vector<double> enclosures = robot_config["enclosures"].as<std::vector<double>>();
-  double secure_radius = robot_config["secure_radius"].as<double>();
+
+  // get values from parser
+  ConfigParser::RobotConfig robot_config = config_parser.robot_config;
+  std::string robot_name = robot_config.robot_name;
+  nb_joints_ = robot_config.nb_joints;
+  std::vector<double> transformation_matrices = robot_config.transformation_matrices;
+  std::vector<double> enclosures = robot_config.enclosures;
+  double secure_radius = robot_config.secure_radius;
+
+  secure_radius_ = secure_radius;
   robot_reach_ = new RobotReach(transformation_matrices, nb_joints_, enclosures, init_x,
                                 init_y, init_z, init_roll, init_pitch, init_yaw, secure_radius);
+  robot_actual_reach_ = new RobotReach(transformation_matrices, nb_joints_, enclosures, init_x,
+                                init_y, init_z, init_roll, init_pitch, init_yaw, secure_radius);
+
   ////////////// Setting trajectory variables
-  YAML::Node trajectory_config = YAML::LoadFile(trajectory_config_file);
-  max_s_stop_ = trajectory_config["max_s_stop"].as<double>();
-  q_min_allowed_ = trajectory_config["q_min_allowed"].as<std::vector<double>>();
-  q_max_allowed_ = trajectory_config["q_max_allowed"].as<std::vector<double>>();
-  v_max_allowed_ = trajectory_config["v_max_allowed"].as<std::vector<double>>();
-  a_max_allowed_ = trajectory_config["a_max_allowed"].as<std::vector<double>>();
-  j_max_allowed_ = trajectory_config["j_max_allowed"].as<std::vector<double>>();
-  a_max_ltt_ = trajectory_config["a_max_ltt"].as<std::vector<double>>();
-  j_max_ltt_ = trajectory_config["j_max_ltt"].as<std::vector<double>>();
+
+  // get values from parser
+  ConfigParser::TrajectoryConfig trajectory_config = config_parser.trajectory_config;
+  max_s_stop_ = trajectory_config.max_s_stop;
+  q_min_allowed_ = trajectory_config.q_min_allowed;
+  q_max_allowed_ = trajectory_config.q_max_allowed;
+  v_max_allowed_ = trajectory_config.v_max_allowed;
+  a_max_allowed_ = trajectory_config.a_max_allowed;
+  j_max_allowed_ = trajectory_config.j_max_allowed;
+  a_max_ltt_ = trajectory_config.a_max_ltt;
+  j_max_ltt_ = trajectory_config.j_max_ltt;
   ltp_ = long_term_planner::LongTermPlanner(nb_joints_, sample_time, q_min_allowed_, q_max_allowed_, v_max_allowed_,
                                             a_max_ltt_, j_max_ltt_);
-  v_safe_ = trajectory_config["v_safe"].as<double>();
-  alpha_i_max_ = trajectory_config["alpha_i_max"].as<double>();
+  v_safe_ = trajectory_config.v_safe;
+  alpha_i_max_ = trajectory_config.alpha_i_max;
   RobotReach::Velocity_method velocity_method =
-      static_cast<RobotReach::Velocity_method>(trajectory_config["velocity_method"].as<int>());
-  robot_reach_->setVelocityMethod(velocity_method);
-  spdlog::info("velocity_method = {}", velocity_method);
+      static_cast<RobotReach::Velocity_method>(trajectory_config.velocity_method);
+
   // Initialize the long term trajectory
   sliding_window_k_ = (int)std::floor(max_s_stop_ / sample_time_);
   std::vector<Motion> long_term_traj;
@@ -94,54 +107,78 @@ SafetyShield::SafetyShield(double sample_time, std::string trajectory_config_fil
     long_term_trajectory_ = LongTermTraj(long_term_traj, sample_time_, *robot_reach_, path_s_discrete_, sliding_window_k_);
   }
   //////////// Build human reach
-  YAML::Node human_config = YAML::LoadFile(mocap_config_file);
-  double measurement_error_pos = human_config["measurement_error_pos"].as<double>();
-  double measurement_error_vel = human_config["measurement_error_vel"].as<double>();
-  double delay = human_config["delay"].as<double>();
 
-  std::vector<std::string> joint_name_vec = human_config["joint_names"].as<std::vector<std::string>>();
+  // get values from parser
+  ConfigParser::HumanConfig human_config = config_parser.human_config;
+  double measurement_error_pos = human_config.measurement_error_pos;
+  double measurement_error_vel = human_config.measurement_error_vel;
+  double delay = human_config.delay;
+
+  std::vector<std::string> joint_name_vec = human_config.joint_names;
   std::map<std::string, int> joint_names;
   for (std::size_t i = 0; i < joint_name_vec.size(); ++i) {
     joint_names[joint_name_vec[i]] = i;
   }
-
-  std::vector<double> joint_v_max = human_config["joint_v_max"].as<std::vector<double>>();
-  std::vector<double> joint_a_max = human_config["joint_a_max"].as<std::vector<double>>();
+  std::vector<double> joint_v_max = human_config.joint_v_max;
+  std::vector<double> joint_a_max = human_config.joint_a_max;
   // Build bodies
-  const YAML::Node& bodies = human_config["bodies"];
   std::map<std::string, reach_lib::jointPair> body_link_joints;
   std::map<std::string, double> thickness;
-  for (YAML::const_iterator it = bodies.begin(); it != bodies.end(); ++it) {
-    const YAML::Node& body = *it;
-    body_link_joints[body["name"].as<std::string>()] = reach_lib::jointPair(
-        joint_names[body["proximal"].as<std::string>()], joint_names[body["distal"].as<std::string>()]);
-    thickness[body["name"].as<std::string>()] = body["thickness"].as<double>();
+
+  for (std::size_t i = 0; i < human_config.body_parts.size(); ++i) {
+
+    body_link_joints[human_config.body_parts[i]] = reach_lib::jointPair(
+        joint_names[human_config.body_part_proximal[i]], joint_names[human_config.body_part_distal[i]]);
+    thickness[human_config.body_parts[i]] = human_config.joint_thickness[i];
   }
-  // Build extremities
-  const YAML::Node& extremities = human_config["extremities"];
-  std::vector<std::string> extremity_base_names;
-  std::vector<std::string> extremity_end_names;
+
+
+  bool use_combined_model = human_config.use_combined_model;
+  std::vector<std::string> extremity_base_names, extremity_end_names;
   std::vector<double> extremity_length, extremity_thickness;
-  for (YAML::const_iterator it = extremities.begin(); it != extremities.end(); ++it) {
-    const YAML::Node& extremity = *it;
-    extremity_base_names.push_back(extremity["base"].as<std::string>());
-    extremity_end_names.push_back(extremity["end"].as<std::string>());
-    extremity_length.push_back(extremity["length"].as<double>());
-    extremity_thickness.push_back(extremity["thickness"].as<double>());
+  if (use_combined_model) {
+    // Build extremities
+    std::vector<std::string> extremity_base_names;
+    std::vector<std::string> extremity_end_names;
+    std::vector<double> extremity_length;
+    std::vector<double> extremity_thickness;
+    for (std::size_t i = 0; i < human_config.extremity_base_names.size(); ++i) {
+      extremity_base_names.push_back(human_config.extremity_base_names[i]);
+      extremity_end_names.push_back(human_config.extremity_end_names[i]);
+      extremity_length.push_back(human_config.extremity_length[i]);
+      extremity_thickness.push_back(human_config.extremity_thickness[i]);
+    }
   }
-  human_reach_ = new HumanReach(joint_names.size(),
+
+  bool use_kalman_filter = human_config.use_kalman_filter;
+  double s_w, s_v, initial_pos_var, initial_vel_var;
+  if (use_kalman_filter) {
+    s_w = human_config.s_w;
+    s_v = human_config.s_v;
+    initial_pos_var = human_config.initial_pos_var;
+    initial_vel_var = human_config.initial_vel_var;
+  }
+  human_reach_ = createHumanReach(
+    use_combined_model,
+    use_kalman_filter,
+    joint_names.size(),
     joint_names,
     body_link_joints, 
     thickness, 
     joint_v_max, 
     joint_a_max,
+    measurement_error_pos, 
+    measurement_error_vel, 
+    delay,
     extremity_base_names, 
     extremity_end_names, 
     extremity_length,
     extremity_thickness,
-    measurement_error_pos, 
-    measurement_error_vel, 
-    delay);
+    s_w,
+    s_v,
+    initial_pos_var,
+    initial_vel_var
+  );
   ///////////// Build verifier
   verify_ = new safety_shield::VerifyISO();
   /////////// Other settings
@@ -158,7 +195,7 @@ SafetyShield::SafetyShield(double sample_time, std::string trajectory_config_fil
   }
   Motion goal_motion = computesPotentialTrajectory(is_safe_, prev_dq);
   next_motion_ = determineNextMotion(is_safe_);
-  spdlog::info("Safety shield created.");
+  safety_shield_logger::info("Safety shield created.");
 }
 
 void SafetyShield::reset(double init_x, double init_y, double init_z, double init_roll, double init_pitch,
@@ -197,7 +234,7 @@ void SafetyShield::reset(double init_x, double init_y, double init_z, double ini
   }
   Motion goal_motion = computesPotentialTrajectory(is_safe_, prev_dq);
   next_motion_ = determineNextMotion(is_safe_);
-  spdlog::info("Safety shield resetted.");
+  safety_shield_logger::info("Safety shield resetted.");
 }
 
 bool SafetyShield::planSafetyShield(double pos, double vel, double acc, double ve, double a_max, double j_max,
@@ -328,14 +365,14 @@ bool SafetyShield::planSafetyShield(double pos, double vel, double acc, double v
       j23 = 0;
     }
     if (t01 < 0 || t12 < 0 || t23 < 0) {
-      spdlog::debug("planSafetyShield calculated time negative. t01 = {}, t12 = {}, t23 = {}", t01, t12, t23);
+      safety_shield_logger::debug("planSafetyShield calculated time negative. t01 = {}, t12 = {}, t23 = {}", t01, t12, t23);
       return false;
     }
     std::array<double, 6> new_phases = {t01, t01 + t12, t01 + t12 + t23, j01, j12, j23};
     path.setPhases(new_phases);
     return true;
   } catch (const std::exception& exc) {
-    spdlog::error("Exception in SafetyShield::planSafetyShield: {}", exc.what());
+    safety_shield_logger::error("Exception in SafetyShield::planSafetyShield: {}", exc.what());
     return false;
   }
 }
@@ -397,6 +434,14 @@ Motion SafetyShield::computesPotentialTrajectory(bool v, const std::vector<doubl
       calculateMaxAccJerk(prev_speed, a_max_ltt_, j_max_ltt_, a_max_manoeuvre, j_max_manoeuvre);
     }
 
+    // If there is a new LTT for the first time (new_ltt_processed_ == false), set the safe path to stop the robot.
+    // This is to prevent the robot from advancing the old LTT on a PFL trajectory instead of moving to the new LTT.
+    if (!new_ltt_processed_ && shield_type_ == ShieldType::PFL) {
+        planSafetyShield(safe_path_.getPosition(), safe_path_.getVelocity(), safe_path_.getAcceleration(),
+                           0, a_max_manoeuvre, j_max_manoeuvre, failsafe_path_);
+        safe_path_ = failsafe_path_;
+    }
+
     // Desired movement, one timestep
     //  if not already on the repair path, plan a repair path
     if (!recovery_path_.isCurrent()) {
@@ -449,7 +494,7 @@ Motion SafetyShield::computesPotentialTrajectory(bool v, const std::vector<doubl
     goal_motion.setTime(potential_path_.getPhase(3));
     return goal_motion;
   } catch (const std::exception& exc) {
-    spdlog::error("Exception in SafetyShield::computesPotentialTrajectory: {}", exc.what());
+    safety_shield_logger::error("Exception in SafetyShield::computesPotentialTrajectory: {}", exc.what());
     throw exc;
     return Motion();
   }
@@ -480,13 +525,15 @@ bool SafetyShield::planPFLFailsafe(double a_max_manoeuvre, double j_max_manoeuvr
   if(!is_under_iso_velocity) {
     v_limit = v_safe_ / v_max;
     if(v_limit > 1 || v_limit < 0) {
-      spdlog::error("v_limit not between 0 and 1");
+      safety_shield_logger::error("v_limit not between 0 and 1");
     }
   } else {
     v_limit = recovery_path_.getVelocity();
   }
   // This is the PFL failsafe path that ends in a velocity that is under v_iso.
-  planning_success = planSafetyShield(recovery_path_.getPosition(), recovery_path_.getVelocity(), recovery_path_.getAcceleration(), v_limit, a_max_manoeuvre, j_max_manoeuvre, failsafe_path_2_);
+  double eps_ds = 0.001;
+  // Plan to be slightly lower than v_limit to eliminate numerical errors
+  planning_success = planSafetyShield(recovery_path_.getPosition(), recovery_path_.getVelocity(), recovery_path_.getAcceleration(), v_limit - eps_ds, a_max_manoeuvre, j_max_manoeuvre, failsafe_path_2_);
   // If the entire long-term trajectory is under iso-velocity, we dont need to check the velocity of the failsafe-path
   if(!is_under_iso_velocity) {
     // Check if the entire failsafe path is under iso-velocity
@@ -553,6 +600,7 @@ Motion SafetyShield::determineNextMotion(bool is_safe) {
 }
 
 Motion SafetyShield::step(double cycle_begin_time) {
+  
   cycle_begin_time_ = cycle_begin_time;
   try {
     // Get current motion
@@ -572,17 +620,7 @@ Motion SafetyShield::step(double cycle_begin_time) {
       bool is_plannable = checkCurrentMotionForReplanning(current_motion);
       if (is_plannable) {
         // Check if the starting position of the last replanning was very close to the current position
-        bool last_close = true;
-        if (new_ltt_ == true) {
-          for (int i = 0; i < current_motion.getAngle().size(); i++) {
-            if (std::abs(current_motion.getAngle()[i] - last_replan_start_motion_.getAngle()[i]) > 0.01) {
-              last_close = false;
-              break;
-            }
-          }
-        } else {
-          last_close = false;
-        }
+        bool last_close = new_ltt_ && abs(path_s_ - last_replan_s_) < sample_time_;
         // Only replan if the current joint position is different from the last.
         bool success = true;
         if (!last_close) {
@@ -590,7 +628,7 @@ Motion SafetyShield::step(double cycle_begin_time) {
                                                 current_motion.getAcceleration(), new_goal_motion_.getAngle(),
                                                 new_long_term_trajectory_);
           if (success) {
-            last_replan_start_motion_ = current_motion;
+            last_replan_s_ = path_s_;
           }
         }
         if (success) {
@@ -631,6 +669,10 @@ Motion SafetyShield::step(double cycle_begin_time) {
         if (shield_type_ == ShieldType::PFL) {
           is_safe_ = is_safe_ || is_under_v_limit_;
         }
+
+        if (!checkTrajSafety())
+          is_safe_ = false;
+
       }
     } else {
       is_safe_ = true;
@@ -641,9 +683,30 @@ Motion SafetyShield::step(double cycle_begin_time) {
     new_ltt_processed_ = true;
     return next_motion_;
   } catch (const std::exception& exc) {
-    spdlog::error("Exception in SafetyShield::getNextCycle: {}", exc.what());
+    safety_shield_logger::error("Exception in SafetyShield::getNextCycle: {}", exc.what());
     return Motion();
   }
+}
+
+bool SafetyShield::checkTrajSafety() {
+  robot_actual_reach_->calculateAllTransformationMatricesAndCapsules(current_joint_angles_);
+  std::vector<occupancy_containers::capsule::Capsule> capsules = robot_actual_reach_->getRobotCapsulesForVelocity();
+  double error_p1;
+  double error_p2;
+
+  for (int i = 0; i < nb_joints_; i++) {
+    error_p1 = sqrt(pow(robot_capsules_[i].p1_.x - capsules[i].p1_.x, 2) + pow(robot_capsules_[i].p1_.y - capsules[i].p1_.y, 2) + pow(robot_capsules_[i].p1_.z - capsules[i].p1_.z, 2));
+    error_p2 = sqrt(pow(robot_capsules_[i].p2_.x - capsules[i].p2_.x, 2) + pow(robot_capsules_[i].p2_.y - capsules[i].p2_.y, 2) + pow(robot_capsules_[i].p2_.z - capsules[i].p2_.z, 2));
+
+    if (error_p1 > secure_radius_ || error_p2 > secure_radius_) {
+      safety_shield_logger::info("Trajectory violated secure_radius.");
+      return false;
+    }
+    
+  }
+  
+  return true;
+
 }
 
 Motion SafetyShield::getCurrentMotion() {
@@ -678,21 +741,22 @@ void SafetyShield::newLongTermTrajectory(const std::vector<double>& goal_positio
     motion_dq.reserve(nb_joints_);
     for (int i = 0; i < nb_joints_; i++) {
       // TODO: replace with config max min values
-      motion_q.push_back(std::clamp(goal_position[i], q_min_allowed_[i], q_max_allowed_[i]));
-      motion_dq.push_back(std::clamp(goal_velocity[i], -v_max_allowed_[i], v_max_allowed_[i]));
+
+      // for C++ 11 compatability
+      // motion_q.push_back(std::clamp(goal_position[i], q_min_allowed_[i], q_max_allowed_[i]));
+      // motion_dq.push_back(std::clamp(goal_velocity[i], -v_max_allowed_[i], v_max_allowed_[i]));
+      motion_q.push_back((goal_position[i] < q_min_allowed_[i]) ? q_min_allowed_[i] : (goal_position[i] > q_max_allowed_[i]) ? q_max_allowed_[i] : goal_position[i]);
+      motion_dq.push_back((goal_velocity[i] < -v_max_allowed_[i]) ? -v_max_allowed_[i] : (goal_velocity[i] > v_max_allowed_[i]) ? v_max_allowed_[i] : goal_velocity[i]);
+
     }
     new_goal_motion_ = Motion(cycle_begin_time_, motion_q, motion_dq);
     new_goal_ = true;
     new_ltt_ = false;
     new_ltt_processed_ = false;
-    std::vector<double> dummy_q;
-    for (int i = 0; i < nb_joints_; i++) {
-      // fill with high values to guarantee this is not close to current joint position
-      dummy_q.push_back(-1234567);
-    }
-    last_replan_start_motion_ = Motion(cycle_begin_time_, dummy_q);
+    // High negative number to make sure we replan the LTT.
+    // last_replan_s_ = -1E9;
   } catch (const std::exception& exc) {
-    spdlog::error("Exception in SafetyShield::newLongTermTrajectory: {}", exc.what());
+    safety_shield_logger::error("Exception in SafetyShield::newLongTermTrajectory: {}", exc.what());
   }
 }
 

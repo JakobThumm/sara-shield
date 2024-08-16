@@ -27,7 +27,7 @@ bool VerifyISO::verify_human_reach(const std::vector<reach_lib::Capsule>& robot_
     }
     return false;
   } catch (const std::exception& exc) {
-    spdlog::error("Exception in VerifyISO::verify_human_reach: {}", exc.what());
+    safety_shield_logger::error("Exception in VerifyISO::verify_human_reach: {}", exc.what());
     return false;
   }
 }

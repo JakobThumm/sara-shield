@@ -4,7 +4,22 @@ project(safety_shield)
 ## Compile as C++17
 add_compile_options(-std=c++17)
 
+# Add an option to enable Address Sanitizer
+option(ENABLE_ASAN "Enable Address Sanitizer" OFF)
+
+if (ENABLE_ASAN)
+    message("Address Sanitizer enabled")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address -g")
+    set(CMAKE_LINKER_FLAGS "${CMAKE_LINKER_FLAGS} -fsanitize=address")
+endif ()
+
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
+## Add an option for enabling logging
+option(ENABLE_LOGGING "Enable logging using spdlog" ON)
+
+## Add an option for using header config
+option(USE_HEADER_CONFIG "Use header file for config without YAML dependency" OFF)
 
 ## Find catkin macros and libraries
 #find_package(Eigen3 3.4 REQUIRED NO_MODULE)
@@ -21,6 +36,13 @@ include_directories(
         include
 )
 
+## Find Python
+set (PYBIND11_PYTHON_VERSION "3.8")
+set(PYTHON_EXECUTABLE "$ENV{CONDA_PREFIX}/bin/python")
+set(PYTHON_INCLUDE_DIR "$ENV{CONDA_PREFIX}/include/python3.8")
+set(PYTHON_LIBRARY "$ENV{CONDA_PREFIX}/lib/libpython3.8.dylib")
+set(PYTHON_LIBRARY_DEBUG "$ENV{CONDA_PREFIX}/lib/libpython3.8.dylib")
+
 ## Declare a C++ library
 add_library(${PROJECT_NAME}
         src/safety_shield.cc
@@ -29,38 +51,63 @@ add_library(${PROJECT_NAME}
         src/path.cc
         src/robot_reach.cc
         src/human_reach.cc
+        src/measurement_handler.cc
+        src/kalman_filter.cc
         src/verify_iso.cc
-        #src/advanced_verify_iso.cc
-        )
+        
+)
 
 # Add external subdirectories
 add_subdirectory(external/pybind11)
 add_subdirectory(external/SaRA/ReachLib)
 add_subdirectory(external/LongTermPlanner)
-add_subdirectory(external/spdlog)
-add_subdirectory(external/yaml-cpp)
+
+# Conditionally include YAML dependency if USE_HEADER_CONFIG is OFF
+if (USE_HEADER_CONFIG)
+    add_definitions(-DUSE_HEADER_CONFIG)
+else()
+    add_subdirectory(external/yaml-cpp)
+    target_include_directories(${PROJECT_NAME}
+        PUBLIC external/yaml-cpp/include
+    )
+    target_link_directories(${PROJECT_NAME}
+        PUBLIC external/yaml-cpp/src
+    )
+    target_link_libraries(${PROJECT_NAME} yaml-cpp)
+endif()
+
+# Conditionally include spdlog if logging is enabled
+if (ENABLE_LOGGING)
+    add_definitions(-DENABLE_LOGGING)
+    add_subdirectory(external/spdlog)
+    target_include_directories(${PROJECT_NAME}
+        PUBLIC external/spdlog/include
+    )
+    target_link_directories(${PROJECT_NAME}
+        PUBLIC external/spdlog/src
+    )
+    set(LOGGING_LIB spdlog)
+else()
+    set(LOGGING_LIB "")
+endif()
 
 target_include_directories(${PROJECT_NAME}
         PUBLIC external/pybind11/include
-        PUBLIC external/ReachLib/include
+        PUBLIC external/SaRA/ReachLib/include
         PUBLIC external/LongTermPlanner/include
-        PUBLIC external/spdlog/include
-        PUBLIC external/yaml-cpp/include
-        )
+)
 
 target_link_directories(${PROJECT_NAME}
-        PUBLIC external/ReachLib/src
+        PUBLIC external/SaRA/ReachLib/src
         PUBLIC external/LongTermPlanner/src
-        PUBLIC external/spdlog/src
-        PUBLIC external/yaml-cpp/src
-        )
+)
 
-target_link_libraries(${PROJECT_NAME} SaRA long_term_planner spdlog yaml-cpp)
+target_link_libraries(${PROJECT_NAME} SaRA long_term_planner ${LOGGING_LIB})
 
 install(TARGETS ${PROJECT_NAME} DESTINATION /usr/lib)
 
 add_executable(debug src/debug.cc)
-target_link_libraries(debug ${PROJECT_NAME} long_term_planner spdlog yaml-cpp)
+target_link_libraries(debug ${PROJECT_NAME} long_term_planner ${LOGGING_LIB})
 #############
 ## GTest ##
 #############
@@ -107,4 +154,4 @@ gtest_discover_tests(safety_shield_tests)
 ## Bindings ##
 ##############
 pybind11_add_module(safety_shield_py MODULE bindings/safety_shield_bindings.cpp)
-target_link_libraries(safety_shield_py PRIVATE ${PROJECT_NAME} long_term_planner spdlog yaml-cpp)
+target_link_libraries(safety_shield_py PRIVATE ${PROJECT_NAME} long_term_planner ${LOGGING_LIB})

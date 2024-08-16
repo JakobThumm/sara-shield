@@ -92,7 +92,7 @@ std::vector<reach_lib::Capsule> RobotReach::reach(Motion& start_config, Motion& 
     }
     return reach_capsules;
   } catch (const std::exception& exc) {
-    spdlog::error("Exception in RobotReach::reach: {}", exc.what());
+    safety_shield_logger::error("Exception in RobotReach::reach: {}", exc.what());
     return {};
   }
 }

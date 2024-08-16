@@ -18,6 +18,7 @@
 
 #include <cmath>
 #include <vector>
+#include "safety_shield/safety_shield_logger.h"
 
 #ifndef MOTION_H
 #define MOTION_H

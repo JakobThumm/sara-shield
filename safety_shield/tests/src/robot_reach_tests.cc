@@ -5,7 +5,6 @@
 
 #include "robot_reach_fixture.h"
 #include "safety_shield/robot_reach.h"
-#include "spdlog/spdlog.h"
 
 namespace safety_shield {
 

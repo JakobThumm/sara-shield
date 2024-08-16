@@ -1,0 +1,82 @@
+# curtains information
+measurement_error_pos: 0.0
+measurement_error_vel: 0.1
+delay: 0.0
+use_kalman_filter: false
+s_w: 2.0e+2
+s_v: 1.0e-6
+initial_pos_var: 0.003
+initial_vel_var: 0.5
+
+use_combined_model: true
+
+# Names of joints in correct outputted order
+joint_names: [
+  "rShoulder", "lHand", "lShoulder", "Torso", "rElbow", 
+  "rHand", "Collar", "Head", "lElbow"
+]
+joint_v_max: [
+  2, 2, 2, 2, 2, 
+  2, 2, 2, 2
+]
+
+joint_a_max: [
+  50, 50, 50, 50, 50, 
+  50, 20, 20, 50
+]
+
+# All values are in the 95% Quantiles defined in DIN 33402-2
+# There are no values about arm circumference, so we take the leg values as overapproximation.
+bodies:
+  - name: "lUpperArm"
+    proximal: "lShoulder"
+    distal: "lElbow"
+    thickness: 0.108
+
+  - name: "lLowerArm"
+    proximal: "lElbow"
+    distal: "lHand"
+    thickness: 0.068
+
+  - name: "lHand"
+    proximal: "lHand"
+    distal: "lHand"
+    thickness: 0.208
+
+  - name: "rUpperArm"
+    proximal: "rShoulder"
+    distal: "rElbow"
+    thickness: 0.108
+
+  - name: "rLowerArm"
+    proximal: "rElbow"
+    distal: "rHand"
+    thickness: 0.068
+
+  - name: "rHand"
+    proximal: "rHand"
+    distal: "rHand"
+    thickness: 0.208
+
+  - name: "torso"
+    proximal: "Collar"
+    distal: "Torso"
+    thickness: 0.193
+
+  - name: "head"
+    proximal: "Head"
+    distal: "Head"
+    thickness: 0.3
+
+extremities:
+  - name: "lArm"
+    base: "lShoulder"
+    end: "lHand"
+    length: 1.0
+    thickness: 0.01
+    
+  - name: "rArm"
+    base: "rShoulder"
+    end: "rHand"
+    length: 1.0
+    thickness: 0.01

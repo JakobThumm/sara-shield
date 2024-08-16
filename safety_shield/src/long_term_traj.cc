@@ -66,11 +66,13 @@ Motion LongTermTraj::interpolate(double s, double ds, double dds, double ddds, s
     // Calculate LTT velocity
     double v_max_int = dq1[i] + dt * ddq1[i] + 1.0 / 2 * dt * dt * dddq1[i];
     double v_int = v_max_int * ds;
-    dq[i] = std::clamp(v_int, -v_max_allowed[i], v_max_allowed[i]);
+    // for C++11 compatability std::clamp(v_int, -v_max_allowed[i], v_max_allowed[i]);
+    dq[i] = ((v_int < -v_max_allowed[i]) ? -v_max_allowed[i] : (v_int > v_max_allowed[i]) ? v_max_allowed[i] : v_int);
     // Calculate Acceleration
     double a_max_int = ddq1[i] + dt * dddq1[i];
     double a_int = v_max_int * dds + ds * ds * a_max_int;
-    ddq[i] = std::clamp(a_int, -a_max_allowed[i], a_max_allowed[i]);
+    // for C++11 compatability std::clamp(a_int, -a_max_allowed[i], a_max_allowed[i]);
+    ddq[i] = ((a_int < -a_max_allowed[i]) ? -a_max_allowed[i] : (a_int > a_max_allowed[i]) ? a_max_allowed[i] : a_int);
     dddq[i] = dddq1[i] * ds * ds * ds + 3.0 * a_max_int * dds * ds + v_max_int * ddds;
   }
   return Motion(0.0, q, dq, ddq, dddq, s);

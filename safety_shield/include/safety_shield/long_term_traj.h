@@ -23,7 +23,7 @@
 
 #include "safety_shield/motion.h"
 #include "safety_shield/robot_reach.h"
-#include "spdlog/spdlog.h"  // https://github.com/gabime/spdlog
+#include "safety_shield/safety_shield_logger.h"  // https://github.com/gabime/spdlog
 
 #ifndef LONG_TERM_TRAJ_H
 #define LONG_TERM_TRAJ_H
@@ -220,8 +220,8 @@ class LongTermTraj {
   inline int getTrajectoryIndex(int index) const {
     int desired_pos = std::min(index - starting_index_, length_ - 1);
     if (desired_pos < current_pos_) {
-      // spdlog::debug("In LongTermTraj::getNextMotionAtIndex: desired_pos ({:08d}) < current_pos({:08d})", desired_pos,
-      // current_pos_);
+      safety_shield_logger::debug("In LongTermTraj::getNextMotionAtIndex: desired_pos ({:08d}) < current_pos({:08d})", desired_pos,
+      current_pos_);
       desired_pos = current_pos_;
     }
     return desired_pos;

@@ -5,7 +5,6 @@
 
 #include "safety_shield/safety_shield.h"
 #include "safety_shield_fixture.h"
-#include "spdlog/spdlog.h"
 
 namespace safety_shield {
 

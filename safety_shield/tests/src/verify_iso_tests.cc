@@ -5,7 +5,6 @@
 
 #include "reach_lib.hpp"
 #include "safety_shield/verify_iso.h"
-#include "spdlog/spdlog.h"
 #include "verify_iso_fixture.h"
 
 namespace safety_shield {
