@@ -65,7 +65,7 @@ class HumanReachCombinedOnlyTest : public ::testing::Test {
    */
   void SetUp() override {
     std::filesystem::path config_file =
-        std::filesystem::current_path().parent_path() / "config/human_reach_test_single_joint.yaml";
+        std::filesystem::current_path().parent_path() / "config/human_reach_test_single_joint_cm.yaml";
     human_reach_ = buildHumanReach(config_file.string());
   }
 };
@@ -85,7 +85,7 @@ class HumanReachCombinedOnlyArmTest : public ::testing::Test {
    */
   void SetUp() override {
     std::filesystem::path config_file =
-        std::filesystem::current_path().parent_path() / "config/human_reach_test_arm_pos.yaml";
+        std::filesystem::current_path().parent_path() / "config/human_reach_test_arm_pos_cm.yaml";
     human_reach_ = buildHumanReach(config_file.string());
   }
 };
