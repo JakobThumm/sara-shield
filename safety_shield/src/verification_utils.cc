@@ -37,6 +37,33 @@ std::map<int, std::vector<int>> findAllHumanRobotContacts(const std::vector<reac
   return human_robot_contacts;
 }
 
+std::vector<double> calculateRobotLinkEnergies(
+  const std::vector<double>& robot_link_velocities,
+  const std::vector<double>& robot_link_reflected_masses
+) {
+  std::vector<double> robot_link_energies;
+  for (int i = 0; i < robot_link_velocities.size(); i++) {
+    robot_link_energies.push_back(0.5 * robot_link_reflected_masses[i] * robot_link_velocities[i] * robot_link_velocities[i]);
+  }
+  return robot_link_energies;
+}
+
+bool checkContactEnergySafety(
+  const std::map<int, std::vector<int>>& human_robot_contacts,
+  const std::vector<double>& robot_link_energies,
+  const std::vector<double>& maximal_contact_energies
+) {
+  for (const auto& contact : human_robot_contacts) {
+    int human_capsule_index = contact.first;
+    for (const auto& robot_link_index : contact.second) {
+      if (robot_link_energies[robot_link_index] > maximal_contact_energies[human_capsule_index]) {
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
 bool checkVelocitySafety(
   const std::map<int, std::vector<int>>& human_robot_contacts,
   const std::vector<double>& robot_link_velocities,

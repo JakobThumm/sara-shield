@@ -60,32 +60,27 @@ SafetyShield::SafetyShield(double sample_time, std::string trajectory_config_fil
                            ShieldType shield_type)
     : sample_time_(sample_time), path_s_(0), path_s_discrete_(0), shield_type_(shield_type) {
   ///////////// Build robot reach
-  YAML::Node robot_config = YAML::LoadFile(robot_config_file);
-  std::string robot_name = robot_config["robot_name"].as<std::string>();
-  nb_joints_ = robot_config["nb_joints"].as<int>();
-  std::vector<double> transformation_matrices = robot_config["transformation_matrices"].as<std::vector<double>>();
-  std::vector<double> enclosures = robot_config["enclosures"].as<std::vector<double>>();
-  double secure_radius = robot_config["secure_radius"].as<double>();
-  robot_reach_ = new RobotReach(transformation_matrices, nb_joints_, enclosures, init_x,
-                                init_y, init_z, init_roll, init_pitch, init_yaw, secure_radius);
+  robot_reach_ = buildRobotReach(robot_config_file, init_x, init_y, init_z, init_roll, init_pitch, init_yaw);
+  nb_joints_ = robot_reach_->getNbJoints();
   ////////////// Setting trajectory variables
-  YAML::Node trajectory_config = YAML::LoadFile(trajectory_config_file);
-  max_s_stop_ = trajectory_config["max_s_stop"].as<double>();
-  q_min_allowed_ = trajectory_config["q_min_allowed"].as<std::vector<double>>();
-  q_max_allowed_ = trajectory_config["q_max_allowed"].as<std::vector<double>>();
-  v_max_allowed_ = trajectory_config["v_max_allowed"].as<std::vector<double>>();
-  a_max_allowed_ = trajectory_config["a_max_allowed"].as<std::vector<double>>();
-  j_max_allowed_ = trajectory_config["j_max_allowed"].as<std::vector<double>>();
-  a_max_ltt_ = trajectory_config["a_max_ltt"].as<std::vector<double>>();
-  j_max_ltt_ = trajectory_config["j_max_ltt"].as<std::vector<double>>();
-  ltp_ = long_term_planner::LongTermPlanner(nb_joints_, sample_time, q_min_allowed_, q_max_allowed_, v_max_allowed_,
-                                            a_max_ltt_, j_max_ltt_);
-  v_safe_ = trajectory_config["v_safe"].as<double>();
-  alpha_i_max_ = trajectory_config["alpha_i_max"].as<double>();
-  RobotReach::Velocity_method velocity_method =
-      static_cast<RobotReach::Velocity_method>(trajectory_config["velocity_method"].as<int>());
+  int velocity_method_int;
+  readTrajectoryConfig(
+    trajectory_config_file,
+    max_s_stop_,
+    q_min_allowed_,
+    q_max_allowed_,
+    v_max_allowed_,
+    a_max_allowed_,
+    j_max_allowed_,
+    a_max_ltt_,
+    j_max_ltt_,
+    v_safe_,
+    alpha_i_max_,
+    velocity_method_int,
+    reachability_set_interval_size_
+  );
+  RobotReach::Velocity_method velocity_method = static_cast<RobotReach::Velocity_method>(velocity_method_int);
   robot_reach_->setVelocityMethod(velocity_method);
-  spdlog::info("velocity_method = {}", velocity_method);
   // Initialize the long term trajectory
   sliding_window_k_ = (int)std::floor(max_s_stop_ / sample_time_);
   std::vector<Motion> long_term_traj;
@@ -102,82 +97,9 @@ SafetyShield::SafetyShield(double sample_time, std::string trajectory_config_fil
       v_max_allowed_, a_max_allowed_, j_max_allowed_, sliding_window_k_
     );
   }
-  if(trajectory_config["reachability_set_interval_size"]) {
-    reachability_set_interval_size_ = trajectory_config["reachability_set_interval_size"].as<double>();
-  } else {
-    reachability_set_interval_size_ = 10000;
-  }
-
   reachability_set_duration_ = reachability_set_interval_size_ * sample_time_;
   //////////// Build human reach
-  YAML::Node human_config = YAML::LoadFile(mocap_config_file);
-  double measurement_error_pos = human_config["measurement_error_pos"].as<double>();
-  double measurement_error_vel = human_config["measurement_error_vel"].as<double>();
-  double delay = human_config["delay"].as<double>();
-
-  std::vector<std::string> joint_name_vec = human_config["joint_names"].as<std::vector<std::string>>();
-  std::map<std::string, int> joint_names;
-  for (std::size_t i = 0; i < joint_name_vec.size(); ++i) {
-    joint_names[joint_name_vec[i]] = i;
-  }
-
-  std::vector<double> joint_v_max = human_config["joint_v_max"].as<std::vector<double>>();
-  std::vector<double> joint_a_max = human_config["joint_a_max"].as<std::vector<double>>();
-  // Build bodies
-  const YAML::Node& bodies = human_config["bodies"];
-  std::map<std::string, reach_lib::jointPair> body_link_joints;
-  std::map<std::string, double> thickness;
-  for (YAML::const_iterator it = bodies.begin(); it != bodies.end(); ++it) {
-    const YAML::Node& body = *it;
-    body_link_joints[body["name"].as<std::string>()] = reach_lib::jointPair(
-        joint_names[body["proximal"].as<std::string>()], joint_names[body["distal"].as<std::string>()]);
-    thickness[body["name"].as<std::string>()] = body["thickness"].as<double>();
-  }
-
-  bool use_combined_model = human_config["use_combined_model"].as<bool>();
-  std::vector<std::string> extremity_base_names, extremity_end_names;
-  std::vector<double> extremity_length, extremity_thickness;
-  if (!use_combined_model) {
-    // Build extremities
-    const YAML::Node& extremities = human_config["extremities"];
-    for (YAML::const_iterator it = extremities.begin(); it != extremities.end(); ++it) {
-      const YAML::Node& extremity = *it;
-      extremity_base_names.push_back(extremity["base"].as<std::string>());
-      extremity_end_names.push_back(extremity["end"].as<std::string>());
-      extremity_length.push_back(extremity["length"].as<double>());
-      extremity_thickness.push_back(extremity["thickness"].as<double>());
-    }
-  }
-
-  bool use_kalman_filter = human_config["use_kalman_filter"].as<bool>();
-  double s_w, s_v, initial_pos_var, initial_vel_var;
-  if (use_kalman_filter) {
-    s_w = human_config["s_w"].as<double>();
-    s_v = human_config["s_v"].as<double>();
-    initial_pos_var = human_config["initial_pos_var"].as<double>();
-    initial_vel_var = human_config["initial_vel_var"].as<double>();
-  }
-  human_reach_ = createHumanReach(
-    use_combined_model,
-    use_kalman_filter,
-    joint_names.size(),
-    joint_names,
-    body_link_joints, 
-    thickness, 
-    joint_v_max, 
-    joint_a_max,
-    measurement_error_pos, 
-    measurement_error_vel, 
-    delay,
-    extremity_base_names, 
-    extremity_end_names, 
-    extremity_length,
-    extremity_thickness,
-    s_w,
-    s_v,
-    initial_pos_var,
-    initial_vel_var
-  );
+  human_reach_ = buildHumanReach(mocap_config_file);
   ///////////// Build verifier
   verify_ = new safety_shield::VerifyISO();
   /////////// Other settings
@@ -713,9 +635,9 @@ bool SafetyShield::verifySafety(Motion& current_motion, Motion& goal_motion, con
       robot_link_radii,
       velocity_errors
     );
-    // TODO
-    std::vector<std::vector<double>> maximal_contact_velocities;
-    is_safe_ = verify_->verifyHumanReachVelocity(robot_capsules_time_intervals_, human_capsules_time_intervals_, robot_link_velocities, maximal_contact_velocities, collision_index);
+    std::vector<std::vector<double>> robot_link_reflected_masses = robot_reach_->calculateRobotLinkReflectedMassesPerTimeInterval(interval_edges_motions);
+    std::vector<std::vector<double>> maximal_contact_energies = human_reach_->getMaxContactEnergy();
+    is_safe_ = verify_->verifyHumanReachEnergy(robot_capsules_time_intervals_, human_capsules_time_intervals_, robot_link_velocities, robot_link_reflected_masses, maximal_contact_energies, collision_index);
   } else {
     // Verify if the robot and human reachable sets are collision free
     is_safe = verify_->verifyHumanReachTimeIntervals(robot_capsules_time_intervals_, human_capsules_time_intervals_, collision_index);

@@ -18,7 +18,6 @@
 #include <math.h>
 #include <stdio.h>
 #include <time.h>
-#include <yaml-cpp/yaml.h>
 
 #include <algorithm>
 #include <cmath>
@@ -38,6 +37,7 @@
 #include "safety_shield/verify.h"
 #include "safety_shield/verify_iso.h"
 #include "safety_shield/trajectory_utils.h"
+#include "safety_shield/config_utils.h"
 #include "spdlog/spdlog.h"
 
 #ifndef safety_shield_H
@@ -306,7 +306,7 @@ class SafetyShield {
    * Each time interval consists of this many shield time steps.
    * A good value is 5
    */
-  double reachability_set_interval_size_ = 10000;
+  int reachability_set_interval_size_ = 10000;
 
   /**
    * @brief duration is interval size * sampling time of safety shield

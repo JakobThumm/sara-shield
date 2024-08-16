@@ -314,6 +314,26 @@ class RobotReach {
   double exactVelOfCapsule(const int capsule, const Eigen::Vector3d& v, const Eigen::Vector3d& omega);
 
   /**
+   * @brief Calculate the reflected masses of the robot links for each time interval.
+   * 
+   * @param robot_motions motions of the time intervals
+   * @return std::vector<std::vector<double>> reflected masses of the robot links for each time interval
+   */
+  std::vector<std::vector<double>> calculateRobotLinkReflectedMassesPerTimeInterval(
+    const std::vector<Motion>& robot_motions
+  );
+
+   /**
+   * @brief Calculate the reflected masses of the robot links
+   * 
+   * @param robot_motions motion of the robot
+   * @return std::vector<double> reflected masses of the robot links
+   */
+  std::vector<double> calculateRobotLinkReflectedMasses(
+    const Motion& robot_motion
+  );
+
+  /**
    * @brief computes cross product as skew-symmetric matrix
    * @param vec
    * @return matrix

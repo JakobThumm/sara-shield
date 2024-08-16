@@ -51,6 +51,7 @@ add_library(${PROJECT_NAME}
         src/measurement_handler.cc
         src/trajectory_utils.cc
         src/verification_utils.cc
+        src/config_utils.cc
         #src/advanced_verify_iso.cc
         )
 

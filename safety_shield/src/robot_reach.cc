@@ -235,4 +235,26 @@ double RobotReach::exactVelOfCapsule(const int capsule, const Eigen::Vector3d& v
   return std::sqrt(scalar_v * scalar_v + right_current * right_current);
 }
 
+std::vector<std::vector<double>> RobotReach::calculateRobotLinkReflectedMassesPerTimeInterval(
+  const std::vector<Motion>& robot_motions
+) {
+  std::vector<std::vector<double>> masses;
+  for (int i = 0; i < robot_motions.size(); i++) {
+    masses.push_back(calculateRobotLinkReflectedMasses(robot_motions[i]));
+  }
+  return masses;
+}
+
+std::vector<double> RobotReach::calculateRobotLinkReflectedMasses(
+  const Motion& robot_motion
+) {
+  // TODO implement this function.
+  double m = 10;
+  std::vector<double> masses;
+  for (int i = 0; i < nb_joints_; i++) {
+    masses.push_back(m);
+  }
+  return masses;
+}
+
 }  // namespace safety_shield
