@@ -74,6 +74,26 @@ class Verify {
    * @param[in] robot_reachable_sets Reachable sets of the robot in each time interval. Size = [n_time_intervals, n_robot_links]
    * @param[in] human_reachable_sets Reachable sets of the human in each time interval. Size = [n_time_intervals, n_human_models, n_human_bodies]
    * @param[in] robot_link_velocities The maximal velocity of each robot link in each time interval. Size = [n_time_intervals, n_robot_links]
+   * @param[in] robot_link_reflected_masses The reduced mass of each robot link. Size = [n_time_intervals, n_robot_links]
+   * @param[in] maximal_contact_velocities The maximal contact velocity for each human body part. Size = [n_human_models, n_human_bodies]
+   * @param[out] collision_index The index of the time step where the collision occured
+   *
+   * @returns True: if the robot capsules do not collide with one set of the human capsules in each time step, i.e., the motion is safe.
+   *          False: Otherwise
+   */
+  virtual bool verifyHumanReachEnergy(const std::vector<std::vector<reach_lib::Capsule>>& robot_reachable_sets,
+    const std::vector<std::vector<std::vector<reach_lib::Capsule>>>& human_reachable_sets,
+    const std::vector<std::vector<double>>& robot_link_velocities,
+    const std::vector<std::vector<double>>& robot_link_reflected_masses,
+    const std::vector<std::vector<double>>& maximal_contact_energies,
+    int& collision_index) = 0;
+
+  /**
+   * @brief Verify the robot motion against the reachable occupancy of the human for each separate time interval
+   *
+   * @param[in] robot_reachable_sets Reachable sets of the robot in each time interval. Size = [n_time_intervals, n_robot_links]
+   * @param[in] human_reachable_sets Reachable sets of the human in each time interval. Size = [n_time_intervals, n_human_models, n_human_bodies]
+   * @param[in] robot_link_velocities The maximal velocity of each robot link in each time interval. Size = [n_time_intervals, n_robot_links]
    * @param[in] maximal_contact_velocities The maximal contact velocity for each human body part. Size = [n_human_models, n_human_bodies]
    * @param[out] collision_index The index of the time step where the collision occured
    *

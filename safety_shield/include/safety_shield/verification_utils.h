@@ -85,12 +85,33 @@ inline bool checkNoContactsInMap(const std::map<int, std::vector<int>>& contact_
   return true;
 };
 
+std::vector<double> calculateRobotLinkEnergies(
+  const std::vector<double>& robot_link_velocities,
+  const std::vector<double>& robot_link_reflected_masses
+);
+
 /**
  * @brief Check if any link that gets into contact with the human is too fast.
  * 
  * @param human_robot_contacts Maps the human capsule index to the list of robot link indices in contact.
  *  Key is the human capsule index, value is the list of robot link indices.
- * @param robot_link_velocities Robot link velocities at the time of contact.
+ * @param robot_link_energies Robot link energy at the time of contact.
+ * @param maximal_contact_energies Maximal admissible human velocities.
+ * @return true All robot links are slower than the maximal contact velocity.
+ * @return false Otherwise.
+ */
+bool checkContactEnergySafety(
+  const std::map<int, std::vector<int>>& human_robot_contacts,
+  const std::vector<double>& robot_link_energies,
+  const std::vector<double>& maximal_contact_energies
+);
+
+/**
+ * @brief Check if any link that gets into contact with the human is too fast.
+ * 
+ * @param human_robot_contacts Maps the human capsule index to the list of robot link indices in contact.
+ *  Key is the human capsule index, value is the list of robot link indices.
+ * @param robot_link_velocities Robot link velocity at the time of contact.
  * @param maximal_contact_velocities Maximal admissible human velocities.
  * @return true All robot links are slower than the maximal contact velocity.
  * @return false Otherwise.
