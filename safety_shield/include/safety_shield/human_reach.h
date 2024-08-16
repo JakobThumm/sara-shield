@@ -103,8 +103,9 @@ class HumanReach {
 
   /**
    * @brief Threshold on the energy of the robot element in an unconstrained contact for each body part.
+   * @details The format is [model_index][body_index].
    */
-  std::vector<double> max_contact_energy_;
+  std::vector<std::vector<double>> max_contact_energy_;
 
   /**
    * @brief We need two measurements for velocity calculation.
@@ -142,6 +143,7 @@ class HumanReach {
    * @param[in] body_link_joints Maps the body name to the proximal and distal joint ids (key: Body name, value: Joint pair)
    * @param[in] thickness Defines the thickness of the body parts (key: Name of body part, value: Thickness of body
    * part)
+   * @param[in] max_contact_energy The maximal contact energy for each body part.
    * @param[in] max_v The maximum velocity of the joints
    * @param[in] max_a The maximum acceleration of the joints
    * @param[in] measurement_error_pos Maximal positional measurement error
@@ -166,6 +168,7 @@ class HumanReach {
    * @param[in] body_link_joints Maps the body name to the proximal and distal joint ids (key: Body name, value: Joint pair)
    * @param[in] thickness Defines the thickness of the body parts (key: Name of body part, value: Thickness of body
    * part)
+   * @param[in] max_contact_energy The maximal contact energy for each body part.
    * @param[in] max_v The maximum velocity of the joints
    * @param[in] max_a The maximum acceleration of the joints
    * @param[in] measurement_error_pos Maximal positional measurement error
@@ -198,6 +201,7 @@ class HumanReach {
    * @param[in] body_link_joints Maps the body name to the proximal and distal joint ids (key: Body name, value: Joint pair)
    * @param[in] thickness Defines the thickness of the body parts (key: Name of body part, value: Thickness of body
    * part)
+   * @param[in] max_contact_energy The maximal contact energy for each body part.
    * @param[in] max_v The maximum velocity of the joints
    * @param[in] max_a The maximum acceleration of the joints
    * @param[in] extremity_base_names The base joints of extremities, e.g., right / left shoulder, right / left hip
@@ -206,6 +210,7 @@ class HumanReach {
    * used for thickness of extremities
    * @param[in] extremity_length The max length of the extremities (related to extremity_base_names)
    * @param[in] extremity_thickness The thickness of the extremities (usually zero, as it is already considered in extremity_length)
+   * @param[in] extremity_max_contact_energy The maximal contact energy for each extremity.
    * @param[in] measurement_error_pos Maximal positional measurement error
    * @param[in] measurement_error_vel Maximal velocity measurement error
    * @param[in] delay Delay in measurement processing pipeline
@@ -221,6 +226,7 @@ class HumanReach {
       std::vector<std::string>& extremity_end_names, 
       std::vector<double>& extremity_length, 
       std::vector<double>& extremity_thickness,
+      std::vector<double>& extremity_max_contact_energy,
       double measurement_error_pos, 
       double measurement_error_vel, 
       double delay);
@@ -240,6 +246,7 @@ class HumanReach {
    * used for thickness of extremities
    * @param[in] extremity_length The max length of the extremities (related to extremity_base_names)
    * @param[in] extremity_thickness The thickness of the extremities (usually zero, as it is already considered in extremity_length)
+   * @param[in] extremity_max_contact_energy The maximal contact energy for each extremity.
    * @param[in] measurement_error_pos Maximal positional measurement error
    * @param[in] measurement_error_vel Maximal velocity measurement error
    * @param[in] delay Delay in measurement processing pipeline
@@ -259,6 +266,7 @@ class HumanReach {
       std::vector<std::string>& extremity_end_names, 
       std::vector<double>& extremity_length, 
       std::vector<double>& extremity_thickness,
+      std::vector<double>& extremity_max_contact_energy,
       double measurement_error_pos, 
       double measurement_error_vel, 
       double delay,
@@ -472,7 +480,7 @@ class HumanReach {
    *
    * @return std::vector<double>
    */
-  inline std::vector<double> getMaxContactEnergy() const {
+  inline std::vector<std::vector<double>> getMaxContactEnergy() const {
     return max_contact_energy_;
   }
 };
@@ -494,6 +502,7 @@ HumanReach* createHumanReach(
       std::vector<std::string> extremity_end_names, 
       std::vector<double> extremity_length, 
       std::vector<double> extremity_thickness,
+      std::vector<double> extremity_max_contact_energy,
       double s_w,
       double s_v,
       double initial_pos_var,

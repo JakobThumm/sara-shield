@@ -86,7 +86,7 @@ HumanReach* buildHumanReach(
 
   bool use_combined_model = human_config["use_combined_model"].as<bool>();
   std::vector<std::string> extremity_base_names, extremity_end_names;
-  std::vector<double> extremity_length, extremity_thickness;
+  std::vector<double> extremity_length, extremity_thickness, extremity_max_contact_energy;
   if (!use_combined_model) {
     // Build extremities
     const YAML::Node& extremities = human_config["extremities"];
@@ -96,6 +96,7 @@ HumanReach* buildHumanReach(
       extremity_end_names.push_back(extremity["end"].as<std::string>());
       extremity_length.push_back(extremity["length"].as<double>());
       extremity_thickness.push_back(extremity["thickness"].as<double>());
+      extremity_max_contact_energy.push_back(extremity["max_contact_energy_unconstrained"].as<double>());
     }
   }
 
@@ -124,6 +125,7 @@ HumanReach* buildHumanReach(
     extremity_end_names, 
     extremity_length,
     extremity_thickness,
+    extremity_max_contact_energy,
     s_w,
     s_v,
     initial_pos_var,

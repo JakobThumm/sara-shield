@@ -19,6 +19,7 @@ HumanReach* createHumanReach(
       std::vector<std::string> extremity_end_names = std::vector<std::string>(), 
       std::vector<double> extremity_length = std::vector<double>(),
       std::vector<double> extremity_thickness = std::vector<double>(),
+      std::vector<double> extremity_max_contact_energy = std::vector<double>(),
       double s_w = 2.0e+2,
       double s_v = 1.0e-6,
       double initial_pos_var = 0.0,
@@ -31,9 +32,9 @@ HumanReach* createHumanReach(
     }
   } else {
     if (use_kalman_filter) {
-      return new HumanReach(n_joints_meas, joint_names, body_link_joints, thickness, max_contact_energy, max_v, max_a, extremity_base_names, extremity_end_names, extremity_length, extremity_thickness, measurement_error_pos, measurement_error_vel, delay, s_w, s_v, initial_pos_var, initial_vel_var);
+      return new HumanReach(n_joints_meas, joint_names, body_link_joints, thickness, max_contact_energy, max_v, max_a, extremity_base_names, extremity_end_names, extremity_length, extremity_thickness, extremity_max_contact_energy, measurement_error_pos, measurement_error_vel, delay, s_w, s_v, initial_pos_var, initial_vel_var);
     } else {
-      return new HumanReach(n_joints_meas, joint_names, body_link_joints, thickness, max_contact_energy, max_v, max_a, extremity_base_names, extremity_end_names, extremity_length, extremity_thickness, measurement_error_pos, measurement_error_vel, delay);
+      return new HumanReach(n_joints_meas, joint_names, body_link_joints, thickness, max_contact_energy, max_v, max_a, extremity_base_names, extremity_end_names, extremity_length, extremity_thickness, extremity_max_contact_energy, measurement_error_pos, measurement_error_vel, delay);
     }
   }
 }
@@ -70,7 +71,7 @@ HumanReach::HumanReach(int n_joints_meas,
     new reach_lib::ArticulatedCombined(
       system, body_link_joints, thickness, max_v, max_a
   ));
-  max_contact_energy_ = buildMaxContactEnergy(body_link_joints, max_contact_energy);
+  max_contact_energy_.push_back(buildMaxContactEnergy(body_link_joints, max_contact_energy));
   for (int i = 0; i < n_joints_meas; i++) {
     joint_pos_.push_back(reach_lib::Point(0.0, 0.0, 0.0));
     joint_vel_.push_back(reach_lib::Point(0.0, 0.0, 0.0));
@@ -107,6 +108,7 @@ HumanReach::HumanReach(int n_joints_meas,
       std::vector<std::string>& extremity_end_names, 
       std::vector<double>& extremity_length,
       std::vector<double>& extremity_thickness,
+      std::vector<double>& extremity_max_contact_energy,
       double measurement_error_pos, 
       double measurement_error_vel, 
       double delay):
@@ -136,7 +138,10 @@ HumanReach::HumanReach(int n_joints_meas,
   human_models_.push_back(new reach_lib::ArticulatedAccel(
     system, body_link_joints, thickness, max_a
   ));
-  max_contact_energy_ = buildMaxContactEnergy(body_link_joints, max_contact_energy);
+  std::vector<double> max_contact_energy_bodies = buildMaxContactEnergy(body_link_joints, max_contact_energy);
+  max_contact_energy_.push_back(extremity_max_contact_energy);
+  max_contact_energy_.push_back(max_contact_energy_bodies);
+  max_contact_energy_.push_back(max_contact_energy_bodies);
   
   for (int i = 0; i < n_joints_meas; i++) {
     joint_pos_.push_back(reach_lib::Point(0.0, 0.0, 0.0));
@@ -155,6 +160,7 @@ HumanReach::HumanReach(int n_joints_meas,
       std::vector<std::string>& extremity_end_names, 
       std::vector<double>& extremity_length,
       std::vector<double>& extremity_thickness,
+      std::vector<double>& extremity_max_contact_energy,
       double measurement_error_pos, 
       double measurement_error_vel, 
       double delay,
@@ -162,7 +168,7 @@ HumanReach::HumanReach(int n_joints_meas,
       double s_v,
       double initial_pos_var,
       double initial_vel_var):
-      HumanReach(n_joints_meas, joint_names, body_link_joints, thickness, max_contact_energy, max_v, max_a, extremity_base_names, extremity_end_names, extremity_length, extremity_thickness, measurement_error_pos, measurement_error_vel, delay) {
+      HumanReach(n_joints_meas, joint_names, body_link_joints, thickness, max_contact_energy, max_v, max_a, extremity_base_names, extremity_end_names, extremity_length, extremity_thickness, extremity_max_contact_energy, measurement_error_pos, measurement_error_vel, delay) {
   use_kalman_filter_ = true;
   measurement_handler_ = new MeasurementHandler(n_joints_meas, s_w, s_v, initial_pos_var, initial_vel_var);
 }
