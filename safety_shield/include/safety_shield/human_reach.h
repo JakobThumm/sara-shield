@@ -317,7 +317,7 @@ class HumanReach {
    * @return reach_lib::Articulated[TYPE] capsules
    * @throw HumanModelNotFoundException
    */
-  inline std::vector<reach_lib::Capsule> getCapsulesOfModel(const reach_lib::Articulated& model) {
+  inline std::vector<reach_lib::Capsule> getCapsulesOfModel(const reach_lib::Articulated& model) const {
     if (reach_lib::get_capsule_map.find(model.get_mode()) != reach_lib::get_capsule_map.end()) {
       return reach_lib::get_capsule_map.at(model.get_mode())(model);
     } else {
@@ -340,7 +340,7 @@ class HumanReach {
    *
    * @return reach_lib::ArticulatedPos capsules
    */
-  inline std::vector<reach_lib::Capsule> getArticulatedPosCapsules() {
+  inline std::vector<reach_lib::Capsule> getArticulatedPosCapsules() const {
     for (const auto& model : human_models_) {
       if (model->get_mode() == "ARTICULATED-POS") {
         return getCapsulesOfModel(*model);
@@ -354,7 +354,7 @@ class HumanReach {
    *
    * @return reach_lib::ArticulatedVel capsules
    */
-  inline std::vector<reach_lib::Capsule> getArticulatedVelCapsules() {
+  inline std::vector<reach_lib::Capsule> getArticulatedVelCapsules() const {
     for (const auto& model : human_models_) {
       if (model->get_mode() == "ARTICULATED-VEL") {
         return getCapsulesOfModel(*model);
@@ -368,7 +368,7 @@ class HumanReach {
    *
    * @return reach_lib::ArticulatedAccel capsules
    */
-  inline std::vector<reach_lib::Capsule> getArticulatedAccelCapsules() {
+  inline std::vector<reach_lib::Capsule> getArticulatedAccelCapsules() const {
     for (const auto& model : human_models_) {
       if (model->get_mode() == "ARTICULATED-ACCEL") {
         return getCapsulesOfModel(*model);
@@ -382,7 +382,7 @@ class HumanReach {
    *
    * @return reach_lib::ArticulatedCombined capsules
    */
-  inline std::vector<reach_lib::Capsule> getArticulatedCombinedCapsules() {
+  inline std::vector<reach_lib::Capsule> getArticulatedCombinedCapsules() const {
     for (const auto& model : human_models_) {
       if (model->get_mode() == "ARTICULATED-COMBINED") {
         return getCapsulesOfModel(*model);
@@ -396,7 +396,7 @@ class HumanReach {
    *
    * @return std::vector<std::vector<reach_lib::Capsule>>
    */
-  inline std::vector<std::vector<reach_lib::Capsule>> getAllCapsules() {
+  inline std::vector<std::vector<reach_lib::Capsule>> getAllCapsules() const {
     std::vector<std::vector<reach_lib::Capsule>> all_capsules = {};
     for (const auto& model : human_models_) {
       all_capsules.push_back(getCapsulesOfModel(*model));
@@ -409,7 +409,7 @@ class HumanReach {
    *
    * @return double
    */
-  inline double getLastMeasTimestep() {
+  inline double getLastMeasTimestep() const {
     return last_meas_timestep_;
   }
 
@@ -418,7 +418,7 @@ class HumanReach {
    *
    * @return std::vector<reach_lib::Point>
    */
-  inline std::vector<reach_lib::Point> getJointPos() {
+  inline std::vector<reach_lib::Point> getJointPos() const {
     return joint_pos_;
   }
 
@@ -427,7 +427,7 @@ class HumanReach {
    *
    * @return std::vector<reach_lib::Point>
    */
-  inline std::vector<reach_lib::Point> getJointVel() {
+  inline std::vector<reach_lib::Point> getJointVel() const {
     return joint_vel_;
   }
 
@@ -436,7 +436,7 @@ class HumanReach {
    *
    * @return std::map<std::string, reach_lib::jointPair>
    */
-  inline std::map<std::string, reach_lib::jointPair> getBodyLinkJoints() {
+  inline std::map<std::string, reach_lib::jointPair> getBodyLinkJoints() const {
     return body_link_joints_;
   }
 
@@ -445,7 +445,7 @@ class HumanReach {
    *
    * @return double
    */
-  inline double getMeasurementErrorPos() {
+  inline double getMeasurementErrorPos() const {
     return measurement_error_pos_;
   }
 
@@ -454,7 +454,7 @@ class HumanReach {
    *
    * @return double
    */
-  inline double getMeasurementErrorVel() {
+  inline double getMeasurementErrorVel() const {
     return measurement_error_vel_;
   }
 
@@ -463,8 +463,18 @@ class HumanReach {
    *
    * @return double
    */
-  inline double getDelay() {
+  inline double getDelay() const {
     return delay_;
+  }
+
+
+  /**
+   * @brief Get the maximal contact energy for each body part.
+   *
+   * @return std::vector<double>
+   */
+  inline std::vector<double> getMaxContactEnergy() const {
+    return max_contact_energy_;
   }
 };
 
