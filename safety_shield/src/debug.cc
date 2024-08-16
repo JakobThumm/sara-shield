@@ -8,7 +8,6 @@
 #include <vector>
 
 #include "reach_lib.hpp"
-#include "safety_shield/controller.h"
 #include "safety_shield/human_reach.h"
 #include "safety_shield/long_term_traj.h"
 #include "safety_shield/motion.h"
@@ -68,6 +67,7 @@ int main() {
         
         safety_shield::Motion next_motion = shield.step(t);
         std::vector<double> current_qpos = next_motion.getAngle();
+        shield.robotMeasurement(current_qpos);
         safety_shield_logger::info("Current time {}", t);
         safety_shield_logger::info("Goal qpos ({}, {}, {}, {}, {}, {})", qpos[0], qpos[1], qpos[2], qpos[3], qpos[4], qpos[5]);
         safety_shield_logger::info("Current qpos ({}, {}, {}, {}, {}, {})", current_qpos[0], current_qpos[1], current_qpos[2], current_qpos[3], current_qpos[4], current_qpos[5]);

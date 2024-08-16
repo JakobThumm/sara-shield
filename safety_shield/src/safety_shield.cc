@@ -97,8 +97,6 @@ SafetyShield::SafetyShield(double sample_time, std::string trajectory_config_fil
   RobotReach::Velocity_method velocity_method =
       static_cast<RobotReach::Velocity_method>(trajectory_config.velocity_method);
 
-  robot_reach_->setVelocityMethod(velocity_method);
-  safety_shield_logger::info("velocity_method = {}", velocity_method);
   // Initialize the long term trajectory
   sliding_window_k_ = (int)std::floor(max_s_stop_ / sample_time_);
   std::vector<Motion> long_term_traj;
@@ -133,7 +131,6 @@ SafetyShield::SafetyShield(double sample_time, std::string trajectory_config_fil
         joint_names[human_config.body_part_proximal[i]], joint_names[human_config.body_part_distal[i]]);
     thickness[human_config.body_parts[i]] = human_config.joint_thickness[i];
   }
-  safety_shield_logger::info("velocity_method = {}", velocity_method);
 
 
   bool use_combined_model = human_config.use_combined_model;
@@ -152,8 +149,6 @@ SafetyShield::SafetyShield(double sample_time, std::string trajectory_config_fil
       extremity_thickness.push_back(human_config.extremity_thickness[i]);
     }
   }
-
-  safety_shield_logger::info("velocity_method = {}", velocity_method);
 
   bool use_kalman_filter = human_config.use_kalman_filter;
   double s_w, s_v, initial_pos_var, initial_vel_var;
