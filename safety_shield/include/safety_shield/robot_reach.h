@@ -21,7 +21,7 @@
 
 #include "reach_lib.hpp"
 #include "safety_shield/motion.h"
-#include "spdlog/spdlog.h"
+#include "safety_shield/safety_shield_logger.h"
 
 #ifndef ROBOT_REACH_H
 #define ROBOT_REACH_H

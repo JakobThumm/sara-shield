@@ -2,7 +2,7 @@
 
 #include <cmath>
 
-#include "spdlog/spdlog.h"
+#include "safety_shield/safety_shield_logger.h"
 
 namespace safety_shield {
 
@@ -96,10 +96,10 @@ void Path::getMotionUnderVel(double v_limit, double& time, double& pos, double& 
         // already under v_iso
         time = -10;
         if (std::isnan(square)) {
-          spdlog::error("Error in Path::getMotionUnderVel: square is NaN");
+          safety_shield_logger::error("Error in Path::getMotionUnderVel: square is NaN");
           return;
         } else {
-          spdlog::error("Error in Path::getMotionUnderVel: Quadratic-Function only has negative zero-values");
+          safety_shield_logger::error("Error in Path::getMotionUnderVel: Quadratic-Function only has negative zero-values");
           return;
         }
       }
@@ -112,7 +112,7 @@ void Path::getMotionUnderVel(double v_limit, double& time, double& pos, double& 
   }
   // if it is not in any phase, it can't be a failsafe-path
   time = -1;
-  spdlog::error("Error in Path::getMotionUnderVel: it is not in any phase");
+  safety_shield_logger::error("Error in Path::getMotionUnderVel: it is not in any phase");
 }
 
 double Path::getMaxVelocity() {

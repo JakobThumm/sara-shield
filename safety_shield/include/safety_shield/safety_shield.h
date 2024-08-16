@@ -18,7 +18,6 @@
 #include <math.h>
 #include <stdio.h>
 #include <time.h>
-#include <yaml-cpp/yaml.h>
 
 #include <algorithm>
 #include <cmath>
@@ -37,7 +36,8 @@
 #include "safety_shield/robot_reach.h"
 #include "safety_shield/verify.h"
 #include "safety_shield/verify_iso.h"
-#include "spdlog/spdlog.h"
+#include "safety_shield/safety_shield_logger.h"
+#include "safety_shield/config_parser.h"
 
 #ifndef safety_shield_H
 #define safety_shield_H
@@ -74,6 +74,12 @@ class SafetyShield {
    *
    */
   RobotReach* robot_reach_;
+
+  /**
+   * @brief Robot reachable set calculation object (using the actual joint configuration of the robot)
+   *
+   */
+  RobotReach* robot_actual_reach_;
 
   /**
    * @brief Human reachable set calcualtion object
@@ -258,12 +264,9 @@ class SafetyShield {
   bool new_ltt_processed_ = false;
 
   /**
-   * @brief the last starting position of the replanning
-   *
-   * If the last starting position of the replanning is very close to this position, we can skip the replanning and use
-   * the previously planned trajectory.
+   * @brief Last s value when replanning happend.
    */
-  Motion last_replan_start_motion_;
+  double last_replan_s_ = -1.0;
 
   /**
    * @brief the time when the loop begins
@@ -291,6 +294,16 @@ class SafetyShield {
    * @brief maximum cartesian velocity allowed at collision in m/s
    */
   double v_safe_ = 0.10;
+
+  /**
+   * @brief current robot joint angles (updated via updateJointAngles())
+   */
+  std::vector<double> current_joint_angles_;
+
+  /**
+   * @brief margin of error regarding joint trajectory
+   */
+  double secure_radius_;
 
  protected:
   /**
@@ -500,6 +513,11 @@ class SafetyShield {
   void newLongTermTrajectory(const std::vector<double>& goal_position, const std::vector<double>& goal_velocity);
 
   /**
+   * @brief Check if trajectory is followed up to an error of secure_radius_
+   */
+  bool checkTrajSafety(); 
+
+  /**
    * @brief Overrides the current long-term trajectory.
    * @details Requires the robot to be at a complete stop, i.e. v=a=j=0.0 for all joints
    *    Requires the LTT to end in a complete stop.
@@ -520,6 +538,15 @@ class SafetyShield {
    */
   inline void humanMeasurement(const std::vector<reach_lib::Point> human_measurement, double time) {
     human_reach_->measurement(human_measurement, time);
+  }
+
+  /**
+   * @brief Receive current robot measurement
+   * @param[in] new_angles A vector of robot joint measurements (list of doubles)
+   */
+  inline void robotMeasurement(const std::vector<double>& new_angles) {
+        assert(new_angles.size() == nb_joints_);
+        current_joint_angles_ = new_angles;
   }
 
   /**
@@ -546,7 +573,7 @@ class SafetyShield {
    *
    * @return std::vector<std::vector<double>> Capsules
    */
-  inline std::vector<std::vector<double>> getRobotReachCapsules() {
+  std::vector<std::vector<double>> getRobotReachCapsules() {
     std::vector<std::vector<double>> capsules(robot_capsules_.size(), std::vector<double>(7));
     for (int i = 0; i < robot_capsules_.size(); i++) {
       capsules[i] = convertCapsule(robot_capsules_[i]);
@@ -560,11 +587,13 @@ class SafetyShield {
    * p2: Center point of half sphere 2
    * r: Radius of half spheres and cylinder
    *
-   * @param type Type of capsule. Select 0 for POS, 1 for VEL, and 2 for ACCEL
+   * @param type Type of capsule. 
+   *  If in combined mode: select 0 for combined model
+   *  If not in combined mode: select 0 for POS, 1 for VEL, and 2 for ACCEL
    *
    * @return std::vector<std::vector<double>> Capsules
    */
-  inline std::vector<std::vector<double>> getHumanReachCapsules(int type = 1) {
+  std::vector<std::vector<double>> getHumanReachCapsules(int type = 0) {
     assert(type >= 0 && type <= human_capsules_.size());
     std::vector<std::vector<double>> capsules(human_capsules_[type].size(), std::vector<double>(7));
     for (int i = 0; i < human_capsules_[type].size(); i++) {

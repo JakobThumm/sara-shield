@@ -19,7 +19,7 @@
 
 #include "reach_lib.hpp"
 #include "safety_shield/verify.h"
-#include "spdlog/spdlog.h"  // https://github.com/gabime/spdlog
+#include "safety_shield/safety_shield_logger.h"  // https://github.com/gabime/spdlog
 
 #ifndef VERIFY_ISO_H
 #define VERIFY_ISO_H
