@@ -467,7 +467,6 @@ class HumanReach {
     return delay_;
   }
 
-
   /**
    * @brief Get the maximal contact energy for each body part.
    *

@@ -90,9 +90,11 @@ extremities:
     end: "lHand"
     length: 1.0 # See Tabelle 21 — Reichweite nach vorn (Griffachse) - Half a hand length.
     thickness: 0.0
+    max_contact_energy_unconstrained: 0.2  # Head value needed here.
     
   - name: "rArm"
     base: "rShldr"
     end: "rHand"
     length: 1.0 # See Tabelle 21 — Reichweite nach vorn (Griffachse) - Half a hand length.
     thickness: 0.0
+    max_contact_energy_unconstrained: 0.2  # Head value needed here.
