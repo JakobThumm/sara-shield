@@ -3,7 +3,6 @@
 
 #include "human_reach_fixture.h"
 #include "safety_shield/human_reach.h"
-#include "spdlog/spdlog.h"
 
 namespace safety_shield {
 
