@@ -635,7 +635,6 @@ bool SafetyShield::verifySafety(Motion& current_motion, Motion& goal_motion, con
       robot_link_radii,
       velocity_errors
     );
-    // TODO
     std::vector<std::vector<double>> robot_link_reflected_masses = robot_reach_->calculateRobotLinkReflectedMassesPerTimeInterval(interval_edges_motions);
     std::vector<std::vector<double>> maximal_contact_energies = human_reach_->getMaxContactEnergy();
     is_safe_ = verify_->verifyHumanReachEnergy(robot_capsules_time_intervals_, human_capsules_time_intervals_, robot_link_velocities, robot_link_reflected_masses, maximal_contact_energies, collision_index);
