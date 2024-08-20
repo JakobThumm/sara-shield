@@ -76,6 +76,27 @@ class RobotReachTestVelocity : public ::testing::Test {
 };
 
 /**
+ * @brief Test fixture for robot reach class with inertia matrix calculation
+ */
+class RobotReachTestInertiaMatrix : public ::testing::Test {
+ protected:
+  /**
+   * @brief The robot reach object
+   */
+  RobotReach* robot_reach_;
+
+  /**
+   * @brief Create the robot reach object
+   */
+  void SetUp() override {
+    // setup for tests with inertia matrix, testing with siciliano 2D planar robot from Chapter 7.3.2
+    std::filesystem::path config_file =
+        std::filesystem::current_path().parent_path() / "config/robot_reach_test_siciliano_2.yaml";
+    robot_reach_ = buildRobotReach(config_file.string(), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+  }
+};
+
+/**
  * @brief Test fixture for time interval version of robot reach
  */
 class RobotReachTestTimeIntervals : public ::testing::Test {

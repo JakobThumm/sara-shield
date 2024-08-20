@@ -151,24 +151,6 @@ TEST_F(RobotReachTest, ReachTest1) {
   }
 }
 
-// Test this function
-/*
-Eigen::Matrix<double, 6, Eigen::Dynamic> RobotReach::calculateJacobian(const int joint, const reach_lib::Point& point) {
-  Eigen::Matrix<double, 6, Eigen::Dynamic> jacobian;
-  jacobian.setZero(6, joint + 1);
-  Eigen::Vector3d p_e = pointTo3dVector(point);
-  for (int i = 0; i < joint + 1; ++i) {
-    Eigen::Vector3d z_i = z_vectors_[i + 1];
-    Eigen::Vector3d p_i = pointTo3dVector(robot_capsules_for_velocity_[i].p1_);
-    Eigen::Vector3d upper = z_i.cross(p_e - p_i);
-    Eigen::Vector<double, 6> column;
-    column << upper, z_i;
-    jacobian.col(i) = column;
-  }
-  return jacobian;
-}
-*/
-
 void compareJacobians(Eigen::Matrix<double, 6, Eigen::Dynamic>& jacobian,
                       Eigen::Matrix<double, 6, Eigen::Dynamic>& expect) {
   ASSERT_TRUE(jacobian.size() == expect.size());
@@ -509,6 +491,36 @@ TEST_F(RobotReachTestVelocity, JacobianSicilianoTest5) {
   EXPECT_NEAR(jacobian(3, 2), expect(3, 2), 1e-8);
   EXPECT_NEAR(jacobian(4, 2), expect(4, 2), 1e-8);
   EXPECT_NEAR(jacobian(5, 2), expect(5, 2), 1e-8);
+}
+
+TEST_F(RobotReachTestInertiaMatrix, InertiaMatrixTest0) {
+  std::vector<double> q = {M_PI_4, M_PI_4};
+  robot_reach_->calculateAllTransformationMatricesAndCapsules(q);
+  std::vector<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic>> inertia_matrix = robot_reach_->calculateAllInertiaMatrices();
+  // First inertia matrix should only depend on the first joint velocity.
+  EXPECT_NEAR(inertia_matrix[0](0, 1), 0.0, 1e-8);
+  EXPECT_NEAR(inertia_matrix[0](1, 0), 0.0, 1e-8);
+  EXPECT_NEAR(inertia_matrix[0](1, 1), 0.0, 1e-8);
+  // Second inertia matrix can be taken from Siciliano.
+  double a_1 = 1.0;
+  double a_2 = 2.0;
+  double l_1 = 0.5;
+  double l_2 = 1.0;
+  double I_1 = 0.03;
+  double I_2 = 0.02;
+  double m_1 = 3.0;
+  double m_2 = 2.0;
+  double B_11 = I_1 + m_1 * l_1 * l_1 + I_2 + m_2 * (l_2 * l_2 + a_1 * a_1 + 2 * a_1 * l_2 * cos(q[1]));
+  double B_12 = I_2 + m_2 * (l_2 * l_2 + a_1 * l_2 * cos(q[1]));
+  double B_22 = I_2 + m_2 * l_2 * l_2;
+  double B_11_predicted = inertia_matrix[1](0, 0);
+  double B_12_predicted = inertia_matrix[1](0, 1);
+  double B_21_predicted = inertia_matrix[1](1, 0);
+  double B_22_predicted = inertia_matrix[1](1, 1);
+  EXPECT_NEAR(B_11, B_11_predicted, 1e-8);
+  EXPECT_NEAR(B_12, B_12_predicted, 1e-8);
+  EXPECT_NEAR(B_12, B_21_predicted, 1e-8);
+  EXPECT_NEAR(B_22, B_22_predicted, 1e-8);
 }
 
 /// time interval method is equal to standard reach if reachability set interval size is equal or larger to s_diff (with single joint robot)

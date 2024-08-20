@@ -301,10 +301,9 @@ class RobotReach {
   /**
    * @brief Calculate all inertia matrices for a specific robot configuration.
    * @assumption calculateAlltransformationMatricesAndCapsules() was called before
-   * @param q_dot Joint velocities
    * @return std::vector<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic>> Inertia matrices of the links.
    */
-  std::vector<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic>> calculateAllInertiaMatrices(const std::vector<double> q_dot) const;
+  std::vector<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic>> calculateAllInertiaMatrices() const;
 
   /**
    * @brief Calculate the cartesian velocity of both defining point of a specific capsule
