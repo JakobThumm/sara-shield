@@ -16,7 +16,7 @@ LongTermTraj::LongTermTraj(
   length_ = long_term_traj.size();
   assert(length_ > 0);
   nb_modules_ = long_term_traj_[0].getNbModules();
-  calculate_max_acc_jerk_window(long_term_traj_, sliding_window_k);
+  calculateMaxAccJerkWindow(long_term_traj_, sliding_window_k);
   velocitiesOfAllMotions(robot_reach);
   calculateAlphaBeta();
 }
@@ -59,7 +59,7 @@ Motion LongTermTraj::interpolate(double s, double ds, double dds, double ddds) c
   return m;
 }
 
-void LongTermTraj::calculate_max_acc_jerk_window(std::vector<Motion>& long_term_traj, int k) {
+void LongTermTraj::calculateMaxAccJerkWindow(std::vector<Motion>& long_term_traj, int k) {
   int traj_length = long_term_traj.size();
   // It must be k <= trajectory length.
   k = std::min(traj_length, k);

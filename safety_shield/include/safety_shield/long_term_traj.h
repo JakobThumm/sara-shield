@@ -163,7 +163,7 @@ class LongTermTraj {
     length_ = long_term_traj_.size();
     assert (length_ > 0);
     nb_modules_ = long_term_traj_[0].getNbModules();
-    calculate_max_acc_jerk_window(long_term_traj_, sliding_window_k);
+    calculateMaxAccJerkWindow(long_term_traj_, sliding_window_k);
     for (int i = 0; i < long_term_traj_[0].getNbModules(); i++) {
       alpha_i_.push_back(alpha_i_max);
     }
@@ -216,7 +216,7 @@ class LongTermTraj {
    * @param long_term_traj Long term trajectory
    * @param k sliding window size
    */
-  void calculate_max_acc_jerk_window(std::vector<Motion>& long_term_traj, int k);
+  void calculateMaxAccJerkWindow(std::vector<Motion>& long_term_traj, int k);
 
   /**
    * @brief Set the Long Term Trajectory object
