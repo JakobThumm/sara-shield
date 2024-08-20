@@ -629,7 +629,6 @@ bool SafetyShield::verifySafety(Motion& current_motion, Motion& goal_motion, con
     }
     double dt = time_points[1] - time_points[0];
     std::vector<double> velocity_errors = robot_reach_->calculateMaxVelErrors(dt, v_max_allowed_, a_max_allowed_, j_max_allowed_);
-    // TODO: Case new ltt!
     std::vector<std::vector<double>> robot_link_velocities = calculateMaxRobotLinkVelocitiesPerTimeInterval(
       interval_edges_motions,
       robot_link_radii,
