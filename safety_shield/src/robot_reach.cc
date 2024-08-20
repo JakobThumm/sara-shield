@@ -188,7 +188,7 @@ RobotReach::CapsuleVelocity RobotReach::calculateVelocityOfCapsule(const int cap
 
 RobotReach::CapsuleVelocity RobotReach::calculateVelocityOfCapsuleWithJacobian(const int capsule, std::vector<double> q_dot, const Eigen::Matrix<double, 6, Eigen::Dynamic>& jacobian) const {
   Eigen::VectorXd velocity = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(q_dot.data(), q_dot.size());
-  Eigen::Vector<double, 6> result1 = jacobian * velocity.segment(0, capsule + 1);
+  Eigen::Vector<double, 6> result1 = jacobian * velocity;
   RobotReach::SE3Vel vel1(result1.segment(0, 3), result1.segment(3, 3));
   // Point 2: v_2 = v_1 + \omega_1 \times (p_2 - p_1), \omega_2 = \omega_1
   RobotReach::SE3Vel vel2(
@@ -226,7 +226,7 @@ double RobotReach::calculateMaxVelocityOfCapsule(const int capsule, std::vector<
 
 Eigen::Matrix<double, 6, Eigen::Dynamic> RobotReach::calculateJacobian(const int joint, const reach_lib::Point& point) const {
   Eigen::Matrix<double, 6, Eigen::Dynamic> jacobian;
-  jacobian.setZero(6, joint + 1);
+  jacobian.setZero(6, nb_joints_);
   Eigen::Vector3d p_e = pointTo3dVector(point);
   for (int i = 0; i < joint + 1; ++i) {
     Eigen::Vector3d z_i = z_vectors_[i + 1];
