@@ -25,8 +25,12 @@ RobotReach* buildRobotReach(
   if (robot_config["link_inertias"]) {
     inertia_matrices = robot_config["link_inertias"].as<std::vector<double>>();
   }
+  std::vector<double> center_of_masses;
+  if (robot_config["link_centers_of_mass"]) {
+    center_of_masses = robot_config["link_centers_of_mass"].as<std::vector<double>>();
+  }
   return new RobotReach(transformation_matrices, nb_joints, enclosures, 
-                        link_masses, inertia_matrices,
+                        link_masses, inertia_matrices, center_of_masses,
                         init_x, init_y, init_z, init_roll, init_pitch, init_yaw, secure_radius);
 }
 

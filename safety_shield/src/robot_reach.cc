@@ -3,18 +3,10 @@
 namespace safety_shield {
 
 RobotReach::RobotReach(std::vector<double> transformation_matrices, int nb_joints, std::vector<double> geom_par,
-                       std::vector<double> link_masses, std::vector<double> link_inertias, 
+                       std::vector<double> link_masses, std::vector<double> link_inertias, std::vector<double> link_center_of_masses,
                        double x, double y, double z, double roll, double pitch, double yaw, double secure_radius)
     : nb_joints_(nb_joints), link_masses_(link_masses), secure_radius_(secure_radius) {
-  Eigen::Matrix4d transformation_matrix_first;
-  double cr = cos(roll);
-  double sr = sin(roll);
-  double cp = cos(pitch);
-  double sp = sin(pitch);
-  double cy = cos(yaw);
-  double sy = sin(yaw);
-  transformation_matrix_first << cr * cp, cr * sp * sy - sr * cy, cr * sp * cy + sr * sy, x, sr * cp,
-      sr * sp * sy + cr * cy, sr * sp * cy - cr * sy, y, -sp, cp * sy, cp * cy, z, 0, 0, 0, 1;
+  Eigen::Matrix4d transformation_matrix_first = xyzrpy2transformationMatrix(x, y, z, roll, pitch, yaw);
   transformation_matrices_.push_back(transformation_matrix_first);
   for (int joint = 0; joint < nb_joints; joint++) {
     // Fill transformation matrix
@@ -43,20 +35,17 @@ RobotReach::RobotReach(std::vector<double> transformation_matrices, int nb_joint
                       link_inertias[6 * joint + 1], link_inertias[6 * joint + 3], link_inertias[6 * joint + 4],
                       link_inertias[6 * joint + 2], link_inertias[6 * joint + 4], link_inertias[6 * joint + 5];
     link_inertias_.push_back(inertia_matrix);
+    // Build center of masses
+    // CoM have the form x_0, y_0, z_0, roll_0, pitch_0, yaw_0, ...
+    link_center_of_masses_.push_back(xyzrpy2transformationMatrix(
+      link_center_of_masses[6 * joint], link_center_of_masses[6 * joint + 1], link_center_of_masses[6 * joint + 2],
+      link_center_of_masses[6 * joint + 3], link_center_of_masses[6 * joint + 4], link_center_of_masses[6 * joint + 5]
+    ));
   }
 }
 
 void RobotReach::reset(double x, double y, double z, double roll, double pitch, double yaw) {
-  Eigen::Matrix4d transformation_matrix;
-  double cr = cos(roll);
-  double sr = sin(roll);
-  double cp = cos(pitch);
-  double sp = sin(pitch);
-  double cy = cos(yaw);
-  double sy = sin(yaw);
-  transformation_matrix << cr * cp, cr * sp * sy - sr * cy, cr * sp * cy + sr * sy, x, sr * cp, sr * sp * sy + cr * cy,
-      sr * sp * cy - cr * sy, y, -sp, cp * sy, cp * cy, z, 0, 0, 0, 1;
-  transformation_matrices_[0] = transformation_matrix;
+  transformation_matrices_[0] = xyzrpy2transformationMatrix(x, y, z, roll, pitch, yaw);
 }
 
 reach_lib::Capsule RobotReach::transformCapsule(const int& n_joint, const Eigen::Matrix4d& T) const {
@@ -171,17 +160,25 @@ void RobotReach::calculateAllTransformationMatricesAndCapsules(const std::vector
   }
 }
 
-void RobotReach::calculateVelocitiesAndInertiaMatrices(const std::vector<double> q_dot, std::vector<CapsuleVelocity>& velocities,
-    std::vector<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic>>& inertia_matrices) const {
+std::vector<RobotReach::CapsuleVelocity> RobotReach::calculateAllCapsuleVelocities(const std::vector<double> q_dot) const {
   assert(q_dot.size() == nb_joints_);  // Number of joints should match
-  assert(velocities.size() == 0);  // velocities should be empty
-  assert(inertia_matrices.size() == 0);  // inertia matrices should be empty
+  std::vector<CapsuleVelocity> velocities;
+  for (int i = 0; i < nb_joints_; i++) {
+    velocities.push_back(calculateVelocityOfCapsule(i, q_dot));
+  }
+  return velocities;
+}
+
+std::vector<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic>> RobotReach::calculateAllInertiaMatrices(const std::vector<double> q_dot) const {
+  assert(q_dot.size() == nb_joints_);  // Number of joints should match
+  std::vector<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic>> inertia_matrices;
   std::vector<Eigen::Matrix<double, 6, Eigen::Dynamic>> link_jacobians(nb_joints_);
   for (int i = 0; i < nb_joints_; i++) {
-    link_jacobians[i] = calculateJacobian(i, robot_capsules_for_velocity_[i].p1_);
-    velocities.push_back(calculateVelocityOfCapsuleWithJacobian(i, q_dot, link_jacobians[i]));
+    reach_lib::Point CoM = robot_capsules_for_velocity_[i].p1_ + vectorToPoint((current_transformation_matrices_[i] * link_center_of_masses_[i]).col(3));
+    link_jacobians[i] = calculateJacobian(i, CoM);
     inertia_matrices.push_back(calculateInertiaMatrix(i, link_jacobians));
   }
+  return inertia_matrices;
 }
 
 RobotReach::CapsuleVelocity RobotReach::calculateVelocityOfCapsule(const int capsule, std::vector<double> q_dot) const {

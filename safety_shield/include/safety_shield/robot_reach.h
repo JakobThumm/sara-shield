@@ -97,6 +97,11 @@ class RobotReach {
   std::vector<Eigen::Matrix3d> link_inertias_;
 
   /**
+   * @brief Transformation matrix from the link coordinate system to the center of mass of the link.
+   */
+  std::vector<Eigen::Matrix4d> link_center_of_masses_;
+
+  /**
    * @brief The enclosing capsules
    */
   std::vector<reach_lib::Capsule> robot_capsules_;
@@ -141,6 +146,7 @@ class RobotReach {
    * @param geom_param the robot occupancy matrix
    * @param link_masses the masses of the links
    * @param link_inertias the inertias of the links
+   * @param link_center_of_masses the center of masses of the links
    * @param x initial x position of base
    * @param y initial y position of base
    * @param z initial z position of base
@@ -151,7 +157,7 @@ class RobotReach {
    *  account for measurement and modelling errors.
    */
   RobotReach(std::vector<double> transformation_matrices, int nb_joints, std::vector<double> geom_par,
-             std::vector<double> link_masses, std::vector<double> link_inertias, 
+             std::vector<double> link_masses, std::vector<double> link_inertias, std::vector<double> link_center_of_masses,
              double x = 0, double y = 0, double z = 0,
              double roll = 0, double pitch = 0, double yaw = 0, double secure_radius = 0);
 
@@ -201,6 +207,19 @@ class RobotReach {
 
   inline reach_lib::Point vectorToPoint(const Eigen::Vector4d& vec) const {
     return reach_lib::Point(vec(0), vec(1), vec(2));
+  }
+
+  inline Eigen::Matrix4d xyzrpy2transformationMatrix(double x, double y, double z, double roll, double pitch, double yaw) const {
+    Eigen::Matrix4d T;
+    double cr = cos(roll);
+    double sr = sin(roll);
+    double cp = cos(pitch);
+    double sp = sin(pitch);
+    double cy = cos(yaw);
+    double sy = sin(yaw);
+    T << cr * cp, cr * sp * sy - sr * cy, cr * sp * cy + sr * sy, x, sr * cp,
+        sr * sp * sy + cr * cy, sr * sp * cy - cr * sy, y, -sp, cp * sy, cp * cy, z, 0, 0, 0, 1;
+    return T;
   }
 
   /**
@@ -272,14 +291,20 @@ class RobotReach {
    const std::vector<double>& dq_max, const std::vector<double>& ddq_max, const std::vector<double>& dddq_max) const;
 
   /**
-   * @brief Calculate all velocities and inertia matrices for a specific robot configuration and joint velocity.
+   * @brief Calculate all velocities for a specific robot configuration.
    * @assumption calculateAlltransformationMatricesAndCapsules() was called before
    * @param[in] q_dot Joint velocities
-   * @param[out] velocities Vector of velocities in SE3 of both points of a capsule
-   * @param[out] inertia_matrices Inertia matrices of the links
+   * @return std::vector<CapsuleVelocity> Vector of velocities in SE3 of both points of a capsule
    */
-  void calculateVelocitiesAndInertiaMatrices(const std::vector<double> q_dot, std::vector<CapsuleVelocity>& velocities,
-    std::vector<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic>>& inertia_matrices) const;
+  std::vector<CapsuleVelocity> calculateAllCapsuleVelocities(const std::vector<double> q_dot) const;
+
+  /**
+   * @brief Calculate all inertia matrices for a specific robot configuration.
+   * @assumption calculateAlltransformationMatricesAndCapsules() was called before
+   * @param q_dot Joint velocities
+   * @return std::vector<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic>> Inertia matrices of the links.
+   */
+  std::vector<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic>> calculateAllInertiaMatrices(const std::vector<double> q_dot) const;
 
   /**
    * @brief Calculate the cartesian velocity of both defining point of a specific capsule
@@ -302,8 +327,6 @@ class RobotReach {
 
   /**
    * @brief Calculate the inertia matrix of a specific link
-   * 
-   * @details Currently, we are not taking the origin of the center of mass of the link into account. This is an open TODO.
    * 
    * @param[in] i link index
    * @param[in] link_jacobians Jacobians of the robot links up until link i.

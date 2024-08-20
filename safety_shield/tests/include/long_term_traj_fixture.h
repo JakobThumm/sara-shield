@@ -24,6 +24,7 @@
 
 #include "safety_shield/motion.h"
 #include "safety_shield/long_term_traj.h"
+#include "safety_shield/config_utils.h"
 
 #ifndef LONG_TERM_TRAJ_FIXTURE_H
 #define LONG_TERM_TRAJ_FIXTURE_H
@@ -113,23 +114,8 @@ protected:
     void SetUp() override {
         // setup for tests with jacobian matrix, testing with schunk robot
         std::filesystem::path config_file = std::filesystem::current_path().parent_path() / "config/robot_parameters_schunk.yaml";
-        YAML::Node robot_config = YAML::LoadFile(config_file.string());
-        double nb_joints = robot_config["nb_joints"].as<int>();
-        std::vector<double> transformation_matrices = robot_config["transformation_matrices"].as<std::vector<double>>();
-        std::vector<double>  enclosures = robot_config["enclosures"].as<std::vector<double>>();
-        double secure_radius = robot_config["secure_radius"].as<double>();
-        RobotReach robot_reach_approximate(transformation_matrices,
-                                           nb_joints,
-                                            enclosures,
-                                            0.0, 0.0, 0.0,
-                                            0.0, 0.0, 0.0,
-                                            secure_radius);
-        RobotReach robot_reach_exact(transformation_matrices,
-                                           nb_joints,
-                                           enclosures,
-                                           0.0, 0.0, 0.0,
-                                           0.0, 0.0, 0.0,
-                                           secure_radius);
+        RobotReach robot_reach_approximate = *(buildRobotReach(config_file.string(), 0.0, 0.0, 1.0, 0.0, 0.0, 0.0));
+        RobotReach robot_reach_exact = *(buildRobotReach(config_file.string(), 0.0, 0.0, 1.0, 0.0, 0.0, 0.0));
         robot_reach_approximate.setVelocityMethod(RobotReach::Velocity_method::APPROXIMATE);
         robot_reach_exact.setVelocityMethod(RobotReach::Velocity_method::EXACT);
         std::vector<Motion> mo_vec;
