@@ -139,6 +139,8 @@ class RobotReach {
    * @param transformation_matrices the transformation matrices
    * @param nb_joints the number of joints of the robot
    * @param geom_param the robot occupancy matrix
+   * @param link_masses the masses of the links
+   * @param link_inertias the inertias of the links
    * @param x initial x position of base
    * @param y initial y position of base
    * @param z initial z position of base
@@ -148,8 +150,10 @@ class RobotReach {
    * @param secure_radius Expand the radius of the robot capsules by this amount to
    *  account for measurement and modelling errors.
    */
-  RobotReach(std::vector<double> transformation_matrices, int nb_joints, std::vector<double> geom_par, double x = 0,
-             double y = 0, double z = 0, double roll = 0, double pitch = 0, double yaw = 0, double secure_radius = 0);
+  RobotReach(std::vector<double> transformation_matrices, int nb_joints, std::vector<double> geom_par,
+             std::vector<double> link_masses, std::vector<double> link_inertias, 
+             double x = 0, double y = 0, double z = 0,
+             double roll = 0, double pitch = 0, double yaw = 0, double secure_radius = 0);
 
   /**
    *  @brief A robot destructor
@@ -298,6 +302,8 @@ class RobotReach {
 
   /**
    * @brief Calculate the inertia matrix of a specific link
+   * 
+   * @details Currently, we are not taking the origin of the center of mass of the link into account. This is an open TODO.
    * 
    * @param[in] i link index
    * @param[in] link_jacobians Jacobians of the robot links up until link i.

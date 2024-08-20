@@ -17,8 +17,17 @@ RobotReach* buildRobotReach(
   std::vector<double> transformation_matrices = robot_config["transformation_matrices"].as<std::vector<double>>();
   std::vector<double> enclosures = robot_config["enclosures"].as<std::vector<double>>();
   double secure_radius = robot_config["secure_radius"].as<double>();
-  return new RobotReach(transformation_matrices, nb_joints, enclosures, init_x,
-                        init_y, init_z, init_roll, init_pitch, init_yaw, secure_radius);
+  std::vector<double> link_masses;
+  if (robot_config["link_masses"]) {
+    link_masses = robot_config["link_masses"].as<std::vector<double>>();
+  }
+  std::vector<double> inertia_matrices;
+  if (robot_config["link_inertias"]) {
+    inertia_matrices = robot_config["link_inertias"].as<std::vector<double>>();
+  }
+  return new RobotReach(transformation_matrices, nb_joints, enclosures, 
+                        link_masses, inertia_matrices,
+                        init_x, init_y, init_z, init_roll, init_pitch, init_yaw, secure_radius);
 }
 
 void readTrajectoryConfig(

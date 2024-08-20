@@ -3,8 +3,9 @@
 namespace safety_shield {
 
 RobotReach::RobotReach(std::vector<double> transformation_matrices, int nb_joints, std::vector<double> geom_par,
+                       std::vector<double> link_masses, std::vector<double> link_inertias, 
                        double x, double y, double z, double roll, double pitch, double yaw, double secure_radius)
-    : nb_joints_(nb_joints), secure_radius_(secure_radius) {
+    : nb_joints_(nb_joints), link_masses_(link_masses), secure_radius_(secure_radius) {
   Eigen::Matrix4d transformation_matrix_first;
   double cr = cos(roll);
   double sr = sin(roll);
@@ -35,6 +36,13 @@ RobotReach::RobotReach(std::vector<double> transformation_matrices, int nb_joint
     double radius = geom_par[7 * joint + 6];
     reach_lib::Capsule capsule(vectorToPoint(p1), vectorToPoint(p2), radius);
     robot_capsules_.push_back(capsule);
+    // Build inertia matrices
+    // link_inertias have form ixx_0, ixy_0, ixz_0, iyy_0, iyz_0, izz_0, ...
+    Eigen::Matrix<double, 3, 3> inertia_matrix;
+    inertia_matrix << link_inertias[6 * joint], link_inertias[6 * joint + 1], link_inertias[6 * joint + 2],
+                      link_inertias[6 * joint + 1], link_inertias[6 * joint + 3], link_inertias[6 * joint + 4],
+                      link_inertias[6 * joint + 2], link_inertias[6 * joint + 4], link_inertias[6 * joint + 5];
+    link_inertias_.push_back(inertia_matrix);
   }
 }
 
