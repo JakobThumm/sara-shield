@@ -169,7 +169,7 @@ void LongTermTraj::velocitiesOfAllMotions(RobotReach& robot_reach) {
     std::vector<double> motion_vels;
     robot_reach.calculateAllTransformationMatricesAndCapsules(motion.getAngleRef());
     for (int j = 0; j < nb_modules_; j++) {
-      capsule_velocities_[i][j] = robot_reach.getVelocityOfCapsule(j, motion.getVelocityRef());
+      capsule_velocities_[i][j] = robot_reach.calculateVelocityOfCapsule(j, motion.getVelocityRef());
       double motion_vel = robot_reach.approximateVelOfCapsule(j, capsule_velocities_[i][j].v2.v, capsule_velocities_[i][j].v2.w);
       motion_vels.push_back(motion_vel);
       max_motion_vel = std::max(max_motion_vel, motion_vel);

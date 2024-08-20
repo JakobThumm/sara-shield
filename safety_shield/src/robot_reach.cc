@@ -51,7 +51,7 @@ void RobotReach::reset(double x, double y, double z, double roll, double pitch, 
   transformation_matrices_[0] = transformation_matrix;
 }
 
-reach_lib::Capsule RobotReach::transformCapsule(const int& n_joint, const Eigen::Matrix4d& T) {
+reach_lib::Capsule RobotReach::transformCapsule(const int& n_joint, const Eigen::Matrix4d& T) const {
   Eigen::Vector4d p1 = T * pointToVector(robot_capsules_[n_joint].p1_);
   Eigen::Vector4d p2 = T * pointToVector(robot_capsules_[n_joint].p2_);
   reach_lib::Capsule c(vectorToPoint(p1), vectorToPoint(p2), robot_capsules_[n_joint].r_);
@@ -59,7 +59,7 @@ reach_lib::Capsule RobotReach::transformCapsule(const int& n_joint, const Eigen:
 }
 
 std::vector<reach_lib::Capsule> RobotReach::reach(Motion& start_config, Motion& goal_config, double s_diff,
-                                                  std::vector<double> alpha_i) {
+                                                  std::vector<double> alpha_i) const {
   assert(alpha_i.size() == nb_joints_);
   Eigen::Matrix4d T_before = transformation_matrices_[0];
   Eigen::Matrix4d T_after = transformation_matrices_[0];
@@ -93,7 +93,7 @@ std::vector<reach_lib::Capsule> RobotReach::reach(Motion& start_config, Motion& 
 }
 
 /// get for each robot motion the corresponding reachable set and collect in list
-std::vector<std::vector<reach_lib::Capsule>> RobotReach::reachTimeIntervals(std::vector<Motion> motions, std::vector<double> alpha_i) {
+std::vector<std::vector<reach_lib::Capsule>> RobotReach::reachTimeIntervals(std::vector<Motion> motions, std::vector<double> alpha_i) const {
   std::vector<std::vector<reach_lib::Capsule>> robot_reachable_sets;
   for(int i = 0; i < motions.size() - 1; i++) {
     std::vector<reach_lib::Capsule> timestep_i = reach(motions[i], motions[i+1], motions[i+1].getS() - motions[i].getS(), alpha_i);
@@ -106,7 +106,7 @@ double RobotReach::maxVelocityOfMotion(const Motion& motion) {
   calculateAllTransformationMatricesAndCapsules(motion.getAngleRef());
   double max_capsule_vel = 0;
   for (int i = 0; i < nb_joints_; ++i) {
-    double capsule_vel = getMaxVelocityOfCapsule(i, motion.getVelocityRef());
+    double capsule_vel = calculateMaxVelocityOfCapsule(i, motion.getVelocityRef());
     max_capsule_vel = std::max(max_capsule_vel, capsule_vel);
   }
   return max_capsule_vel;
@@ -147,7 +147,9 @@ double RobotReach::calculateMaxVelError(int link_index, double dt, const std::ve
 void RobotReach::calculateAllTransformationMatricesAndCapsules(const std::vector<double>& q) {
   robot_capsules_for_velocity_.clear();
   z_vectors_.clear();
+  current_transformation_matrices_.clear();
   Eigen::Matrix4d T_capsule = transformation_matrices_[0];
+  current_transformation_matrices_.push_back(T_capsule);
   // push z-vector of transformation matrix
   z_vectors_.emplace_back(T_capsule.block(0, 2, 3, 1));
   for (int i = 0; i < nb_joints_; ++i) {
@@ -156,14 +158,32 @@ void RobotReach::calculateAllTransformationMatricesAndCapsules(const std::vector
     // push robot capsule and z-vector
     robot_capsules_for_velocity_.push_back(capsule);
     z_vectors_.emplace_back(T_capsule.block(0, 2, 3, 1));
+    Eigen::Matrix4d deep_copy_T = T_capsule;
+    current_transformation_matrices_.push_back(deep_copy_T);
   }
 }
 
-RobotReach::CapsuleVelocity RobotReach::getVelocityOfCapsule(const int capsule, std::vector<double> q_dot){
+void RobotReach::calculateVelocitiesAndInertiaMatrices(const std::vector<double> q_dot, std::vector<CapsuleVelocity>& velocities,
+    std::vector<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic>>& inertia_matrices) const {
+  assert(q_dot.size() == nb_joints_);  // Number of joints should match
+  assert(velocities.size() == 0);  // velocities should be empty
+  assert(inertia_matrices.size() == 0);  // inertia matrices should be empty
+  std::vector<Eigen::Matrix<double, 6, Eigen::Dynamic>> link_jacobians(nb_joints_);
+  for (int i = 0; i < nb_joints_; i++) {
+    link_jacobians[i] = calculateJacobian(i, robot_capsules_for_velocity_[i].p1_);
+    velocities.push_back(calculateVelocityOfCapsuleWithJacobian(i, q_dot, link_jacobians[i]));
+    inertia_matrices.push_back(calculateInertiaMatrix(i, link_jacobians));
+  }
+}
+
+RobotReach::CapsuleVelocity RobotReach::calculateVelocityOfCapsule(const int capsule, std::vector<double> q_dot) const {
+  Eigen::Matrix<double, 6, Eigen::Dynamic> jacobian = calculateJacobian(capsule, robot_capsules_for_velocity_[capsule].p1_);
+  return calculateVelocityOfCapsuleWithJacobian(capsule, q_dot, jacobian);
+}
+
+RobotReach::CapsuleVelocity RobotReach::calculateVelocityOfCapsuleWithJacobian(const int capsule, std::vector<double> q_dot, const Eigen::Matrix<double, 6, Eigen::Dynamic>& jacobian) const {
   Eigen::VectorXd velocity = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(q_dot.data(), q_dot.size());
-  // Point 1
-  Eigen::Matrix<double, 6, Eigen::Dynamic> jacobian1 = getJacobian(capsule, robot_capsules_for_velocity_[capsule].p1_);
-  Eigen::Vector<double, 6> result1 = jacobian1 * velocity.segment(0, capsule + 1);
+  Eigen::Vector<double, 6> result1 = jacobian * velocity.segment(0, capsule + 1);
   RobotReach::SE3Vel vel1(result1.segment(0, 3), result1.segment(3, 3));
   // Point 2: v_2 = v_1 + \omega_1 \times (p_2 - p_1), \omega_2 = \omega_1
   RobotReach::SE3Vel vel2(
@@ -174,8 +194,23 @@ RobotReach::CapsuleVelocity RobotReach::getVelocityOfCapsule(const int capsule, 
   return RobotReach::CapsuleVelocity(vel1, vel2);
 }
 
-double RobotReach::getMaxVelocityOfCapsule(const int capsule, std::vector<double> q_dot) {
-  RobotReach::CapsuleVelocity capsule_velocity = getVelocityOfCapsule(capsule, q_dot);
+Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> RobotReach::calculateInertiaMatrix(const int i, const std::vector<Eigen::Matrix<double, 6, Eigen::Dynamic>>& link_jacobians) const {
+  assert(i < nb_joints_);
+  assert(link_jacobians.size() > i);  // Jacobians should be calculated up to the i-th link.
+  Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> inertia_matrix;
+  // J_P = link_jacobians[i](Eigen::seq(0,3), Eigen::all)
+  // J_O = link_jacobians[i](Eigen::seq(3,6), Eigen::all)
+  // R = current_transformation_matrices_[i].block(0, 0, 3, 3)
+  inertia_matrix = calculateLocalIntertiaMatrix(link_jacobians[0], link_masses_[0], current_transformation_matrices_[0].block(0, 0, 3, 3), link_inertias_[0]);
+  for (int j = 1; j <= nb_joints_; j++) {
+    auto J = (j < i) ? link_jacobians[j] : link_jacobians[i];
+    inertia_matrix = inertia_matrix + calculateLocalIntertiaMatrix(J, link_masses_[j], current_transformation_matrices_[j].block(0, 0, 3, 3), link_inertias_[j]);
+  }
+  return inertia_matrix;
+}
+
+double RobotReach::calculateMaxVelocityOfCapsule(const int capsule, std::vector<double> q_dot) const {
+  RobotReach::CapsuleVelocity capsule_velocity = calculateVelocityOfCapsule(capsule, q_dot);
   if (velocity_method_ == APPROXIMATE) {
     return approximateVelOfCapsule(capsule, capsule_velocity.v2.v, capsule_velocity.v2.w);
   } else {
@@ -184,7 +219,7 @@ double RobotReach::getMaxVelocityOfCapsule(const int capsule, std::vector<double
   }
 }
 
-Eigen::Matrix<double, 6, Eigen::Dynamic> RobotReach::getJacobian(const int joint, const reach_lib::Point& point) {
+Eigen::Matrix<double, 6, Eigen::Dynamic> RobotReach::calculateJacobian(const int joint, const reach_lib::Point& point) const {
   Eigen::Matrix<double, 6, Eigen::Dynamic> jacobian;
   jacobian.setZero(6, joint + 1);
   Eigen::Vector3d p_e = pointTo3dVector(point);
@@ -199,7 +234,7 @@ Eigen::Matrix<double, 6, Eigen::Dynamic> RobotReach::getJacobian(const int joint
   return jacobian;
 }
 
-double RobotReach::approximateVelOfCapsule(const int capsule, const Eigen::Vector3d& v, const Eigen::Vector3d& omega) {
+double RobotReach::approximateVelOfCapsule(const int capsule, const Eigen::Vector3d& v, const Eigen::Vector3d& omega) const {
   Eigen::Vector3d p1 = pointTo3dVector(robot_capsules_for_velocity_[capsule].p1_);
   Eigen::Vector3d p2 = pointTo3dVector(robot_capsules_for_velocity_[capsule].p2_);
   Eigen::Vector3d link = p1 - p2;
@@ -213,7 +248,7 @@ double RobotReach::approximateVelOfCapsule(const int capsule, const Eigen::Vecto
   return std::max(q1, q2);
 }
 
-double RobotReach::exactVelOfCapsule(const int capsule, const Eigen::Vector3d& v, const Eigen::Vector3d& omega) {
+double RobotReach::exactVelOfCapsule(const int capsule, const Eigen::Vector3d& v, const Eigen::Vector3d& omega) const {
   Eigen::Vector3d n = omega.normalized();
   double scalar_v = v.transpose() * n;
   Eigen::Vector3d p1 = pointTo3dVector(robot_capsules_for_velocity_[capsule].p1_);
@@ -237,7 +272,7 @@ double RobotReach::exactVelOfCapsule(const int capsule, const Eigen::Vector3d& v
 
 std::vector<std::vector<double>> RobotReach::calculateRobotLinkReflectedMassesPerTimeInterval(
   const std::vector<Motion>& robot_motions
-) {
+) const {
   std::vector<std::vector<double>> masses;
   for (int i = 0; i < robot_motions.size(); i++) {
     masses.push_back(calculateRobotLinkReflectedMasses(robot_motions[i]));
@@ -247,7 +282,7 @@ std::vector<std::vector<double>> RobotReach::calculateRobotLinkReflectedMassesPe
 
 std::vector<double> RobotReach::calculateRobotLinkReflectedMasses(
   const Motion& robot_motion
-) {
+) const {
   // TODO implement this function.
   double m = 10;
   std::vector<double> masses;
