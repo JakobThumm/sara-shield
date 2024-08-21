@@ -582,6 +582,14 @@ class SafetyShield {
   std::vector<Motion> getMotionsFromCurrentLTTandPath(const std::vector<double>& time_points);
 
   /**
+   * @brief Calculate the list of link inertia matrices on the LTT based on the current path and the given time points.
+   * 
+   * @param time_points Time points to return the list of motions at.
+   * @return std::vector<std::vector<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic>>>
+   */
+  std::vector<std::vector<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic>>> getInertiaMatricesFromCurrentLTTandPath(const std::vector<double>& time_points);
+
+  /**
    * @brief Receive a new human measurement
    * @param[in] human_measurement A vector of human joint measurements (list of reach_lib::Points)
    * @param[in] time The timestep of the measurement in seconds.

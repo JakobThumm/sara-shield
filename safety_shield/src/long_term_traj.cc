@@ -179,6 +179,8 @@ void LongTermTraj::velocitiesOfAllMotions(RobotReach& robot_reach) {
     motion.setMaximumCartesianVelocities(motion_vels);
     // Max velocity of the entire LTT.
     max_cart_vel_ = std::max(max_cart_vel_, max_motion_vel);
+    // Calculate the link inertia matrices
+    inertia_matrices_.push_back(robot_reach.calculateAllInertiaMatrices());
   }
 }
 

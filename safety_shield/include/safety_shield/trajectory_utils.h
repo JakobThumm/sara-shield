@@ -14,6 +14,7 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include <Eigen/Dense>
 #include <assert.h>
 #include <vector>
 
@@ -45,6 +46,17 @@ std::vector<double> calcTimePointsForEquidistantIntervals(double begin, double e
  */
 std::vector<Motion> getMotionsOfAllTimeStepsFromPath(const LongTermTraj& ltt, const Path& path, const std::vector<double>& time_points);
 
+/**
+ * @brief Get the inertia matrices of all robot links of all time points from a path on a long term trajectory.
+ * 
+ * @param ltt The long term trajectory to sample motions from.
+ * @param path The path that defines the movement on the path.
+ * @param time_points The time points at which to sample the motions.
+ * @return std::vector<std::vector<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic>>> 
+ */
+std::vector<std::vector<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic>>> getInertiaMatricesOfAllTimeStepsFromPath(
+  const LongTermTraj& ltt, const Path& path, const std::vector<double>& time_points
+);
 
 } // namespace safety_shield
 
