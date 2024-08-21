@@ -101,4 +101,37 @@ std::vector<std::vector<double>> calculateMaxRobotLinkVelocitiesPerTimeInterval(
   }
   return max_velocities;
 }
+
+std::vector<std::vector<double>> calculateMaxRobotEnergiesFromReflectedMasses(
+  const std::vector<std::vector<double>>& robot_link_velocities,
+  const std::vector<std::vector<double>>& robot_link_reflected_masses
+) {
+  assert(robot_link_velocities.size() == robot_link_reflected_masses.size());
+  assert(robot_link_velocities[0].size() == robot_link_reflected_masses[0].size());
+  int n_time_intervals = robot_link_velocities.size();
+  std::vector<std::vector<double>> robot_link_energies;
+  for (int i = 0; i < n_time_intervals; i++) {
+    robot_link_energies.push_back(calculateRobotLinkEnergies(robot_link_velocities[i], robot_link_reflected_masses[i]));
+  }
+  return robot_link_energies;
+}
+
+std::vector<std::vector<double>> calculateMaxRobotEnergiesFromInertiaMatrices(
+  const std::vector<std::vector<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic>>>& robot_inertia_matrices,
+  std::vector<std::vector<double>> dq
+) {
+  assert(robot_inertia_matrices.size() == dq.size());
+  int n_time_intervals = robot_inertia_matrices.size();
+  std::vector<std::vector<double>> robot_link_energies;
+  for (int i = 0; i < n_time_intervals; i++) {
+    Eigen::VectorXd dq_i = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(dq[i].data(), dq[i].size());
+    std::vector<double> robot_link_energies_i;
+    for (int j = 0; j < dq[i].size(); j++) {
+      robot_link_energies_i.push_back((0.5 * dq_i.transpose() * robot_inertia_matrices[i][j] * dq_i).array()[0]);
+    }
+    robot_link_energies.push_back(robot_link_energies_i);
+  }
+  return robot_link_energies;
+}
+
 }  // namespace safety_shield
