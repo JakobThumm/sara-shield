@@ -22,3 +22,18 @@ enclosures: [
   0.0, -0.1, 0.0,
   0.01,
 ]
+
+# In kg
+link_masses: [
+  1.0
+]
+
+# ixx, ixy, ixz, iyy, iyz, izz
+link_inertias: [
+  0.01, 0, 0, 0.01, 0, 0.01
+]
+
+# rpy, xyz
+link_centers_of_mass: [
+  0, 0, 0, 0, 0, 0
+]

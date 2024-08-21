@@ -629,15 +629,27 @@ bool SafetyShield::verifySafety(Motion& current_motion, Motion& goal_motion, con
     }
     double dt = time_points[1] - time_points[0];
     std::vector<double> velocity_errors = robot_reach_->calculateMaxVelErrors(dt, v_max_allowed_, a_max_allowed_, j_max_allowed_);
-    // TODO: Case new ltt!
     std::vector<std::vector<double>> robot_link_velocities = calculateMaxRobotLinkVelocitiesPerTimeInterval(
       interval_edges_motions,
       robot_link_radii,
       velocity_errors
     );
-    std::vector<std::vector<double>> robot_link_reflected_masses = robot_reach_->calculateRobotLinkReflectedMassesPerTimeInterval(interval_edges_motions);
     std::vector<std::vector<double>> maximal_contact_energies = human_reach_->getMaxContactEnergy();
-    is_safe_ = verify_->verifyHumanReachEnergy(robot_capsules_time_intervals_, human_capsules_time_intervals_, robot_link_velocities, robot_link_reflected_masses, maximal_contact_energies, collision_index);
+    // Solution with maximal allowed contact velocities (not fully implemented yet)
+    /* 
+    // Solution with reflected masses (not fully implemented yet)
+    std::vector<std::vector<double>> robot_link_reflected_masses = robot_reach_->calculateRobotLinkReflectedMassesPerTimeInterval(interval_edges_motions);
+    is_safe_ = verify_->verifyHumanReachEnergyReflectedMasses(robot_capsules_time_intervals_, human_capsules_time_intervals_, robot_link_velocities, robot_link_reflected_masses, maximal_contact_energies, collision_index);
+    */
+    // Solution with inertia matrices
+    is_safe = verify_->verifyHumanReachEnergyInertiaMatrices(
+      robot_capsules_time_intervals_,
+      human_capsules_time_intervals_,
+      getInertiaMatricesFromCurrentLTTandPath(time_points),
+      interval_edges_motions,
+      maximal_contact_energies,
+      collision_index
+    );
   } else {
     // Verify if the robot and human reachable sets are collision free
     is_safe = verify_->verifyHumanReachTimeIntervals(robot_capsules_time_intervals_, human_capsules_time_intervals_, collision_index);
@@ -773,6 +785,16 @@ std::vector<Motion> SafetyShield::getMotionsFromCurrentLTTandPath(const std::vec
     ltt = new_long_term_trajectory_;
   }
   return getMotionsOfAllTimeStepsFromPath(ltt, potential_path_, time_points);
+}
+
+std::vector<std::vector<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic>>> SafetyShield::getInertiaMatricesFromCurrentLTTandPath(
+  const std::vector<double>& time_points
+) {
+  LongTermTraj& ltt = long_term_trajectory_;
+  if (new_ltt_) {
+    ltt = new_long_term_trajectory_;
+  }
+  return getInertiaMatricesOfAllTimeStepsFromPath(ltt, potential_path_, time_points);
 }
 
 }  // namespace safety_shield

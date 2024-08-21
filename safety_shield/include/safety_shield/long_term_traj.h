@@ -14,6 +14,7 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include <Eigen/Dense>
 #include <assert.h>
 
 #include <algorithm>
@@ -119,7 +120,12 @@ class LongTermTraj {
   std::vector<std::vector<RobotReach::CapsuleVelocity>> capsule_velocities_;
 
   /**
-   * @brief sets maximum cartesian velocity for all Motions in LTT
+   * @brief The inertia matrices of the robot links in each time interval.
+   */
+  std::vector<std::vector<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic>>> inertia_matrices_;
+
+  /**
+   * @brief sets maximum cartesian velocity and the inertia matrices for all motions in LTT
    * @param[in] robot_reach used to calculate jacobians and velocities
    */
   void velocitiesOfAllMotions(RobotReach& robot_reach);
@@ -163,7 +169,7 @@ class LongTermTraj {
     length_ = long_term_traj_.size();
     assert (length_ > 0);
     nb_modules_ = long_term_traj_[0].getNbModules();
-    calculate_max_acc_jerk_window(long_term_traj_, sliding_window_k);
+    calculateMaxAccJerkWindow(long_term_traj_, sliding_window_k);
     for (int i = 0; i < long_term_traj_[0].getNbModules(); i++) {
       alpha_i_.push_back(alpha_i_max);
     }
@@ -216,7 +222,7 @@ class LongTermTraj {
    * @param long_term_traj Long term trajectory
    * @param k sliding window size
    */
-  void calculate_max_acc_jerk_window(std::vector<Motion>& long_term_traj, int k);
+  void calculateMaxAccJerkWindow(std::vector<Motion>& long_term_traj, int k);
 
   /**
    * @brief Set the Long Term Trajectory object
@@ -463,6 +469,16 @@ class LongTermTraj {
    */
   inline Motion getMotion(unsigned long index) const {
     return long_term_traj_.at(index);
+  }
+
+  /**
+   * @brief gets the inertia matrices of the robot links in a given time step
+   *
+   * @param index of motion in LTT
+   * @return std::vector<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic>> inertia matrices of the robot links
+   */
+  inline std::vector<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic>> getInertiaMatrices(int index) const {
+    return inertia_matrices_[index];
   }
 
   /**

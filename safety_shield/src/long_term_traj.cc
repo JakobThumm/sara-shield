@@ -16,7 +16,7 @@ LongTermTraj::LongTermTraj(
   length_ = long_term_traj.size();
   assert(length_ > 0);
   nb_modules_ = long_term_traj_[0].getNbModules();
-  calculate_max_acc_jerk_window(long_term_traj_, sliding_window_k);
+  calculateMaxAccJerkWindow(long_term_traj_, sliding_window_k);
   velocitiesOfAllMotions(robot_reach);
   calculateAlphaBeta();
 }
@@ -59,7 +59,7 @@ Motion LongTermTraj::interpolate(double s, double ds, double dds, double ddds) c
   return m;
 }
 
-void LongTermTraj::calculate_max_acc_jerk_window(std::vector<Motion>& long_term_traj, int k) {
+void LongTermTraj::calculateMaxAccJerkWindow(std::vector<Motion>& long_term_traj, int k) {
   int traj_length = long_term_traj.size();
   // It must be k <= trajectory length.
   k = std::min(traj_length, k);
@@ -169,7 +169,7 @@ void LongTermTraj::velocitiesOfAllMotions(RobotReach& robot_reach) {
     std::vector<double> motion_vels;
     robot_reach.calculateAllTransformationMatricesAndCapsules(motion.getAngleRef());
     for (int j = 0; j < nb_modules_; j++) {
-      capsule_velocities_[i][j] = robot_reach.getVelocityOfCapsule(j, motion.getVelocityRef());
+      capsule_velocities_[i][j] = robot_reach.calculateVelocityOfCapsule(j, motion.getVelocityRef());
       double motion_vel = robot_reach.approximateVelOfCapsule(j, capsule_velocities_[i][j].v2.v, capsule_velocities_[i][j].v2.w);
       motion_vels.push_back(motion_vel);
       max_motion_vel = std::max(max_motion_vel, motion_vel);
@@ -179,6 +179,8 @@ void LongTermTraj::velocitiesOfAllMotions(RobotReach& robot_reach) {
     motion.setMaximumCartesianVelocities(motion_vels);
     // Max velocity of the entire LTT.
     max_cart_vel_ = std::max(max_cart_vel_, max_motion_vel);
+    // Calculate the link inertia matrices
+    inertia_matrices_.push_back(robot_reach.calculateAllInertiaMatrices());
   }
 }
 

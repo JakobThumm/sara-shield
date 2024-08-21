@@ -14,6 +14,7 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include <Eigen/Dense>
 #include <assert.h>
 #include <vector>
 #include <map>
@@ -134,6 +135,30 @@ std::vector<std::vector<double>> calculateMaxRobotLinkVelocitiesPerTimeInterval(
   const std::vector<Motion>& robot_motions,
   const std::vector<double>& link_radii,
   const std::vector<double>& velocity_error
+);
+
+/**
+ * @brief Calculate the maximal robot link energies for each time interval.
+ * 
+ * @param robot_link_velocities The maximal velocity of each robot link in each time interval.
+ * @param robot_link_reflected_masses The maximal reflected masses of each robot link in each time interval.
+ * @return std::vector<std::vector<double>> Maximal energy of each robot link for each time interval.
+ */
+std::vector<std::vector<double>> calculateMaxRobotEnergiesFromReflectedMasses(
+  const std::vector<std::vector<double>>& robot_link_velocities,
+  const std::vector<std::vector<double>>& robot_link_reflected_masses
+);
+
+/**
+ * @brief Calculate the maximal robot link energies for each time interval.
+ * 
+ * @param robot_inertia_matrices The inertia matrices of the robot links in each time interval.
+ * @param dq The joint velocities of the robot in each time interval.
+ * @return std::vector<std::vector<double>> Maximal energy of each robot link for each time interval.
+ */
+std::vector<std::vector<double>> calculateMaxRobotEnergiesFromInertiaMatrices(
+  const std::vector<std::vector<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic>>>& robot_inertia_matrices,
+  std::vector<std::vector<double>> dq
 );
 
 /**

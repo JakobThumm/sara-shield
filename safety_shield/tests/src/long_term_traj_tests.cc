@@ -110,7 +110,7 @@ TEST_F(LongTermTrajTest, MaxAccWindowTest) {
   Motion m6(6, p0, v0, a6, j0);
   mo_vec.push_back(m6);
   long_term_trajectory_.setLongTermTrajectory(mo_vec);
-  long_term_trajectory_.calculate_max_acc_jerk_window(mo_vec, 3);
+  long_term_trajectory_.calculateMaxAccJerkWindow(mo_vec, 3);
 
   EXPECT_EQ(long_term_trajectory_.getMaxAccelerationWindow(0)[0], 78);
   EXPECT_EQ(long_term_trajectory_.getMaxAccelerationWindow(1)[0], 90);
@@ -175,7 +175,7 @@ TEST_F(LongTermTrajTest, MaxJerkWindowTest) {
   Motion m6(6, p0, v0, a0, j6);
   mo_vec.push_back(m6);
   long_term_trajectory_.setLongTermTrajectory(mo_vec);
-  long_term_trajectory_.calculate_max_acc_jerk_window(mo_vec, 3);
+  long_term_trajectory_.calculateMaxAccJerkWindow(mo_vec, 3);
 
   EXPECT_EQ(long_term_trajectory_.getMaxJerkWindow(0)[0], 78);
   EXPECT_EQ(long_term_trajectory_.getMaxJerkWindow(1)[0], 90);
