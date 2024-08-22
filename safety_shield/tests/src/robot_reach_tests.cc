@@ -523,6 +523,24 @@ TEST_F(RobotReachTestInertiaMatrix, InertiaMatrixTest0) {
   EXPECT_NEAR(B_22, B_22_predicted, 1e-8);
 }
 
+/*
+TEST_F(RobotReachSchunkTest, MaxReflectedMassTest) {
+  std::vector<double> q = {M_PI_4, M_PI_4, M_PI_4, -M_PI_4, M_PI_4, M_PI_4};
+  robot_reach_->calculateAllTransformationMatricesAndCapsules(q);
+  std::vector<double> max_reflected_masses = robot_reach_->calculateAllMaxReflectedMasses();
+  double sum_of_link_masses = 7.385860000000001;
+  EXPECT_NEAR(max_reflected_masses[max_reflected_masses.size()-1], sum_of_link_masses, 1e-8);
+}
+
+TEST_F(RobotReachPandaTest, MaxReflectedMassTest) {
+  std::vector<double> q = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+  robot_reach_->calculateAllTransformationMatricesAndCapsules(q);
+  std::vector<double> max_reflected_masses = robot_reach_->calculateAllMaxReflectedMasses();
+  double sum_of_link_masses = 16.691901;
+  EXPECT_NEAR(max_reflected_masses[max_reflected_masses.size()-1], sum_of_link_masses, 1e-8);
+}
+*/
+
 /// time interval method is equal to standard reach if reachability set interval size is equal or larger to s_diff (with single joint robot)
 TEST_F(RobotReachTestTimeIntervals, EqualityTest0) {
   Motion start_config(0, std::vector<double>{0.0}, 0);

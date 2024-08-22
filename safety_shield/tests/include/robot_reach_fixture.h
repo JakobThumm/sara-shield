@@ -126,6 +126,46 @@ class RobotReachTestTimeIntervals : public ::testing::Test {
   }
 };
 
+/**
+ * @brief Test fixture for robot reach class
+ */
+class RobotReachSchunkTest : public ::testing::Test {
+ protected:
+  /**
+   * @brief The robot reach object
+   */
+  RobotReach* robot_reach_;
+
+  /**
+   * @brief Create the robot reach object
+   */
+  void SetUp() override {
+    std::filesystem::path config_file =
+        std::filesystem::current_path().parent_path() / "config/robot_parameters_schunk.yaml";
+    robot_reach_ = buildRobotReach(config_file.string(), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+  }
+};
+
+/**
+ * @brief Test fixture for robot reach class
+ */
+class RobotReachPandaTest : public ::testing::Test {
+ protected:
+  /**
+   * @brief The robot reach object
+   */
+  RobotReach* robot_reach_;
+
+  /**
+   * @brief Create the robot reach object
+   */
+  void SetUp() override {
+    std::filesystem::path config_file =
+        std::filesystem::current_path().parent_path() / "config/robot_parameters_panda.yaml";
+    robot_reach_ = buildRobotReach(config_file.string(), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+  }
+};
+
 }  // namespace safety_shield
 
 #endif  // ROBOT_REACH_FIXTURE_H

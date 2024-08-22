@@ -179,6 +179,31 @@ std::vector<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic>> RobotReach::c
   return inertia_matrices;
 }
 
+std::vector<Eigen::Matrix<double, 3, 3>> RobotReach::calculateAllInvMassMatrices() const {
+  std::vector<Eigen::Matrix<double, 3, 3>> inv_mass_matrices;
+  std::vector<Eigen::Matrix<double, 6, Eigen::Dynamic>> link_jacobians(nb_joints_);
+  for (int i = 0; i < nb_joints_; i++) {
+    reach_lib::Point CoM = vectorToPoint((current_transformation_matrices_[i] * link_center_of_masses_[i]).col(3));
+    link_jacobians[i] = calculateJacobian(i, CoM);
+    auto inertia_matrix = calculateInertiaMatrix(i, link_jacobians);
+    inv_mass_matrices.push_back(calculateInvMassMatrix(link_jacobians[i], inertia_matrix));
+  }
+  return inv_mass_matrices;
+}
+
+std::vector<double> RobotReach::calculateAllMaxReflectedMasses() const {
+  auto inv_mass_matrices = calculateAllInvMassMatrices();
+  std::vector<double> max_reflected_masses;
+  for (int i = 0; i < nb_joints_; i++) {
+    std::cout << "Inv Mass Matrix: \n " << inv_mass_matrices[i] << std::endl;
+    Eigen::Vector3d eigenvalues = inv_mass_matrices[i].eigenvalues().real();
+    std::cout << "Eigenvalues: " << eigenvalues << std::endl;
+    double smallestAbsEigenvalue = eigenvalues.cwiseAbs().minCoeff();
+    max_reflected_masses.push_back(1.0 / smallestAbsEigenvalue);
+  }
+  return max_reflected_masses;
+}
+
 RobotReach::CapsuleVelocity RobotReach::calculateVelocityOfCapsule(const int capsule, std::vector<double> q_dot) const {
   Eigen::Matrix<double, 6, Eigen::Dynamic> jacobian = calculateJacobian(capsule, robot_capsules_for_velocity_[capsule].p1_);
   return calculateVelocityOfCapsuleWithJacobian(capsule, q_dot, jacobian);
@@ -210,6 +235,14 @@ Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> RobotReach::calculateInert
     inertia_matrix = inertia_matrix + calculateLocalIntertiaMatrix(J, link_masses_[j], current_transformation_matrices_[j].block(0, 0, 3, 3), link_inertias_[j]);
   }
   return inertia_matrix;
+}
+
+Eigen::Matrix<double, 3, 3> RobotReach::calculateInvMassMatrix(
+    const Eigen::Matrix<double, 6, Eigen::Dynamic>& link_jacobian,
+    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> inertia_matrix
+  ) const {
+  auto translational_jacobian = link_jacobian.topRows(3);
+  return translational_jacobian * inertia_matrix.inverse() * translational_jacobian.transpose();
 }
 
 double RobotReach::calculateMaxVelocityOfCapsule(const int capsule, std::vector<double> q_dot) const {

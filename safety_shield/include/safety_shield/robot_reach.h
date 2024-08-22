@@ -306,6 +306,20 @@ class RobotReach {
   std::vector<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic>> calculateAllInertiaMatrices() const;
 
   /**
+   * @brief Calculate all inverse translational mass matrices for a specific robot configuration.
+   * @assumption calculateAlltransformationMatricesAndCapsules() was called before
+   * @return std::vector<Eigen::Matrix<double, 3, 3>> The inverse translational mass matrices of the links.
+   */
+  std::vector<Eigen::Matrix<double, 3, 3>> calculateAllInvMassMatrices() const;
+
+  /**
+   * @brief Calculate all maximum reflected masses for a specific robot configuration.
+   * @assumption calculateAlltransformationMatricesAndCapsules() was called before
+   * @return std::vector<double> Maximum reflected masses of the links.
+   */
+  std::vector<double> calculateAllMaxReflectedMasses() const;
+
+  /**
    * @brief Calculate the cartesian velocity of both defining point of a specific capsule
    * @assumption calculateAlltransformationMatricesAndCapsules() was called before
    * @param capsule which capsule
@@ -332,6 +346,20 @@ class RobotReach {
    * @return Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> inertia matrix of link i.
    */
   Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> calculateInertiaMatrix(const int i, const std::vector<Eigen::Matrix<double, 6, Eigen::Dynamic>>& link_jacobians) const;
+
+  /**
+   * @brief Calculate the inverse translational mass matrix of a specific link
+   * 
+   * @details Currently only works for the last link!
+   * 
+   * @param[in] link_jacobian Jacobians of the robot link i.
+   * @param[in] inertia_matrix Inertia matrix of the robot link i.
+   * @return Eigen::Matrix<double, 3, 3> inverse translational mass matrix of link i.
+   */
+  Eigen::Matrix<double, 3, 3> calculateInvMassMatrix(
+    const Eigen::Matrix<double, 6, Eigen::Dynamic>& link_jacobian,
+    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> inertia_matrix
+  ) const;
 
   /**
    * @brief Calculate the local inertia matrix of a specific link
