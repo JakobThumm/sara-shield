@@ -642,11 +642,13 @@ bool SafetyShield::verifySafety(Motion& current_motion, Motion& goal_motion, con
     is_safe_ = verify_->verifyHumanReachEnergyReflectedMasses(robot_capsules_time_intervals_, human_capsules_time_intervals_, robot_link_velocities, robot_link_reflected_masses, maximal_contact_energies, collision_index);
     */
     // Solution with inertia matrices
+    std::vector<std::vector<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic>>> inertias_beginning_of_intervals = 
+      getInertiaMatricesFromCurrentLTTandPath(std::vector<double>(time_points.begin(), time_points.end() - 1));
     is_safe = verify_->verifyHumanReachEnergyInertiaMatrices(
       robot_capsules_time_intervals_,
       human_capsules_time_intervals_,
-      getInertiaMatricesFromCurrentLTTandPath(time_points),
-      interval_edges_motions,
+      inertias_beginning_of_intervals,
+      std::vector<Motion>(interval_edges_motions.begin(), interval_edges_motions.end() - 1),
       maximal_contact_energies,
       collision_index
     );
