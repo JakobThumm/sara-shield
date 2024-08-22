@@ -79,6 +79,8 @@ SafetyShield::SafetyShield(double sample_time, std::string trajectory_config_fil
     velocity_method_int,
     reachability_set_interval_size_
   );
+  ltp_ = long_term_planner::LongTermPlanner(nb_joints_, sample_time, q_min_allowed_, q_max_allowed_, v_max_allowed_,
+                                            a_max_ltt_, j_max_ltt_);
   RobotReach::Velocity_method velocity_method = static_cast<RobotReach::Velocity_method>(velocity_method_int);
   robot_reach_->setVelocityMethod(velocity_method);
   // Initialize the long term trajectory
