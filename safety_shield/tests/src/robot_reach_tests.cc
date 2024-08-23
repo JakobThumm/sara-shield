@@ -523,15 +523,15 @@ TEST_F(RobotReachTestInertiaMatrix, InertiaMatrixTest0) {
   EXPECT_NEAR(B_22, B_22_predicted, 1e-8);
 }
 
-/*
+
 TEST_F(RobotReachSchunkTest, MaxReflectedMassTest) {
-  std::vector<double> q = {M_PI_4, M_PI_4, M_PI_4, -M_PI_4, M_PI_4, M_PI_4};
+  std::vector<double> q = {0.2, 0.4, -0.32, 0.86, 0.926, 1.3};  // Some value that is no singularity
   robot_reach_->calculateAllTransformationMatricesAndCapsules(q);
   std::vector<double> max_reflected_masses = robot_reach_->calculateAllMaxReflectedMasses();
-  double sum_of_link_masses = 7.385860000000001;
-  EXPECT_NEAR(max_reflected_masses[max_reflected_masses.size()-1], sum_of_link_masses, 1e-8);
+  double sum_of_link_masses = 13.79;
+  EXPECT_TRUE(max_reflected_masses[max_reflected_masses.size()-1] < sum_of_link_masses);
 }
-
+/*
 TEST_F(RobotReachPandaTest, MaxReflectedMassTest) {
   std::vector<double> q = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
   robot_reach_->calculateAllTransformationMatricesAndCapsules(q);
