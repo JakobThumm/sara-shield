@@ -57,6 +57,7 @@ bool checkContactEnergySafety(
     int human_capsule_index = contact.first;
     for (const auto& robot_link_index : contact.second) {
       if (robot_link_energies[robot_link_index] > maximal_contact_energies[human_capsule_index]) {
+        spdlog::warn("Robot link {} in contact with human body {} and robot energy of {} exceeded max allowed energy of {}.", robot_link_index, human_capsule_index, robot_link_energies[robot_link_index], maximal_contact_energies[human_capsule_index]);
         return false;
       }
     }
@@ -93,7 +94,8 @@ std::vector<std::vector<double>> calculateMaxRobotLinkVelocitiesPerTimeInterval(
   for (int i = 1; i < robot_motions.size(); i++) {
     std::vector<double> max_velocities_i;
     for (int j = 0; j < n_links; j++) {
-      double delta_s = robot_motions[i].getS()-robot_motions[i-1].getS();
+      assert(robot_motions[i-1].getMaximumCartesianVelocities()[j] >= 0);
+      assert(robot_motions[i].getMaximumCartesianVelocities()[j] >= 0);
       double max_v = std::max(robot_motions[i-1].getMaximumCartesianVelocities()[j], robot_motions[i].getMaximumCartesianVelocities()[j]);
       max_velocities_i.push_back(max_v + velocity_error[j]);
     }

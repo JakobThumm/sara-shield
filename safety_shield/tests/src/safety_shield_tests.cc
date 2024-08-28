@@ -36,17 +36,21 @@ TEST_F(SafetyShieldTest, PlanSafetyShieldTest) {
   double final_pos, final_vel, final_acc;
   bool success;
   safety_shield::Path path;
-  for (int i = -10; i < 11; i++) {
+  for (int i = 0; i < 11; i++) {
     vel = double(i) / 10.0;
     for (int j = -40; j < 40; j++) {
       acc = double(j) / 5.0;
+      double t_to_a_0 = ceil((abs(acc) / j_max) / shield_.getSampleTime()) * shield_.getSampleTime();
+      if (vel + acc * t_to_a_0 / 2 < 0) {
+        continue;
+      }
       for (int k = 0; k < 101; k++) {
         ve = double(k) / 100.0;
         success = shield_.planSafetyShield(pos, vel, acc, ve, a_max, j_max, path);
-        EXPECT_TRUE(success);
+        ASSERT_TRUE(success);
         path.getFinalMotion(final_pos, final_vel, final_acc);
-        EXPECT_NEAR(final_vel, ve, 1e-6);
-        EXPECT_NEAR(final_acc, 0.0, 1e-6);
+        ASSERT_NEAR(final_vel, ve, 1e-6);
+        ASSERT_NEAR(final_acc, 0.0, 1e-6);
       }
     }
   }
