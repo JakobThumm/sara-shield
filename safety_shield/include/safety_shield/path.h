@@ -19,6 +19,8 @@
 #include <array>
 #include <iostream>
 
+#include "spdlog/spdlog.h"
+
 #ifndef PATH_H
 #define PATH_H
 
@@ -30,9 +32,16 @@ namespace safety_shield {
 class Path {
  private:
   /**
-   * @brief The three phases of the path with their end time (0 -> 2) and jerk (3 -> 5)
+   * @brief The end times of the three phases of the path
+   * 
+   * @details These values are continuously decremented by the sample time
    */
-  std::array<double, 6> phases_;
+  std::array<double, 3> times_;
+
+  /**
+   * @brief The jerks of the three phases of the path
+   */
+  std::array<double, 3> jerks_;
 
   /**
    * @brief The starting position
@@ -59,6 +68,53 @@ class Path {
    */
   bool is_current_;
 
+  /**
+   * @brief Calculate the position after the time duration
+   *
+   * @param p_0 starting position
+   * @param dt time duration
+   * @param v velocity
+   * @param a acceleration
+   * @param j jerk
+   * @return double position after the time duration
+   */
+  inline double calculatePos(double p_0, double dt, double v, double a, double j) const {
+    return p_0 + v * dt + 0.5 * a * dt * dt + j * dt * dt * dt / 6;
+  }
+
+  /**
+   * @brief Calculate the velocity after the time duration
+   * 
+   * @details Clips the velocity to 0 if it is negative
+   * 
+   * @param v_0 starting velocity
+   * @param dt time duration
+   * @param a acceleration
+   * @param j jerk
+   * @return double velocity after the time duration
+   */
+  inline double calculateVel(double v_0, double dt, double a, double j) const {
+    double v = v_0 + a * dt + 0.5 * j * dt * dt;
+    if (v < 0) {
+      spdlog::debug("Negative velocity detected. Setting to 0.");
+      return 0;
+    } else {
+      return v;
+    }
+  }
+
+  /**
+   * @brief Calculate the acceleration after the time duration
+   * 
+   * @param a_0 starting acceleration
+   * @param dt time duration
+   * @param j jerk
+   * @return double acceleration after the time duration
+   */
+  inline double calculateAcc(double a_0, double dt, double j) const {
+    return a_0 + j * dt;
+  }
+
  public:
   /**
    * @brief empty path constructor
@@ -71,11 +127,40 @@ class Path {
    */
   ~Path() {}
 
+  inline double calculateTimeForVel(double v_limit, double v, double a, double j) const {
+    // Solve v_limit = prev_vel + prev_acc * dt + jerk * dt^2 / 2 for dt
+    double square = std::sqrt(a * a - 2 * j * (v - v_limit));
+    double left = (-a - square) / j;
+    double right = (-a + square) / j;
+    if (left > 0 && right > 0) {
+      return std::min(left, right);
+    } else if (left > 0) {
+      return left;
+    } else if (right > 0) {
+      return right;
+    } else {
+      // already under v_iso
+      if (std::isnan(square)) {
+        spdlog::error("Error in Path::getMotionUnderVel: square is NaN");
+      } else {
+        spdlog::error("Error in Path::getMotionUnderVel: Quadratic-Function only has negative zero-values");
+      }
+      return -10;
+    }
+  }
+
   /**
    * @brief Returns the phases
    */
-  inline std::array<double, 6> getPhases() {
-    return phases_;
+  inline std::array<double, 3> getTimes() const {
+    return times_;
+  }
+
+  /**
+   * @brief Returns the jerks
+   */
+  inline std::array<double, 3> getJerks() const {
+    return jerks_;
   }
 
   /**
@@ -83,9 +168,9 @@ class Path {
    *
    * Format : [phases, is_current, pos, vel, acc]
    */
-  inline void printPath() {
-    std::cout << phases_[0] << "," << phases_[1] << "," << phases_[2] << "," << phases_[3] << "," << phases_[4] << ","
-              << phases_[5] << "," << is_current_ << "," << pos_ << "," << vel_ << "," << acc_ << std::endl;
+  inline void printPath() const {
+    std::cout << times_[0] << "," << times_[1] << "," << times_[2] << "," << jerks_[0] << "," << jerks_[1] << ","
+              << jerks_[2] << "," << is_current_ << "," << pos_ << "," << vel_ << "," << acc_ << std::endl;
   }
 
   /**
@@ -94,8 +179,8 @@ class Path {
    * @param i the phase number
    * @return the associated end time
    */
-  inline double getPhase(int i) {
-    return phases_[i - 1];
+  inline double getTime(int phase) {
+    return times_[phase];
   }
 
   /**
@@ -105,7 +190,7 @@ class Path {
    * @return the associated jerk
    */
   inline double getJerk(int phase) {
-    return phases_[phase + 3];
+    return jerks_[phase];
   }
 
   /**
@@ -123,7 +208,12 @@ class Path {
    * @return the starting velocity
    */
   inline double getVelocity() {
-    return vel_;
+    if (vel_ < 0) {
+      spdlog::debug("Negative path velocity detected. Setting to 0.");
+      return 0;
+    } else {
+      return vel_;
+    }
   }
 
   /**
@@ -156,13 +246,18 @@ class Path {
   /**
    * @brief Sets the path phases
    *
-   * @param phases the new phases
+   * @param times the new end times of the phases
+   * @param jerks the new jerks of the phases
    */
-  inline void setPhases(const std::array<double, 6>& phases) {
+  inline void setPhases(const std::array<double, 3>& times, const std::array<double, 3>& jerks) {
     for (int i = 0; i < 3; i++) {
-      assertm(phases[i] >= 0, "Phase is smaller than zero");
+      assertm(times[i] >= 0, "Phase is smaller than zero");
+      if (i > 0) {
+        assertm(times[i] >= times[i - 1], "Phases are not in increasing order");
+      }
     }
-    phases_ = phases;
+    times_ = times;
+    jerks_ = jerks;
   }
 
   /**
@@ -202,11 +297,11 @@ class Path {
   }
 
   /**
-   * @brief Increments the path
+   * @brief Increments the path by the given duration
    *
-   * @param sample_time the incrementation path
+   * @param duration the duration to increment the path by
    */
-  void increment(double sample_time);
+  void increment(double duration);
 
   /**
    * @brief Return the last position, velocity, and acceleration of the path.

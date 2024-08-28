@@ -230,7 +230,7 @@ Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> RobotReach::calculateInert
   // J_O = link_jacobians[i](Eigen::seq(3,6), Eigen::all)
   // R = current_transformation_matrices_[i].block(0, 0, 3, 3)
   inertia_matrix = calculateLocalIntertiaMatrix(link_jacobians[0], link_masses_[0], current_transformation_matrices_[0].block(0, 0, 3, 3), link_inertias_[0]);
-  for (int j = 1; j <= nb_joints_; j++) {
+  for (int j = 1; j < nb_joints_; j++) {
     auto J = (j < i) ? link_jacobians[j] : link_jacobians[i];
     inertia_matrix = inertia_matrix + calculateLocalIntertiaMatrix(J, link_masses_[j], current_transformation_matrices_[j].block(0, 0, 3, 3), link_inertias_[j]);
   }

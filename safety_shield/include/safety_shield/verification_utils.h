@@ -21,6 +21,7 @@
 
 #include "safety_shield/motion.h"
 #include "reach_lib.hpp"
+#include "spdlog/spdlog.h"
 
 #ifndef VERIFICATION_UTILS_H
 #define VERIFICATION_UTILS_H

@@ -65,6 +65,7 @@ void readTrajectoryConfig(
     reachability_set_interval_size = trajectory_config["reachability_set_interval_size"].as<double>();
   } else {
     reachability_set_interval_size = 10000;
+    spdlog::warn("reachability_set_interval_size not found in trajectory config file. Using default value of 10000.");
   }
 }
 

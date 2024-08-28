@@ -38,8 +38,9 @@ class PathTest : public ::testing::Test {
    */
   void SetUp() override {
     path_ = Path();
-    std::array<double,6> phases = {1, 2, 3, 1, 0, -1};
-    path_.setPhases(phases);
+    std::array<double, 3> times = {1, 2, 3};
+    std::array<double, 3> jerks = {1, 0, -1};
+    path_.setPhases(times, jerks);
   }
 };
 } // namespace safety_shield

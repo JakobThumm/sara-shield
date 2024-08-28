@@ -181,19 +181,24 @@ bool SafetyShield::planSafetyShield(double pos, double vel, double acc, double v
 
     // If current velocity is close to goal and acceleration is approx zero -> Do nothing
     if (fabs(vel - ve) < epsilon && fabs(acc) < epsilon) {
-      std::array<double, 6> new_phases = {sample_time_, sample_time_, sample_time_, 0.0, 0.0, 0.0};
-      path.setPhases(new_phases);
+      std::array<double, 3> new_times = {sample_time_, sample_time_, sample_time_};
+      std::array<double, 3> new_jerks = {0.0, 0.0, 0.0};
+      path.setPhases(new_times, new_jerks);
       return true;
     }
     // Time to reach zero acceleration with maximum jerk
     double t_to_a_0 = roundToTimestep(abs(acc) / j_max);
     // Velocity at zero acceleration
     double v_at_a_0 = vel + acc * t_to_a_0 / 2;
+    if (v_at_a_0 < 0) {
+      spdlog::warn("Velocity at zero acceleration is negative. The path calculations will be incorrect.");
+    }
 
     // If the velocity at zero acceleration is the goal velocity, use t_to_a_0 and max jerk and return
     if (fabs(v_at_a_0 - ve) < epsilon) {
-      std::array<double, 6> new_phases = {t_to_a_0, t_to_a_0, t_to_a_0, -acc / t_to_a_0, 0, 0};
-      path.setPhases(new_phases);
+      std::array<double, 3> new_times = {t_to_a_0, t_to_a_0, t_to_a_0};
+      std::array<double, 3> new_jerks = {-acc / t_to_a_0, 0, 0};
+      path.setPhases(new_times, new_jerks);
       return true;
     }
 
@@ -298,8 +303,9 @@ bool SafetyShield::planSafetyShield(double pos, double vel, double acc, double v
       spdlog::debug("planSafetyShield calculated time negative. t01 = {}, t12 = {}, t23 = {}", t01, t12, t23);
       return false;
     }
-    std::array<double, 6> new_phases = {t01, t01 + t12, t01 + t12 + t23, j01, j12, j23};
-    path.setPhases(new_phases);
+    std::array<double, 3> new_times = {t01, t01 + t12, t01 + t12 + t23};
+    std::array<double, 3> new_jerks = {j01, j12, j23};
+    path.setPhases(new_times, new_jerks);
     return true;
   } catch (const std::exception& exc) {
     spdlog::error("Exception in SafetyShield::planSafetyShield: {}", exc.what());
@@ -364,14 +370,6 @@ Motion SafetyShield::computesPotentialTrajectory(bool v, const std::vector<doubl
       calculateMaxAccJerk(prev_speed, a_max_ltt_, j_max_ltt_, a_max_manoeuvre, j_max_manoeuvre);
     }
 
-    // If there is a new LTT for the first time (new_ltt_processed_ == false), set the safe path to stop the robot.
-    // This is to prevent the robot from advancing the old LTT on a PFL trajectory instead of moving to the new LTT.
-    if (!new_ltt_processed_ && shield_type_ == ShieldType::PFL) {
-        planSafetyShield(safe_path_.getPosition(), safe_path_.getVelocity(), safe_path_.getAcceleration(),
-                           0, a_max_manoeuvre, j_max_manoeuvre, failsafe_path_);
-        safe_path_ = failsafe_path_;
-    }
-
     // Desired movement, one timestep
     //  if not already on the repair path, plan a repair path
     if (!recovery_path_.isCurrent()) {
@@ -385,15 +383,9 @@ Motion SafetyShield::computesPotentialTrajectory(bool v, const std::vector<doubl
       // advance one step on repair path
       recovery_path_.increment(sample_time_);
       bool failsafe_2_planning_success;
-      if (shield_type_ == ShieldType::PFL) {
-        // Plan new failsafe path for PFL
-        failsafe_2_planning_success = planPFLFailsafe(a_max_manoeuvre, j_max_manoeuvre);
-      } else {
-        // plan new failsafe path for STP
-        failsafe_2_planning_success =
-            planSafetyShield(recovery_path_.getPosition(), recovery_path_.getVelocity(), recovery_path_.getAcceleration(),
-                            0, a_max_manoeuvre, j_max_manoeuvre, failsafe_path_2_);
-      }
+      failsafe_2_planning_success =
+          planSafetyShield(recovery_path_.getPosition(), recovery_path_.getVelocity(), recovery_path_.getAcceleration(),
+                          0, a_max_manoeuvre, j_max_manoeuvre, failsafe_path_2_);
       // Check the validity of the planned path
       if (!failsafe_2_planning_success || recovery_path_.getPosition() < failsafe_path_.getPosition()) {
         recovery_path_correct_ = false;
@@ -408,20 +400,17 @@ Motion SafetyShield::computesPotentialTrajectory(bool v, const std::vector<doubl
     }
 
     //// Calculate start and goal pos of intended motion
-    // Fill potential buffer with position and velocity from last failsafe path. This value is not really used.
-    double s_d = failsafe_path_.getPosition();
-    double ds_d = failsafe_path_.getVelocity();
-    double dds_d = failsafe_path_.getAcceleration();
-    double ddds_d = failsafe_path_.getJerk();
-    // Calculate goal
+    double s_d, ds_d, dds_d;
     potential_path_.getFinalMotion(s_d, ds_d, dds_d);
+    double ddds_d = 0.0;
+    // Calculate goal
     Motion goal_motion;
     if (new_ltt_) {
       goal_motion = new_long_term_trajectory_.interpolate(s_d, ds_d, dds_d, ddds_d);
     } else {
       goal_motion = long_term_trajectory_.interpolate(s_d, ds_d, dds_d, ddds_d);
     } 
-    goal_motion.setTime(potential_path_.getPhase(3));
+    goal_motion.setTime(potential_path_.getTime(2));
     return goal_motion;
   } catch (const std::exception& exc) {
     spdlog::error("Exception in SafetyShield::computesPotentialTrajectory: {}", exc.what());
@@ -654,6 +643,9 @@ bool SafetyShield::verifySafety(Motion& current_motion, Motion& goal_motion, con
       maximal_contact_energies,
       collision_index
     );
+    if (!is_safe) {
+      spdlog::warn("Collision detected at time point {} with robot EEF velocity {}.", time_points[collision_index], robot_link_velocities[collision_index][nb_joints_ - 1]);
+    }
   } else {
     // Verify if the robot and human reachable sets are collision free
     is_safe = verify_->verifyHumanReachTimeIntervals(robot_capsules_time_intervals_, human_capsules_time_intervals_, collision_index);

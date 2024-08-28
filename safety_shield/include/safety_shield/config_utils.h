@@ -23,6 +23,7 @@
 
 #include "safety_shield/robot_reach.h"
 #include "safety_shield/human_reach.h"
+#include "spdlog/spdlog.h"
 
 #ifndef CONFIG_UTILS_H
 #define CONFIG_UTILS_H

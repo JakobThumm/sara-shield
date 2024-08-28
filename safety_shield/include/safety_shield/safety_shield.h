@@ -659,6 +659,10 @@ class SafetyShield {
     return shield_type_;
   }
 
+  inline double getSampleTime() const {
+    return sample_time_;
+  }
+
 };
 }  // namespace safety_shield
 
