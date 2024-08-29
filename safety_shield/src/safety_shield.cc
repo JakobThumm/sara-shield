@@ -643,9 +643,10 @@ bool SafetyShield::verifySafety(Motion& current_motion, Motion& goal_motion, con
       maximal_contact_energies,
       collision_index
     );
-    if (!is_safe) {
-      spdlog::warn("Collision detected at time point {} with robot EEF velocity {}.", time_points[collision_index], robot_link_velocities[collision_index][nb_joints_ - 1]);
-    }
+    // Debugging
+    // if (!is_safe) {
+    //   spdlog::warn("Collision detected at time point {} with robot EEF velocity {}.", time_points[collision_index], robot_link_velocities[collision_index][nb_joints_ - 1]);
+    // }
   } else {
     // Verify if the robot and human reachable sets are collision free
     is_safe = verify_->verifyHumanReachTimeIntervals(robot_capsules_time_intervals_, human_capsules_time_intervals_, collision_index);

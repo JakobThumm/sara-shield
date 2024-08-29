@@ -57,7 +57,7 @@ bool checkContactEnergySafety(
     int human_capsule_index = contact.first;
     for (const auto& robot_link_index : contact.second) {
       if (robot_link_energies[robot_link_index] > maximal_contact_energies[human_capsule_index]) {
-        spdlog::warn("Robot link {} in contact with human body {} and robot energy of {} exceeded max allowed energy of {}.", robot_link_index, human_capsule_index, robot_link_energies[robot_link_index], maximal_contact_energies[human_capsule_index]);
+        // spdlog::warn("Robot link {} in contact with human body {} and robot energy of {} exceeded max allowed energy of {}.", robot_link_index, human_capsule_index, robot_link_energies[robot_link_index], maximal_contact_energies[human_capsule_index]);
         return false;
       }
     }
