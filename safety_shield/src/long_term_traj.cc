@@ -11,11 +11,9 @@ LongTermTraj::LongTermTraj(
   std::vector<double> a_max_allowed,
   std::vector<double> j_max_allowed,
   int sliding_window_k
-) : long_term_traj_(long_term_traj), sample_time_(sample_time), current_pos_(0), starting_index_(starting_index),
+) : current_pos_(0), starting_index_(starting_index),
       v_max_allowed_(v_max_allowed), a_max_allowed_(a_max_allowed), j_max_allowed_(j_max_allowed) {
-  length_ = long_term_traj.size();
-  assert(length_ > 0);
-  nb_modules_ = long_term_traj_[0].getNbModules();
+  setLongTermTrajectory(long_term_traj, sample_time);
   calculateMaxAccJerkWindow(long_term_traj_, sliding_window_k);
   velocitiesOfAllMotions(robot_reach);
   calculateAlphaBeta();

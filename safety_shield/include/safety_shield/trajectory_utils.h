@@ -15,7 +15,7 @@
  */
 
 #include <Eigen/Dense>
-#include <assert.h>
+#include <stdexcept>
 #include <vector>
 
 #include "safety_shield/motion.h"

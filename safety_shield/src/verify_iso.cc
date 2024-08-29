@@ -19,7 +19,9 @@ bool VerifyISO::verifyHumanReachTimeIntervals(
   const std::vector<std::vector<std::vector<reach_lib::Capsule>>>& human_reachable_sets,
   int& collision_index
 ) {
-  assert(robot_reachable_sets.size() == human_reachable_sets.size());
+  if (robot_reachable_sets.size() != human_reachable_sets.size()) {
+    throw std::length_error("The number of time intervals for the robot and human reachable sets do not match.");
+  }
   for (int i = 0; i < robot_reachable_sets.size(); i++) {
     if (!verifyHumanReach(robot_reachable_sets[i], human_reachable_sets[i])) {
       // returns false if at least in one time step, there is a collision
@@ -61,11 +63,22 @@ bool VerifyISO::verifyHumanReachEnergy(const std::vector<std::vector<reach_lib::
   const std::vector<std::vector<double>>& robot_link_energies,
   const std::vector<std::vector<double>>& maximal_contact_energies,
   int& collision_index) {
-  assert(robot_reachable_sets.size() == human_reachable_sets.size());  // same number of time intervals
-  assert(robot_reachable_sets.size() == robot_link_energies.size());  // same number of time intervals
-  assert(robot_reachable_sets[0].size() == robot_link_energies[0].size());  // same number of robot links
-  assert(human_reachable_sets[0].size() == maximal_contact_energies.size());  // same number of human models
-  assert(human_reachable_sets[0][0].size() == maximal_contact_energies[0].size());  // same number of human bodies
+  if (robot_reachable_sets.size() != human_reachable_sets.size()) {
+    throw std::length_error("The number of time intervals for the robot and human reachable sets do not match.");
+  }
+  if (robot_reachable_sets.size() != robot_link_energies.size()) {
+    throw std::length_error("The number of time intervals for the robot and robot link energies do not match.");
+  }
+  if (robot_reachable_sets[0].size() != robot_link_energies[0].size()) {
+    throw std::length_error("The number of robot links for the robot reachable sets and robot link energies do not match.");
+  }
+  if (human_reachable_sets[0].size() != maximal_contact_energies.size()) {
+    throw std::length_error("The number of human models for the human reachable sets and maximal contact energies do not match.");
+  }
+  if (human_reachable_sets[0][0].size() != maximal_contact_energies[0].size()) {
+    throw std::length_error("The number of human bodies for the human reachable sets and maximal contact energies do not match.");
+  }
+
   int n_time_intervals = robot_reachable_sets.size();
   int n_robot_links = robot_reachable_sets[0].size();
   int n_human_models = human_reachable_sets[0].size();
@@ -90,11 +103,21 @@ bool VerifyISO::verifyHumanReachVelocity(const std::vector<std::vector<reach_lib
   const std::vector<std::vector<double>>& robot_link_velocities,
   const std::vector<std::vector<double>>& maximal_contact_velocities,
   int& collision_index) {
-  assert(robot_reachable_sets.size() == human_reachable_sets.size());  // same number of time intervals
-  assert(robot_reachable_sets.size() == robot_link_velocities.size());  // same number of time intervals
-  assert(robot_reachable_sets[0].size() == robot_link_velocities[0].size());  // same number of robot links
-  assert(human_reachable_sets[0].size() == maximal_contact_velocities.size());  // same number of human models
-  assert(human_reachable_sets[0][0].size() == maximal_contact_velocities[0].size());  // same number of human bodies
+  if (robot_reachable_sets.size() != human_reachable_sets.size()) {
+    throw std::length_error("The number of time intervals for the robot and human reachable sets do not match.");
+  }
+  if (robot_reachable_sets.size() != robot_link_velocities.size()) {
+    throw std::length_error("The number of time intervals for the robot reachable sets and robot link velocities do not match.");
+  }
+  if (robot_reachable_sets[0].size() != robot_link_velocities[0].size()) {
+    throw std::length_error("The number of robot links for the robot reachable sets and robot link velocities do not match.");
+  }
+  if (human_reachable_sets[0].size() != maximal_contact_velocities.size()) {
+    throw std::length_error("The number of human models for the human reachable sets and maximal contact velocities do not match.");
+  }
+  if (human_reachable_sets[0][0].size() != maximal_contact_velocities[0].size()) {
+    throw std::length_error("The number of human bodies for the human reachable sets and maximal contact velocities do not match.");
+  }
   int n_time_intervals = robot_reachable_sets.size();
   int n_robot_links = robot_reachable_sets[0].size();
   int n_human_models = human_reachable_sets[0].size();

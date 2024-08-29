@@ -561,7 +561,9 @@ void SafetyShield::evaluateNewLTTProcessed(Motion& current_motion) {
 }
 
 void SafetyShield::newGoalPlanning(Motion& current_motion) {
-  assert(new_goal_); // This function should only be called if there is a new goal to plan to.
+  if (!new_goal_) {
+    throw std::logic_error("SafetyShield::newGoalPlanning called without new goal.");
+  }
   // Check if current motion has acceleration and jerk values that lie in the plannable ranges
   if (!checkCurrentMotionForReplanning(current_motion)) {
     new_ltt_ = false;

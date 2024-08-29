@@ -14,8 +14,7 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <assert.h>
-
+#include <stdexcept>
 #include <cmath>
 #include <vector>
 #include "spdlog/spdlog.h"
@@ -75,6 +74,12 @@ class Motion {
    * @brief The maximum Cartesian velocities of the individual robot links in this time step.
    */
   std::vector<double> maximum_cartesian_velocities_;
+
+  inline void checkMotionModuleSize(Motion *motion) const {
+    if (motion->getNbModules() != nb_modules_) {
+      throw std::invalid_argument("The two motions must have the same number of modules.");
+    }
+  }
 
  public:
   /**
@@ -170,8 +175,7 @@ class Motion {
    * @return false Position is not the same
    */
   inline bool hasSamePos(Motion *motion, double threshold = 1e-3) const {
-    assert(motion->getNbModules() == nb_modules_);
-    // Check if traj starts at the same position
+    checkMotionModuleSize(motion);
     for (int i = 0; i < nb_modules_; i++) {
       if (std::abs(q_[i] - motion->getAngle()[i]) > threshold) {
         return false;
@@ -189,8 +193,7 @@ class Motion {
    * @return false Velocity is not the same
    */
   inline bool hasSameVel(Motion *motion, double threshold = 1e-4) const {
-    assert(motion->getNbModules() == nb_modules_);
-    // Check if traj starts at the same position
+    checkMotionModuleSize(motion);
     for (int i = 0; i < nb_modules_; i++) {
       if (std::abs(dq_[i] - motion->getVelocity()[i]) > threshold) {
         return false;
@@ -208,8 +211,7 @@ class Motion {
    * @return false acceleration is not the same
    */
   inline bool hasSameAcc(Motion *motion, double threshold = 1e-4) const {
-    assert(motion->getNbModules() == nb_modules_);
-    // Check if traj starts at the same position
+    checkMotionModuleSize(motion);
     for (int i = 0; i < nb_modules_; i++) {
       if (std::abs(ddq_[i] - motion->getAcceleration()[i]) > threshold) {
         return false;

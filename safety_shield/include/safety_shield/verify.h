@@ -17,6 +17,7 @@
 #include <Eigen/Dense>
 #include <algorithm>
 #include <vector>
+#include <stdexcept>
 
 #include "reach_lib.hpp"
 #include "safety_shield/verification_utils.h"

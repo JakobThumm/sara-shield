@@ -16,7 +16,7 @@
 
 #include <map>
 #include <vector>
-#include <assert.h>
+#include <stdexcept>
 #include <string>
 
 #include <Eigen/Dense>

@@ -86,17 +86,27 @@ std::vector<std::vector<double>> calculateMaxRobotLinkVelocitiesPerTimeInterval(
   const std::vector<double>& link_radii,
   const std::vector<double>& velocity_error
 ) {
-  std::vector<std::vector<double>> max_velocities;
-  assert(robot_motions.size() > 0);
+  if (robot_motions.size() == 0) {
+    spdlog::error("No robot motions provided in calculateMaxRobotLinkVelocitiesPerTimeInterval.");
+    return std::vector<std::vector<double>>();
+  }
   int n_links = robot_motions[0].getMaximumCartesianVelocities().size();
-  assert(velocity_error.size() == n_links);
-  assert(link_radii.size() == n_links);
+  if (velocity_error.size() != n_links) {
+    throw std::length_error("Velocity error has to have the same size as the number of robot links.");
+  }
+  if (link_radii.size() != n_links) {
+    throw std::length_error("Link radii have to have the same size as the number of robot links.");
+  }
+  std::vector<std::vector<double>> max_velocities;
   for (int i = 1; i < robot_motions.size(); i++) {
     std::vector<double> max_velocities_i;
     for (int j = 0; j < n_links; j++) {
-      assert(robot_motions[i-1].getMaximumCartesianVelocities()[j] >= 0);
-      assert(robot_motions[i].getMaximumCartesianVelocities()[j] >= 0);
-      double max_v = std::max(robot_motions[i-1].getMaximumCartesianVelocities()[j], robot_motions[i].getMaximumCartesianVelocities()[j]);
+      double prev_vel = robot_motions[i-1].getMaximumCartesianVelocities()[j];
+      double vel = robot_motions[i].getMaximumCartesianVelocities()[j];
+      if (prev_vel < 0 || vel < 0) {
+        throw std::invalid_argument("Maximum Cartesian velocity of robot motion cannot be negative.");
+      }
+      double max_v = std::max(prev_vel, vel);
       max_velocities_i.push_back(max_v + velocity_error[j]);
     }
     max_velocities.push_back(max_velocities_i);
@@ -108,8 +118,12 @@ std::vector<std::vector<double>> calculateMaxRobotEnergiesFromReflectedMasses(
   const std::vector<std::vector<double>>& robot_link_velocities,
   const std::vector<std::vector<double>>& robot_link_reflected_masses
 ) {
-  assert(robot_link_velocities.size() == robot_link_reflected_masses.size());
-  assert(robot_link_velocities[0].size() == robot_link_reflected_masses[0].size());
+  if (robot_link_velocities.size() != robot_link_reflected_masses.size()) {
+    throw std::length_error("Robot link velocities and reflected masses have to have the same size.");
+  }
+  if (robot_link_velocities[0].size() != robot_link_reflected_masses[0].size()) {
+    throw std::length_error("Number of links in Robot link velocities and reflected masses have to be the same.");
+  }
   int n_time_intervals = robot_link_velocities.size();
   std::vector<std::vector<double>> robot_link_energies;
   for (int i = 0; i < n_time_intervals; i++) {
@@ -122,7 +136,9 @@ std::vector<std::vector<double>> calculateMaxRobotEnergiesFromInertiaMatrices(
   const std::vector<std::vector<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic>>>& robot_inertia_matrices,
   std::vector<std::vector<double>> dq
 ) {
-  assert(robot_inertia_matrices.size() == dq.size());
+  if (robot_inertia_matrices.size() != dq.size()) {
+    throw std::length_error("Robot inertia matrices and joint velocities have to have the same size.");
+  }
   int n_time_intervals = robot_inertia_matrices.size();
   std::vector<std::vector<double>> robot_link_energies;
   for (int i = 0; i < n_time_intervals; i++) {
