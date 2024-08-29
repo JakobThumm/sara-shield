@@ -14,8 +14,7 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <cassert>
-#define assertm(exp, msg) assert(((void)msg, exp))
+#include <stdexcept>
 #include <array>
 #include <iostream>
 
@@ -251,9 +250,11 @@ class Path {
    */
   inline void setPhases(const std::array<double, 3>& times, const std::array<double, 3>& jerks) {
     for (int i = 0; i < 3; i++) {
-      assertm(times[i] >= 0, "Phase is smaller than zero");
-      if (i > 0) {
-        assertm(times[i] >= times[i - 1], "Phases are not in increasing order");
+      if (times[i] < 0) {
+        throw std::invalid_argument("Time " + std::to_string(i) + " = " + std::to_string(times[i]) + " is smaller than zero");
+      }
+      if (i > 0 && times[i] < times[i - 1]) {
+        throw std::invalid_argument("times[" + std::to_string(i) + "]= " + std::to_string(times[i]) + " is smaller than times[" + std::to_string(i-1) + "]= " + std::to_string(times[i-1]));
       }
     }
     times_ = times;

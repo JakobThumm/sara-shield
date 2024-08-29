@@ -57,8 +57,13 @@ TEST_F(VerifyIsoTest, VerifyHumanReachTimeIntervalsTest) {
   std::vector<std::vector<std::vector<reach_lib::Capsule>>> h_caps_list_012 = {h_caps_0, h_caps_1, h_caps_2};
   std::vector<std::vector<reach_lib::Capsule>> r_caps_list_012 = {r_caps_0, r_caps_1, r_caps_2};
   int collision_index;
-  EXPECT_DEBUG_DEATH(verify_iso_.verifyHumanReachTimeIntervals(r_caps_list_01, h_caps_list_012, collision_index), "");
-  // EXPECT_DEBUG_DEATH(verify_iso_.verifyHumanReachTimeIntervals(r_caps_list_012, h_caps_list_01, collision_index), "");
+  try {
+    verify_iso_.verifyHumanReachTimeIntervals(r_caps_list_01, h_caps_list_012, collision_index);
+    // We should never reach this point
+    ASSERT_TRUE(false);
+  } catch (std::length_error& e) {
+    EXPECT_TRUE(true);
+  }
   EXPECT_TRUE(verify_iso_.verifyHumanReachTimeIntervals(r_caps_list_01, h_caps_list_01, collision_index));
   EXPECT_EQ(collision_index, -1);
   EXPECT_FALSE(verify_iso_.verifyHumanReachTimeIntervals(r_caps_list_012, h_caps_list_012, collision_index));
@@ -99,11 +104,27 @@ TEST_F(VerifyIsoTest, VerifyHumanReachVelocityTest) {
   std::vector<std::vector<double>> maximal_contact_velocities_wrongly_defined = {{0.3, 0.4, 0.5}};
   std::vector<std::vector<double>> maximal_contact_velocities_wrongly_defined2 = {{0.3, 0.4, 0.5}, {0.3, 0.4, 0.5}};
   int collision_index;
-  EXPECT_DEBUG_DEATH(verify_iso_.verifyHumanReachVelocity(r_caps_list_01, h_caps_list_012, robot_link_velocities_01, maximal_contact_velocities_high, collision_index), "");
-  // EXPECT_DEBUG_DEATH(verify_iso_.verifyHumanReachVelocity(r_caps_list_012, h_caps_list_01, robot_link_velocities_01, maximal_contact_velocities_high, collision_index), "");
-  // EXPECT_DEBUG_DEATH(verify_iso_.verifyHumanReachVelocity(r_caps_list_01, h_caps_list_01, robot_link_velocities_012, maximal_contact_velocities_high, collision_index), "");
-  EXPECT_DEBUG_DEATH(verify_iso_.verifyHumanReachVelocity(r_caps_list_01, h_caps_list_01, robot_link_velocities_01, maximal_contact_velocities_wrongly_defined, collision_index), "");
-  EXPECT_DEBUG_DEATH(verify_iso_.verifyHumanReachVelocity(r_caps_list_01, h_caps_list_01, robot_link_velocities_01, maximal_contact_velocities_wrongly_defined2, collision_index), "");
+  try {
+    verify_iso_.verifyHumanReachVelocity(r_caps_list_01, h_caps_list_012, robot_link_velocities_01, maximal_contact_velocities_high, collision_index);
+    // We should never reach this point
+    ASSERT_TRUE(false);
+  } catch (std::length_error& e) {
+    EXPECT_TRUE(true);
+  }
+  try {
+    verify_iso_.verifyHumanReachVelocity(r_caps_list_01, h_caps_list_01, robot_link_velocities_01, maximal_contact_velocities_wrongly_defined, collision_index);
+    // We should never reach this point
+    ASSERT_TRUE(false);
+  } catch (std::length_error& e) {
+    EXPECT_TRUE(true);
+  }
+  try {
+    verify_iso_.verifyHumanReachVelocity(r_caps_list_01, h_caps_list_01, robot_link_velocities_01, maximal_contact_velocities_wrongly_defined2, collision_index);
+    // We should never reach this point
+    ASSERT_TRUE(false);
+  } catch (std::length_error& e) {
+    EXPECT_TRUE(true);
+  }
   // No collision
   EXPECT_TRUE(verify_iso_.verifyHumanReachVelocity(r_caps_list_01, h_caps_list_01, robot_link_velocities_01, maximal_contact_velocities_high, collision_index));
   EXPECT_EQ(collision_index, -1);

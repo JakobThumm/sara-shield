@@ -127,7 +127,9 @@ HumanReach::HumanReach(int n_joints_meas,
     extremity_max_v.push_back(
       std::max(max_v.at(joint_names.at(extremity_base_names[i])), max_v.at(joint_names.at(extremity_end_names[i]))));
   }
-  assert(extremity_base_names.size() == extremity_end_names.size());
+  if (extremity_base_names.size() != extremity_end_names.size()) {
+    throw std::length_error("HumanReach::HumanReach: extremity_base_names and extremity_end_names must have the same size.");
+  }
   human_models_.push_back(new reach_lib::ArticulatedPos(
     system, extremity_body_segment_map, extremity_thickness,
     extremity_max_v, extremity_length
@@ -182,7 +184,9 @@ void HumanReach::reset() {
 }
 
 void HumanReach::measurement(const std::vector<reach_lib::Point>& human_joint_pos, double time) {
-  assert(human_joint_pos.size() == n_joints_meas_);
+  if (human_joint_pos.size() != n_joints_meas_) {
+    throw std::length_error("HumanReach::measurement: measurement vector human_joint_pos must have the same size as n_joints_meas_");
+  }
   try {
     if (use_kalman_filter_) {
       // Filter measurements

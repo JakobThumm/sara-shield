@@ -95,7 +95,9 @@ void Path::getMotionUnderVel(double v_limit, double& time, double& pos, double& 
     double epsilon = 1e-8;
     if (next_vel < v_limit + epsilon) {
       double dt_limit = calculateTimeForVel(v_limit, prev_vel, prev_acc, jerks_[i]);
-      assert(dt_limit >= 0);  // time must be positive
+      if (dt_limit < 0) {
+        throw std::runtime_error("Error in Path::getMotionUnderVel: dt_limit is negative. Could not calculate the time when the velocity falls under the safe limit.");
+      }
       time = times_[i] + dt_limit;
       pos = calculatePos(prev_pos, dt_limit, prev_vel, prev_acc, jerk);
       vel = calculateVel(prev_vel, dt_limit, prev_acc, jerk);

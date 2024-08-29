@@ -14,7 +14,7 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <assert.h>
+#include <stdexcept>
 #include <math.h>
 #include <stdio.h>
 #include <time.h>
@@ -605,7 +605,6 @@ class SafetyShield {
    * @param[in] time The timestep of the measurement in seconds.
    */
   inline void humanMeasurement(const std::vector<std::vector<double>> human_measurement, double time) {
-    assert(human_measurement.size() > 0);
     std::vector<reach_lib::Point> converted_vec;
     for (int i = 0; i < human_measurement.size(); i++) {
       converted_vec.push_back(
@@ -643,7 +642,10 @@ class SafetyShield {
    * @return std::vector<std::vector<double>> Capsules
    */
   inline std::vector<std::vector<double>> getHumanReachCapsules(int type = 0) {
-    assert(type >= 0 && type <= human_capsules_.size());
+    if (type < 0 || type >= human_capsules_.size()) {
+      throw std::invalid_argument("Invalid type of human reach capsules requested. Please select a value between 0 and " +
+                                  std::to_string(human_capsules_.size() - 1));
+    }
     std::vector<std::vector<double>> capsules(human_capsules_[type].size(), std::vector<double>(7));
     for (int i = 0; i < human_capsules_[type].size(); i++) {
       capsules[i] = convertCapsule(human_capsules_[type][i]);

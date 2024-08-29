@@ -3,8 +3,9 @@
 namespace safety_shield {
 
 void MeasurementHandler::initialMeasurement(const std::vector<reach_lib::Point>& measurements) {
-  // Check if the number of joints in the measurements is the same as the number of joints in the filter
-  assert(measurements.size() == n_joints_meas_);
+  if (measurements.size() != n_joints_meas_) {
+    throw std::length_error("MeasurementHandler::initialMeasurement: measurements vector must have the same size as n_joints_meas_");
+  }
   for (int i = 0; i < n_joints_meas_; i++) {
     Vector<6> initial_state;
     initial_state << measurements[i].x, 0.0, measurements[i].y, 0.0, measurements[i].z, 0.0;
@@ -21,9 +22,12 @@ void MeasurementHandler::initialMeasurement(const std::vector<reach_lib::Point>&
 
 Observation MeasurementHandler::filterMeasurements(
   const std::vector<reach_lib::Point>& measurements, double time) {
-  // Check if the number of joints in the measurements is the same as the number of joints in the filter
-  assert(measurements.size() == n_joints_meas_);
-  assert(time >= 0.0);
+  if (measurements.size() != n_joints_meas_) {
+    throw std::length_error("MeasurementHandler::filterMeasurements: measurements vector must have the same size as n_joints_meas_");
+  }
+  if (time < 0.0) {
+    throw std::invalid_argument("MeasurementHandler::filterMeasurements: time must be greater than or equal to 0.0");
+  }
   Observation filtered_measurements;
   filtered_measurements.time = time;
   if (last_meas_timestep_ == -1) {

@@ -15,7 +15,7 @@
  */
 
 #include <Eigen/Dense>
-#include <assert.h>
+#include <stdexcept>
 
 #include <algorithm>
 #include <deque>
@@ -137,6 +137,24 @@ class LongTermTraj {
    */
   void calculateAlphaBeta();
 
+  inline void checkLength(int length) {
+    if (length <= 0) {
+      throw std::invalid_argument("Length of long term trajectory must be greater than 0.");
+    }
+  }
+
+  inline void checkModuleSize(int nb_modules) {
+    if (nb_modules <= 0) {
+      throw std::invalid_argument("Number of modules must be greater than 0.");
+    }
+  }
+
+  inline void checkSampleTime(double sample_time) {
+    if (sample_time <= 0) {
+      throw std::invalid_argument("Sample time must be greater than 0.");
+    }
+  }
+
  public:
   /**
    * @brief Construct a new Long Term Traj object.
@@ -166,9 +184,7 @@ class LongTermTraj {
                int sliding_window_k = 10, double alpha_i_max = 1.0)
       : long_term_traj_(long_term_traj), sample_time_(sample_time), current_pos_(0), starting_index_(starting_index),
         v_max_allowed_(v_max_allowed), a_max_allowed_(a_max_allowed), j_max_allowed_(j_max_allowed) {
-    length_ = long_term_traj_.size();
-    assert (length_ > 0);
-    nb_modules_ = long_term_traj_[0].getNbModules();
+    setLongTermTrajectory(long_term_traj, sample_time);
     calculateMaxAccJerkWindow(long_term_traj_, sliding_window_k);
     for (int i = 0; i < long_term_traj_[0].getNbModules(); i++) {
       alpha_i_.push_back(alpha_i_max);
@@ -230,10 +246,13 @@ class LongTermTraj {
    * @param long_term_traj vector of motions to form the new long-term trajectory
    */
   inline void setLongTermTrajectory(const std::vector<Motion>& long_term_traj) {
+    double length = long_term_traj.size();
+    checkLength(length);
+    int nb_modules = long_term_traj[0].getNbModules();
+    checkModuleSize(nb_modules);
+    length_ = length;
+    nb_modules_ = nb_modules;
     long_term_traj_ = long_term_traj;
-    length_ = long_term_traj_.size();
-    assert (length_ > 0);
-    nb_modules_ = long_term_traj_[0].getNbModules();
   }
 
   /**
@@ -243,10 +262,8 @@ class LongTermTraj {
    * @param sample_time the sample time of the new long-term trajectory
    */
   inline void setLongTermTrajectory(const std::vector<Motion>& long_term_traj, double sample_time) {
-    long_term_traj_ = long_term_traj;
-    length_ = long_term_traj_.size();
-    assert (length_ > 0);
-    nb_modules_ = long_term_traj_[0].getNbModules();
+    checkSampleTime(sample_time);
+    setLongTermTrajectory(long_term_traj);
     sample_time_ = sample_time;
   }
 
@@ -342,7 +359,6 @@ class LongTermTraj {
    * @return int LTT index
    */
   inline int getLowerIndex(double s) const {
-    assert(sample_time_ != 0);
     return getTrajectoryIndex(static_cast<int>(floor(s / sample_time_)));
   }
 
@@ -353,7 +369,6 @@ class LongTermTraj {
    * @return int LTT index
    */
   inline int getUpperIndex(double s) const {
-    assert(sample_time_ != 0);
     return getTrajectoryIndex(static_cast<int>(ceil(s / sample_time_)));
   }
 
@@ -364,7 +379,6 @@ class LongTermTraj {
    * @return int LTT index difference
    */
   inline double getModIndex(double s) const {
-    assert(sample_time_ != 0);
     double ind = s / sample_time_;
     double intpart;
     return modf(ind, &intpart);
@@ -487,7 +501,10 @@ class LongTermTraj {
    * @param index of motion in LTT
    */
   inline std::vector<std::vector<RobotReach::CapsuleVelocity>>::const_iterator getVelocityCapsuleIterator(int index) {
-    assert (index >= 0 && index < capsule_velocities_.size());
+    // TODO: Use unsigned int
+    if (index < 0 || index >= capsule_velocities_.size()) {
+      throw std::out_of_range("Index out of range");
+    }
     return capsule_velocities_.begin() + index;
   }
 

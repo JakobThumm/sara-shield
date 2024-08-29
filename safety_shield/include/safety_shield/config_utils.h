@@ -14,7 +14,6 @@
  * If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <assert.h>
 #include <vector>
 #include <map>
 #include <string>
