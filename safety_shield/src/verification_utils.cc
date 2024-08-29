@@ -37,6 +37,34 @@ std::map<int, std::vector<int>> findAllHumanRobotContacts(const std::vector<reac
   return human_robot_contacts;
 }
 
+std::vector<double> calculateRobotLinkEnergies(
+  const std::vector<double>& robot_link_velocities,
+  const std::vector<double>& robot_link_reflected_masses
+) {
+  std::vector<double> robot_link_energies;
+  for (int i = 0; i < robot_link_velocities.size(); i++) {
+    robot_link_energies.push_back(0.5 * robot_link_reflected_masses[i] * robot_link_velocities[i] * robot_link_velocities[i]);
+  }
+  return robot_link_energies;
+}
+
+bool checkContactEnergySafety(
+  const std::map<int, std::vector<int>>& human_robot_contacts,
+  const std::vector<double>& robot_link_energies,
+  const std::vector<double>& maximal_contact_energies
+) {
+  for (const auto& contact : human_robot_contacts) {
+    int human_capsule_index = contact.first;
+    for (const auto& robot_link_index : contact.second) {
+      if (robot_link_energies[robot_link_index] > maximal_contact_energies[human_capsule_index]) {
+        // spdlog::warn("Robot link {} in contact with human body {} and robot energy of {} exceeded max allowed energy of {}.", robot_link_index, human_capsule_index, robot_link_energies[robot_link_index], maximal_contact_energies[human_capsule_index]);
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
 bool checkVelocitySafety(
   const std::map<int, std::vector<int>>& human_robot_contacts,
   const std::vector<double>& robot_link_velocities,
@@ -52,4 +80,60 @@ bool checkVelocitySafety(
   }
   return true;
 }
+
+std::vector<std::vector<double>> calculateMaxRobotLinkVelocitiesPerTimeInterval(
+  const std::vector<Motion>& robot_motions,
+  const std::vector<double>& link_radii,
+  const std::vector<double>& velocity_error
+) {
+  std::vector<std::vector<double>> max_velocities;
+  assert(robot_motions.size() > 0);
+  int n_links = robot_motions[0].getMaximumCartesianVelocities().size();
+  assert(velocity_error.size() == n_links);
+  assert(link_radii.size() == n_links);
+  for (int i = 1; i < robot_motions.size(); i++) {
+    std::vector<double> max_velocities_i;
+    for (int j = 0; j < n_links; j++) {
+      assert(robot_motions[i-1].getMaximumCartesianVelocities()[j] >= 0);
+      assert(robot_motions[i].getMaximumCartesianVelocities()[j] >= 0);
+      double max_v = std::max(robot_motions[i-1].getMaximumCartesianVelocities()[j], robot_motions[i].getMaximumCartesianVelocities()[j]);
+      max_velocities_i.push_back(max_v + velocity_error[j]);
+    }
+    max_velocities.push_back(max_velocities_i);
+  }
+  return max_velocities;
+}
+
+std::vector<std::vector<double>> calculateMaxRobotEnergiesFromReflectedMasses(
+  const std::vector<std::vector<double>>& robot_link_velocities,
+  const std::vector<std::vector<double>>& robot_link_reflected_masses
+) {
+  assert(robot_link_velocities.size() == robot_link_reflected_masses.size());
+  assert(robot_link_velocities[0].size() == robot_link_reflected_masses[0].size());
+  int n_time_intervals = robot_link_velocities.size();
+  std::vector<std::vector<double>> robot_link_energies;
+  for (int i = 0; i < n_time_intervals; i++) {
+    robot_link_energies.push_back(calculateRobotLinkEnergies(robot_link_velocities[i], robot_link_reflected_masses[i]));
+  }
+  return robot_link_energies;
+}
+
+std::vector<std::vector<double>> calculateMaxRobotEnergiesFromInertiaMatrices(
+  const std::vector<std::vector<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic>>>& robot_inertia_matrices,
+  std::vector<std::vector<double>> dq
+) {
+  assert(robot_inertia_matrices.size() == dq.size());
+  int n_time_intervals = robot_inertia_matrices.size();
+  std::vector<std::vector<double>> robot_link_energies;
+  for (int i = 0; i < n_time_intervals; i++) {
+    Eigen::VectorXd dq_i = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(dq[i].data(), dq[i].size());
+    std::vector<double> robot_link_energies_i;
+    for (int j = 0; j < dq[i].size(); j++) {
+      robot_link_energies_i.push_back((0.5 * dq_i.transpose() * robot_inertia_matrices[i][j] * dq_i).array()[0]);
+    }
+    robot_link_energies.push_back(robot_link_energies_i);
+  }
+  return robot_link_energies;
+}
+
 }  // namespace safety_shield

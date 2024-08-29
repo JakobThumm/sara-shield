@@ -102,6 +102,12 @@ class HumanReach {
   std::vector<reach_lib::Articulated*> human_models_;
 
   /**
+   * @brief Threshold on the energy of the robot element in an unconstrained contact for each body part.
+   * @details The format is [model_index][body_index].
+   */
+  std::vector<std::vector<double>> max_contact_energy_;
+
+  /**
    * @brief We need two measurements for velocity calculation.
    */
   bool has_second_meas_ = false;
@@ -137,6 +143,7 @@ class HumanReach {
    * @param[in] body_link_joints Maps the body name to the proximal and distal joint ids (key: Body name, value: Joint pair)
    * @param[in] thickness Defines the thickness of the body parts (key: Name of body part, value: Thickness of body
    * part)
+   * @param[in] max_contact_energy The maximal contact energy for each body part.
    * @param[in] max_v The maximum velocity of the joints
    * @param[in] max_a The maximum acceleration of the joints
    * @param[in] measurement_error_pos Maximal positional measurement error
@@ -147,6 +154,7 @@ class HumanReach {
       std::map<std::string, int> joint_names,
       std::map<std::string, reach_lib::jointPair>& body_link_joints, 
       const std::map<std::string, double>& thickness, 
+      const std::map<std::string, double>& max_contact_energy,
       std::vector<double>& max_v, 
       std::vector<double>& max_a,
       double measurement_error_pos, 
@@ -160,6 +168,7 @@ class HumanReach {
    * @param[in] body_link_joints Maps the body name to the proximal and distal joint ids (key: Body name, value: Joint pair)
    * @param[in] thickness Defines the thickness of the body parts (key: Name of body part, value: Thickness of body
    * part)
+   * @param[in] max_contact_energy The maximal contact energy for each body part.
    * @param[in] max_v The maximum velocity of the joints
    * @param[in] max_a The maximum acceleration of the joints
    * @param[in] measurement_error_pos Maximal positional measurement error
@@ -174,6 +183,7 @@ class HumanReach {
       std::map<std::string, int> joint_names,
       std::map<std::string, reach_lib::jointPair>& body_link_joints, 
       const std::map<std::string, double>& thickness, 
+      const std::map<std::string, double>& max_contact_energy,
       std::vector<double>& max_v, 
       std::vector<double>& max_a,
       double measurement_error_pos, 
@@ -191,6 +201,7 @@ class HumanReach {
    * @param[in] body_link_joints Maps the body name to the proximal and distal joint ids (key: Body name, value: Joint pair)
    * @param[in] thickness Defines the thickness of the body parts (key: Name of body part, value: Thickness of body
    * part)
+   * @param[in] max_contact_energy The maximal contact energy for each body part.
    * @param[in] max_v The maximum velocity of the joints
    * @param[in] max_a The maximum acceleration of the joints
    * @param[in] extremity_base_names The base joints of extremities, e.g., right / left shoulder, right / left hip
@@ -199,6 +210,7 @@ class HumanReach {
    * used for thickness of extremities
    * @param[in] extremity_length The max length of the extremities (related to extremity_base_names)
    * @param[in] extremity_thickness The thickness of the extremities (usually zero, as it is already considered in extremity_length)
+   * @param[in] extremity_max_contact_energy The maximal contact energy for each extremity.
    * @param[in] measurement_error_pos Maximal positional measurement error
    * @param[in] measurement_error_vel Maximal velocity measurement error
    * @param[in] delay Delay in measurement processing pipeline
@@ -207,12 +219,14 @@ class HumanReach {
       std::map<std::string, int> joint_names,
       std::map<std::string, reach_lib::jointPair>& body_link_joints, 
       const std::map<std::string, double>& thickness, 
+      const std::map<std::string, double>& max_contact_energy,
       std::vector<double>& max_v, 
       std::vector<double>& max_a,
       std::vector<std::string>& extremity_base_names, 
       std::vector<std::string>& extremity_end_names, 
       std::vector<double>& extremity_length, 
       std::vector<double>& extremity_thickness,
+      std::vector<double>& extremity_max_contact_energy,
       double measurement_error_pos, 
       double measurement_error_vel, 
       double delay);
@@ -232,6 +246,7 @@ class HumanReach {
    * used for thickness of extremities
    * @param[in] extremity_length The max length of the extremities (related to extremity_base_names)
    * @param[in] extremity_thickness The thickness of the extremities (usually zero, as it is already considered in extremity_length)
+   * @param[in] extremity_max_contact_energy The maximal contact energy for each extremity.
    * @param[in] measurement_error_pos Maximal positional measurement error
    * @param[in] measurement_error_vel Maximal velocity measurement error
    * @param[in] delay Delay in measurement processing pipeline
@@ -244,12 +259,14 @@ class HumanReach {
       std::map<std::string, int> joint_names,
       std::map<std::string, reach_lib::jointPair>& body_link_joints, 
       const std::map<std::string, double>& thickness, 
+      const std::map<std::string, double>& max_contact_energy,
       std::vector<double>& max_v, 
       std::vector<double>& max_a,
       std::vector<std::string>& extremity_base_names, 
       std::vector<std::string>& extremity_end_names, 
       std::vector<double>& extremity_length, 
       std::vector<double>& extremity_thickness,
+      std::vector<double>& extremity_max_contact_energy,
       double measurement_error_pos, 
       double measurement_error_vel, 
       double delay,
@@ -308,7 +325,7 @@ class HumanReach {
    * @return reach_lib::Articulated[TYPE] capsules
    * @throw HumanModelNotFoundException
    */
-  inline std::vector<reach_lib::Capsule> getCapsulesOfModel(const reach_lib::Articulated& model) {
+  inline std::vector<reach_lib::Capsule> getCapsulesOfModel(const reach_lib::Articulated& model) const {
     if (reach_lib::get_capsule_map.find(model.get_mode()) != reach_lib::get_capsule_map.end()) {
       return reach_lib::get_capsule_map.at(model.get_mode())(model);
     } else {
@@ -331,7 +348,7 @@ class HumanReach {
    *
    * @return reach_lib::ArticulatedPos capsules
    */
-  inline std::vector<reach_lib::Capsule> getArticulatedPosCapsules() {
+  inline std::vector<reach_lib::Capsule> getArticulatedPosCapsules() const {
     for (const auto& model : human_models_) {
       if (model->get_mode() == "ARTICULATED-POS") {
         return getCapsulesOfModel(*model);
@@ -345,7 +362,7 @@ class HumanReach {
    *
    * @return reach_lib::ArticulatedVel capsules
    */
-  inline std::vector<reach_lib::Capsule> getArticulatedVelCapsules() {
+  inline std::vector<reach_lib::Capsule> getArticulatedVelCapsules() const {
     for (const auto& model : human_models_) {
       if (model->get_mode() == "ARTICULATED-VEL") {
         return getCapsulesOfModel(*model);
@@ -359,7 +376,7 @@ class HumanReach {
    *
    * @return reach_lib::ArticulatedAccel capsules
    */
-  inline std::vector<reach_lib::Capsule> getArticulatedAccelCapsules() {
+  inline std::vector<reach_lib::Capsule> getArticulatedAccelCapsules() const {
     for (const auto& model : human_models_) {
       if (model->get_mode() == "ARTICULATED-ACCEL") {
         return getCapsulesOfModel(*model);
@@ -373,7 +390,7 @@ class HumanReach {
    *
    * @return reach_lib::ArticulatedCombined capsules
    */
-  inline std::vector<reach_lib::Capsule> getArticulatedCombinedCapsules() {
+  inline std::vector<reach_lib::Capsule> getArticulatedCombinedCapsules() const {
     for (const auto& model : human_models_) {
       if (model->get_mode() == "ARTICULATED-COMBINED") {
         return getCapsulesOfModel(*model);
@@ -387,7 +404,7 @@ class HumanReach {
    *
    * @return std::vector<std::vector<reach_lib::Capsule>>
    */
-  inline std::vector<std::vector<reach_lib::Capsule>> getAllCapsules() {
+  inline std::vector<std::vector<reach_lib::Capsule>> getAllCapsules() const {
     std::vector<std::vector<reach_lib::Capsule>> all_capsules = {};
     for (const auto& model : human_models_) {
       all_capsules.push_back(getCapsulesOfModel(*model));
@@ -400,7 +417,7 @@ class HumanReach {
    *
    * @return double
    */
-  inline double getLastMeasTimestep() {
+  inline double getLastMeasTimestep() const {
     return last_meas_timestep_;
   }
 
@@ -409,7 +426,7 @@ class HumanReach {
    *
    * @return std::vector<reach_lib::Point>
    */
-  inline std::vector<reach_lib::Point> getJointPos() {
+  inline std::vector<reach_lib::Point> getJointPos() const {
     return joint_pos_;
   }
 
@@ -418,7 +435,7 @@ class HumanReach {
    *
    * @return std::vector<reach_lib::Point>
    */
-  inline std::vector<reach_lib::Point> getJointVel() {
+  inline std::vector<reach_lib::Point> getJointVel() const {
     return joint_vel_;
   }
 
@@ -427,7 +444,7 @@ class HumanReach {
    *
    * @return std::map<std::string, reach_lib::jointPair>
    */
-  inline std::map<std::string, reach_lib::jointPair> getBodyLinkJoints() {
+  inline std::map<std::string, reach_lib::jointPair> getBodyLinkJoints() const {
     return body_link_joints_;
   }
 
@@ -436,7 +453,7 @@ class HumanReach {
    *
    * @return double
    */
-  inline double getMeasurementErrorPos() {
+  inline double getMeasurementErrorPos() const {
     return measurement_error_pos_;
   }
 
@@ -445,7 +462,7 @@ class HumanReach {
    *
    * @return double
    */
-  inline double getMeasurementErrorVel() {
+  inline double getMeasurementErrorVel() const {
     return measurement_error_vel_;
   }
 
@@ -454,8 +471,17 @@ class HumanReach {
    *
    * @return double
    */
-  inline double getDelay() {
+  inline double getDelay() const {
     return delay_;
+  }
+
+  /**
+   * @brief Get the maximal contact energy for each body part.
+   *
+   * @return std::vector<double>
+   */
+  inline std::vector<std::vector<double>> getMaxContactEnergy() const {
+    return max_contact_energy_;
   }
 };
 
@@ -466,6 +492,7 @@ HumanReach* createHumanReach(
       std::map<std::string, int> joint_names,
       std::map<std::string, reach_lib::jointPair>& body_link_joints, 
       const std::map<std::string, double>& thickness, 
+      const std::map<std::string, double>& max_contact_energy, 
       std::vector<double>& max_v, 
       std::vector<double>& max_a,
       double measurement_error_pos, 
@@ -475,10 +502,16 @@ HumanReach* createHumanReach(
       std::vector<std::string> extremity_end_names, 
       std::vector<double> extremity_length, 
       std::vector<double> extremity_thickness,
+      std::vector<double> extremity_max_contact_energy,
       double s_w,
       double s_v,
       double initial_pos_var,
       double initial_vel_var);
+      
+std::vector<double> buildMaxContactEnergy(
+  const std::map<std::string, reach_lib::jointPair>& body_link_joints, 
+  const std::map<std::string, double>& max_contact_energy
+);
 
 }  // namespace safety_shield
 #endif  // HUMAN_REACH_H

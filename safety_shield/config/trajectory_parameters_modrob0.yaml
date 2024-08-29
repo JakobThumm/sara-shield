@@ -26,4 +26,4 @@ v_safe: 0.05
 velocity_method: 0
 
 # interval of time step depending on sampling time
-reachability_sets_interval_size: 5
+reachability_set_interval_size: 5

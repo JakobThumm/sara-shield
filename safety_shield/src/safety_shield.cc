@@ -60,32 +60,29 @@ SafetyShield::SafetyShield(double sample_time, std::string trajectory_config_fil
                            ShieldType shield_type)
     : sample_time_(sample_time), path_s_(0), path_s_discrete_(0), shield_type_(shield_type) {
   ///////////// Build robot reach
-  YAML::Node robot_config = YAML::LoadFile(robot_config_file);
-  std::string robot_name = robot_config["robot_name"].as<std::string>();
-  nb_joints_ = robot_config["nb_joints"].as<int>();
-  std::vector<double> transformation_matrices = robot_config["transformation_matrices"].as<std::vector<double>>();
-  std::vector<double> enclosures = robot_config["enclosures"].as<std::vector<double>>();
-  double secure_radius = robot_config["secure_radius"].as<double>();
-  robot_reach_ = new RobotReach(transformation_matrices, nb_joints_, enclosures, init_x,
-                                init_y, init_z, init_roll, init_pitch, init_yaw, secure_radius);
+  robot_reach_ = buildRobotReach(robot_config_file, init_x, init_y, init_z, init_roll, init_pitch, init_yaw);
+  nb_joints_ = robot_reach_->getNbJoints();
   ////////////// Setting trajectory variables
-  YAML::Node trajectory_config = YAML::LoadFile(trajectory_config_file);
-  max_s_stop_ = trajectory_config["max_s_stop"].as<double>();
-  q_min_allowed_ = trajectory_config["q_min_allowed"].as<std::vector<double>>();
-  q_max_allowed_ = trajectory_config["q_max_allowed"].as<std::vector<double>>();
-  v_max_allowed_ = trajectory_config["v_max_allowed"].as<std::vector<double>>();
-  a_max_allowed_ = trajectory_config["a_max_allowed"].as<std::vector<double>>();
-  j_max_allowed_ = trajectory_config["j_max_allowed"].as<std::vector<double>>();
-  a_max_ltt_ = trajectory_config["a_max_ltt"].as<std::vector<double>>();
-  j_max_ltt_ = trajectory_config["j_max_ltt"].as<std::vector<double>>();
+  int velocity_method_int;
+  readTrajectoryConfig(
+    trajectory_config_file,
+    max_s_stop_,
+    q_min_allowed_,
+    q_max_allowed_,
+    v_max_allowed_,
+    a_max_allowed_,
+    j_max_allowed_,
+    a_max_ltt_,
+    j_max_ltt_,
+    v_safe_,
+    alpha_i_max_,
+    velocity_method_int,
+    reachability_set_interval_size_
+  );
   ltp_ = long_term_planner::LongTermPlanner(nb_joints_, sample_time, q_min_allowed_, q_max_allowed_, v_max_allowed_,
                                             a_max_ltt_, j_max_ltt_);
-  v_safe_ = trajectory_config["v_safe"].as<double>();
-  alpha_i_max_ = trajectory_config["alpha_i_max"].as<double>();
-  RobotReach::Velocity_method velocity_method =
-      static_cast<RobotReach::Velocity_method>(trajectory_config["velocity_method"].as<int>());
+  RobotReach::Velocity_method velocity_method = static_cast<RobotReach::Velocity_method>(velocity_method_int);
   robot_reach_->setVelocityMethod(velocity_method);
-  spdlog::info("velocity_method = {}", velocity_method);
   // Initialize the long term trajectory
   sliding_window_k_ = (int)std::floor(max_s_stop_ / sample_time_);
   std::vector<Motion> long_term_traj;
@@ -102,82 +99,9 @@ SafetyShield::SafetyShield(double sample_time, std::string trajectory_config_fil
       v_max_allowed_, a_max_allowed_, j_max_allowed_, sliding_window_k_
     );
   }
-  if(trajectory_config["reachability_set_interval_size"]) {
-    reachability_set_interval_size_ = trajectory_config["reachability_set_interval_size"].as<double>();
-  } else {
-    reachability_set_interval_size_ = 10000;
-  }
-
   reachability_set_duration_ = reachability_set_interval_size_ * sample_time_;
   //////////// Build human reach
-  YAML::Node human_config = YAML::LoadFile(mocap_config_file);
-  double measurement_error_pos = human_config["measurement_error_pos"].as<double>();
-  double measurement_error_vel = human_config["measurement_error_vel"].as<double>();
-  double delay = human_config["delay"].as<double>();
-
-  std::vector<std::string> joint_name_vec = human_config["joint_names"].as<std::vector<std::string>>();
-  std::map<std::string, int> joint_names;
-  for (std::size_t i = 0; i < joint_name_vec.size(); ++i) {
-    joint_names[joint_name_vec[i]] = i;
-  }
-
-  std::vector<double> joint_v_max = human_config["joint_v_max"].as<std::vector<double>>();
-  std::vector<double> joint_a_max = human_config["joint_a_max"].as<std::vector<double>>();
-  // Build bodies
-  const YAML::Node& bodies = human_config["bodies"];
-  std::map<std::string, reach_lib::jointPair> body_link_joints;
-  std::map<std::string, double> thickness;
-  for (YAML::const_iterator it = bodies.begin(); it != bodies.end(); ++it) {
-    const YAML::Node& body = *it;
-    body_link_joints[body["name"].as<std::string>()] = reach_lib::jointPair(
-        joint_names[body["proximal"].as<std::string>()], joint_names[body["distal"].as<std::string>()]);
-    thickness[body["name"].as<std::string>()] = body["thickness"].as<double>();
-  }
-
-  bool use_combined_model = human_config["use_combined_model"].as<bool>();
-  std::vector<std::string> extremity_base_names, extremity_end_names;
-  std::vector<double> extremity_length, extremity_thickness;
-  if (!use_combined_model) {
-    // Build extremities
-    const YAML::Node& extremities = human_config["extremities"];
-    for (YAML::const_iterator it = extremities.begin(); it != extremities.end(); ++it) {
-      const YAML::Node& extremity = *it;
-      extremity_base_names.push_back(extremity["base"].as<std::string>());
-      extremity_end_names.push_back(extremity["end"].as<std::string>());
-      extremity_length.push_back(extremity["length"].as<double>());
-      extremity_thickness.push_back(extremity["thickness"].as<double>());
-    }
-  }
-
-  bool use_kalman_filter = human_config["use_kalman_filter"].as<bool>();
-  double s_w, s_v, initial_pos_var, initial_vel_var;
-  if (use_kalman_filter) {
-    s_w = human_config["s_w"].as<double>();
-    s_v = human_config["s_v"].as<double>();
-    initial_pos_var = human_config["initial_pos_var"].as<double>();
-    initial_vel_var = human_config["initial_vel_var"].as<double>();
-  }
-  human_reach_ = createHumanReach(
-    use_combined_model,
-    use_kalman_filter,
-    joint_names.size(),
-    joint_names,
-    body_link_joints, 
-    thickness, 
-    joint_v_max, 
-    joint_a_max,
-    measurement_error_pos, 
-    measurement_error_vel, 
-    delay,
-    extremity_base_names, 
-    extremity_end_names, 
-    extremity_length,
-    extremity_thickness,
-    s_w,
-    s_v,
-    initial_pos_var,
-    initial_vel_var
-  );
+  human_reach_ = buildHumanReach(mocap_config_file);
   ///////////// Build verifier
   verify_ = new safety_shield::VerifyISO();
   /////////// Other settings
@@ -257,19 +181,24 @@ bool SafetyShield::planSafetyShield(double pos, double vel, double acc, double v
 
     // If current velocity is close to goal and acceleration is approx zero -> Do nothing
     if (fabs(vel - ve) < epsilon && fabs(acc) < epsilon) {
-      std::array<double, 6> new_phases = {sample_time_, sample_time_, sample_time_, 0.0, 0.0, 0.0};
-      path.setPhases(new_phases);
+      std::array<double, 3> new_times = {sample_time_, sample_time_, sample_time_};
+      std::array<double, 3> new_jerks = {0.0, 0.0, 0.0};
+      path.setPhases(new_times, new_jerks);
       return true;
     }
     // Time to reach zero acceleration with maximum jerk
     double t_to_a_0 = roundToTimestep(abs(acc) / j_max);
     // Velocity at zero acceleration
     double v_at_a_0 = vel + acc * t_to_a_0 / 2;
+    if (v_at_a_0 < 0) {
+      spdlog::warn("Velocity at zero acceleration is negative. The path calculations will be incorrect.");
+    }
 
     // If the velocity at zero acceleration is the goal velocity, use t_to_a_0 and max jerk and return
     if (fabs(v_at_a_0 - ve) < epsilon) {
-      std::array<double, 6> new_phases = {t_to_a_0, t_to_a_0, t_to_a_0, -acc / t_to_a_0, 0, 0};
-      path.setPhases(new_phases);
+      std::array<double, 3> new_times = {t_to_a_0, t_to_a_0, t_to_a_0};
+      std::array<double, 3> new_jerks = {-acc / t_to_a_0, 0, 0};
+      path.setPhases(new_times, new_jerks);
       return true;
     }
 
@@ -374,8 +303,9 @@ bool SafetyShield::planSafetyShield(double pos, double vel, double acc, double v
       spdlog::debug("planSafetyShield calculated time negative. t01 = {}, t12 = {}, t23 = {}", t01, t12, t23);
       return false;
     }
-    std::array<double, 6> new_phases = {t01, t01 + t12, t01 + t12 + t23, j01, j12, j23};
-    path.setPhases(new_phases);
+    std::array<double, 3> new_times = {t01, t01 + t12, t01 + t12 + t23};
+    std::array<double, 3> new_jerks = {j01, j12, j23};
+    path.setPhases(new_times, new_jerks);
     return true;
   } catch (const std::exception& exc) {
     spdlog::error("Exception in SafetyShield::planSafetyShield: {}", exc.what());
@@ -440,14 +370,6 @@ Motion SafetyShield::computesPotentialTrajectory(bool v, const std::vector<doubl
       calculateMaxAccJerk(prev_speed, a_max_ltt_, j_max_ltt_, a_max_manoeuvre, j_max_manoeuvre);
     }
 
-    // If there is a new LTT for the first time (new_ltt_processed_ == false), set the safe path to stop the robot.
-    // This is to prevent the robot from advancing the old LTT on a PFL trajectory instead of moving to the new LTT.
-    if (!new_ltt_processed_ && shield_type_ == ShieldType::PFL) {
-        planSafetyShield(safe_path_.getPosition(), safe_path_.getVelocity(), safe_path_.getAcceleration(),
-                           0, a_max_manoeuvre, j_max_manoeuvre, failsafe_path_);
-        safe_path_ = failsafe_path_;
-    }
-
     // Desired movement, one timestep
     //  if not already on the repair path, plan a repair path
     if (!recovery_path_.isCurrent()) {
@@ -461,15 +383,9 @@ Motion SafetyShield::computesPotentialTrajectory(bool v, const std::vector<doubl
       // advance one step on repair path
       recovery_path_.increment(sample_time_);
       bool failsafe_2_planning_success;
-      if (shield_type_ == ShieldType::PFL) {
-        // Plan new failsafe path for PFL
-        failsafe_2_planning_success = planPFLFailsafe(a_max_manoeuvre, j_max_manoeuvre);
-      } else {
-        // plan new failsafe path for STP
-        failsafe_2_planning_success =
-            planSafetyShield(recovery_path_.getPosition(), recovery_path_.getVelocity(), recovery_path_.getAcceleration(),
-                            0, a_max_manoeuvre, j_max_manoeuvre, failsafe_path_2_);
-      }
+      failsafe_2_planning_success =
+          planSafetyShield(recovery_path_.getPosition(), recovery_path_.getVelocity(), recovery_path_.getAcceleration(),
+                          0, a_max_manoeuvre, j_max_manoeuvre, failsafe_path_2_);
       // Check the validity of the planned path
       if (!failsafe_2_planning_success || recovery_path_.getPosition() < failsafe_path_.getPosition()) {
         recovery_path_correct_ = false;
@@ -484,20 +400,17 @@ Motion SafetyShield::computesPotentialTrajectory(bool v, const std::vector<doubl
     }
 
     //// Calculate start and goal pos of intended motion
-    // Fill potential buffer with position and velocity from last failsafe path. This value is not really used.
-    double s_d = failsafe_path_.getPosition();
-    double ds_d = failsafe_path_.getVelocity();
-    double dds_d = failsafe_path_.getAcceleration();
-    double ddds_d = failsafe_path_.getJerk();
-    // Calculate goal
+    double s_d, ds_d, dds_d;
     potential_path_.getFinalMotion(s_d, ds_d, dds_d);
+    double ddds_d = 0.0;
+    // Calculate goal
     Motion goal_motion;
     if (new_ltt_) {
       goal_motion = new_long_term_trajectory_.interpolate(s_d, ds_d, dds_d, ddds_d);
     } else {
       goal_motion = long_term_trajectory_.interpolate(s_d, ds_d, dds_d, ddds_d);
     } 
-    goal_motion.setTime(potential_path_.getPhase(3));
+    goal_motion.setTime(potential_path_.getTime(2));
     return goal_motion;
   } catch (const std::exception& exc) {
     spdlog::error("Exception in SafetyShield::computesPotentialTrajectory: {}", exc.what());
@@ -697,9 +610,47 @@ bool SafetyShield::verifySafety(Motion& current_motion, Motion& goal_motion, con
   // Compute the human reachable sets for the potential trajectory
   // humanReachabilityAnalysis(t_command, t_brake)
   human_capsules_time_intervals_ = human_reach_->humanReachabilityAnalysisTimeIntervals(cycle_begin_time_, time_points);
-  // Verify if the robot and human reachable sets are collision free
   int collision_index = -1;
-  is_safe = verify_->verifyHumanReachTimeIntervals(robot_capsules_time_intervals_, human_capsules_time_intervals_, collision_index);
+  if (shield_type_ == ShieldType::PFL) {
+    // is_safe = is_safe || is_under_v_limit_;
+    std::vector<double> robot_link_radii;
+    // TODO find a better way to get the robot link radii
+    for (int i = 0; i < nb_joints_; i++) {
+      robot_link_radii.push_back(robot_capsules_time_intervals_[0][i].r_);
+    }
+    double dt = time_points[1] - time_points[0];
+    std::vector<double> velocity_errors = robot_reach_->calculateMaxVelErrors(dt, v_max_allowed_, a_max_allowed_, j_max_allowed_);
+    std::vector<std::vector<double>> robot_link_velocities = calculateMaxRobotLinkVelocitiesPerTimeInterval(
+      interval_edges_motions,
+      robot_link_radii,
+      velocity_errors
+    );
+    std::vector<std::vector<double>> maximal_contact_energies = human_reach_->getMaxContactEnergy();
+    // Solution with maximal allowed contact velocities (not fully implemented yet)
+    /* 
+    // Solution with reflected masses (not fully implemented yet)
+    std::vector<std::vector<double>> robot_link_reflected_masses = robot_reach_->calculateRobotLinkReflectedMassesPerTimeInterval(interval_edges_motions);
+    is_safe_ = verify_->verifyHumanReachEnergyReflectedMasses(robot_capsules_time_intervals_, human_capsules_time_intervals_, robot_link_velocities, robot_link_reflected_masses, maximal_contact_energies, collision_index);
+    */
+    // Solution with inertia matrices
+    std::vector<std::vector<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic>>> inertias_beginning_of_intervals = 
+      getInertiaMatricesFromCurrentLTTandPath(std::vector<double>(time_points.begin(), time_points.end() - 1));
+    is_safe = verify_->verifyHumanReachEnergyInertiaMatrices(
+      robot_capsules_time_intervals_,
+      human_capsules_time_intervals_,
+      inertias_beginning_of_intervals,
+      std::vector<Motion>(interval_edges_motions.begin(), interval_edges_motions.end() - 1),
+      maximal_contact_energies,
+      collision_index
+    );
+    // Debugging
+    // if (!is_safe) {
+    //   spdlog::warn("Collision detected at time point {} with robot EEF velocity {}.", time_points[collision_index], robot_link_velocities[collision_index][nb_joints_ - 1]);
+    // }
+  } else {
+    // Verify if the robot and human reachable sets are collision free
+    is_safe = verify_->verifyHumanReachTimeIntervals(robot_capsules_time_intervals_, human_capsules_time_intervals_, collision_index);
+  }
   // for visualization in hrgym, reachability sets of last timestep are used
   if (is_safe) {
     robot_capsules_ = robot_capsules_time_intervals_[robot_capsules_time_intervals_.size()-1];
@@ -707,9 +658,6 @@ bool SafetyShield::verifySafety(Motion& current_motion, Motion& goal_motion, con
   } else {
     robot_capsules_ = robot_capsules_time_intervals_[collision_index];
     human_capsules_ = human_capsules_time_intervals_[collision_index];
-  }
-  if (shield_type_ == ShieldType::PFL) {
-    is_safe = is_safe || is_under_v_limit_;
   }
   return is_safe;
 }
@@ -834,6 +782,16 @@ std::vector<Motion> SafetyShield::getMotionsFromCurrentLTTandPath(const std::vec
     ltt = new_long_term_trajectory_;
   }
   return getMotionsOfAllTimeStepsFromPath(ltt, potential_path_, time_points);
+}
+
+std::vector<std::vector<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic>>> SafetyShield::getInertiaMatricesFromCurrentLTTandPath(
+  const std::vector<double>& time_points
+) {
+  LongTermTraj& ltt = long_term_trajectory_;
+  if (new_ltt_) {
+    ltt = new_long_term_trajectory_;
+  }
+  return getInertiaMatricesOfAllTimeStepsFromPath(ltt, potential_path_, time_points);
 }
 
 }  // namespace safety_shield

@@ -66,3 +66,36 @@ enclosures: [
   0.00049324, 0.0033497, 0.024003,
   -0.00049264, 0.0031812, 0.09,
   0.072549]
+
+# The exact dynamic parameters are strongly unclear!
+# We are taking values of https://github.com/ipa320/schunk_modular_robotics/blob/kinetic_dev/schunk_description/urdf/lwa4p_extended/lwa4p_extended.urdf.xacro
+# from Link 2 (Ball 1) to Link 6
+# In kg
+link_masses: [
+  3.9,
+  1.94533,
+  3.9,
+  1.3297,
+  1.9,
+  0.819,
+]
+
+# ixx, ixy, ixz, iyy, iyz, izz
+link_inertias: [
+  0.009780, 0, 0, 0.013300, 0, 0.009780,
+  0.0344, 0, 0.0077, 0.0362, 0, 0.0052,
+  0.009780, 0, 0, 0.013300, 0, 0.009780,
+  0.01, 0, -0.0031, 0.0111, 0, 0.0031,
+  0.002750, 0, 0, 0.004002, 0, 0.002830,
+  0.01, 0, 0, 0.01, 0, 0.01
+]
+
+# rpy, xyz
+link_centers_of_mass: [
+  0, 0, 0.1013, 0, 0, 0,
+  0, -0.175, 0, 0, 0, 0,
+  0, 0, 0.1013, 0, 0, 0,
+  0, 0, 0.099135, 0, 0, 0,
+  0, 0, 0.0748, 0, 0, 0,
+  0, 0, 0.06, 0, 0, 0
+]

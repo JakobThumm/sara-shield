@@ -26,6 +26,7 @@
 #include "safety_shield/robot_reach.h"
 #include "safety_shield/safety_shield.h"
 #include "safety_shield/trajectory_utils.h"
+#include "safety_shield/config_utils.h"
 
 #ifndef ROBOT_REACH_FIXTURE_H
 #define ROBOT_REACH_FIXTURE_H
@@ -48,14 +49,7 @@ class RobotReachTest : public ::testing::Test {
   void SetUp() override {
     std::filesystem::path config_file =
         std::filesystem::current_path().parent_path() / "config/robot_reach_test_single_joint.yaml";
-    YAML::Node robot_config = YAML::LoadFile(config_file.string());
-    std::string robot_name = robot_config["robot_name"].as<std::string>();
-    double nb_joints = robot_config["nb_joints"].as<int>();
-    std::vector<double> transformation_matrices = robot_config["transformation_matrices"].as<std::vector<double>>();
-    std::vector<double> enclosures = robot_config["enclosures"].as<std::vector<double>>();
-    double secure_radius = robot_config["secure_radius"].as<double>();
-    robot_reach_ =
-        new RobotReach(transformation_matrices, nb_joints, enclosures, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, secure_radius);
+    robot_reach_ = buildRobotReach(config_file.string(), 0.0, 0.0, 1.0, 0.0, 0.0, 0.0);
   }
 };
 
@@ -77,13 +71,28 @@ class RobotReachTestVelocity : public ::testing::Test {
     // a1 = a2 = a3 = 1
     std::filesystem::path config_file =
         std::filesystem::current_path().parent_path() / "config/robot_reach_test_siciliano.yaml";
-    YAML::Node robot_config = YAML::LoadFile(config_file.string());
-    double nb_joints = robot_config["nb_joints"].as<int>();
-    std::vector<double> transformation_matrices = robot_config["transformation_matrices"].as<std::vector<double>>();
-    std::vector<double> enclosures = robot_config["enclosures"].as<std::vector<double>>();
-    double secure_radius = robot_config["secure_radius"].as<double>();
-    robot_reach_ =
-        new RobotReach(transformation_matrices, nb_joints, enclosures, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, secure_radius);
+    robot_reach_ = buildRobotReach(config_file.string(), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+  }
+};
+
+/**
+ * @brief Test fixture for robot reach class with inertia matrix calculation
+ */
+class RobotReachTestInertiaMatrix : public ::testing::Test {
+ protected:
+  /**
+   * @brief The robot reach object
+   */
+  RobotReach* robot_reach_;
+
+  /**
+   * @brief Create the robot reach object
+   */
+  void SetUp() override {
+    // setup for tests with inertia matrix, testing with siciliano 2D planar robot from Chapter 7.3.2
+    std::filesystem::path config_file =
+        std::filesystem::current_path().parent_path() / "config/robot_reach_test_siciliano_2.yaml";
+    robot_reach_ = buildRobotReach(config_file.string(), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
   }
 };
 
@@ -108,20 +117,52 @@ class RobotReachTestTimeIntervals : public ::testing::Test {
    * @brief Create the robot reach objects
    */
   void SetUp() override {
-    robot_reach_single_joint_ = buildRobotReach("config/robot_reach_test_single_joint.yaml");
-    robot_reach_siciliano_ = buildRobotReach("config/robot_reach_test_siciliano.yaml");
+    std::filesystem::path config_file_single_joint =
+        std::filesystem::current_path().parent_path() / "config/robot_reach_test_single_joint.yaml";
+    std::filesystem::path config_file_siciliano =
+        std::filesystem::current_path().parent_path() / "config/robot_reach_test_siciliano.yaml";
+    robot_reach_single_joint_ = buildRobotReach(config_file_single_joint.string(), 0.0, 0.0, 1.0, 0.0, 0.0, 0.0);
+    robot_reach_siciliano_ = buildRobotReach(config_file_siciliano.string(), 0.0, 0.0, 1.0, 0.0, 0.0, 0.0);
   }
+};
 
-  RobotReach* buildRobotReach(const std::string& config_path) {
+/**
+ * @brief Test fixture for robot reach class
+ */
+class RobotReachSchunkTest : public ::testing::Test {
+ protected:
+  /**
+   * @brief The robot reach object
+   */
+  RobotReach* robot_reach_;
+
+  /**
+   * @brief Create the robot reach object
+   */
+  void SetUp() override {
     std::filesystem::path config_file =
-        std::filesystem::current_path().parent_path() / config_path;
-    YAML::Node robot_config = YAML::LoadFile(config_file.string());
-    std::string robot_name = robot_config["robot_name"].as<std::string>();
-    double nb_joints = robot_config["nb_joints"].as<int>();
-    std::vector<double> transformation_matrices = robot_config["transformation_matrices"].as<std::vector<double>>();
-    std::vector<double> enclosures = robot_config["enclosures"].as<std::vector<double>>();
-    double secure_radius = robot_config["secure_radius"].as<double>();
-    return new RobotReach(transformation_matrices, nb_joints, enclosures, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, secure_radius);
+        std::filesystem::current_path().parent_path() / "config/robot_parameters_schunk.yaml";
+    robot_reach_ = buildRobotReach(config_file.string(), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+  }
+};
+
+/**
+ * @brief Test fixture for robot reach class
+ */
+class RobotReachPandaTest : public ::testing::Test {
+ protected:
+  /**
+   * @brief The robot reach object
+   */
+  RobotReach* robot_reach_;
+
+  /**
+   * @brief Create the robot reach object
+   */
+  void SetUp() override {
+    std::filesystem::path config_file =
+        std::filesystem::current_path().parent_path() / "config/robot_parameters_panda.yaml";
+    robot_reach_ = buildRobotReach(config_file.string(), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
   }
 };
 

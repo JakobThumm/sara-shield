@@ -90,7 +90,7 @@ PYBIND11_MODULE(safety_shield_py, handle) {
     .def("getMaxAccelerationWindow", &safety_shield::LongTermTraj::getMaxAccelerationWindow)
     .def("getMaxJerkWindow", &safety_shield::LongTermTraj::getMaxJerkWindow)
     .def("getAlphaI", &safety_shield::LongTermTraj::getAlphaI)
-    .def("calculate_max_acc_jerk_window", &safety_shield::LongTermTraj::calculate_max_acc_jerk_window, py::arg("long_term_traj"), py::arg("k"))
+    .def("calculateMaxAccJerkWindow", &safety_shield::LongTermTraj::calculateMaxAccJerkWindow, py::arg("long_term_traj"), py::arg("k"))
     ;
   // Safety shield type
   py::enum_<safety_shield::ShieldType>(handle, "ShieldType", py::arithmetic())

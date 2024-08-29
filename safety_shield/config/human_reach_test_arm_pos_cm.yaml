@@ -8,7 +8,7 @@ s_v: 1.0e-6
 initial_pos_var: 0.003
 initial_vel_var: 0.5
 
-use_combined_model: false
+use_combined_model: true
 
 # Names of joints in correct outputted order
 joint_names: [

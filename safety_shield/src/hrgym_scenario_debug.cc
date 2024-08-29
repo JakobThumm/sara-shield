@@ -249,7 +249,7 @@ int main() {
   std::string trajectory_config_file = std::string("../config/trajectory_parameters_schunk.yaml");
   std::string robot_config_file = std::string("../config/robot_parameters_schunk.yaml");
   std::string mocap_config_file =
-      std::string("../config/cmu_mocap_no_hand.yaml");
+      std::string("../config/mujoco_mocap_edge.yaml");
   double init_x = 0.0;
   double init_y = 0.0;
   double init_z = 0.0;
@@ -257,7 +257,7 @@ int main() {
   double init_pitch = 0.0;
   double init_yaw = 0.0;
   std::vector<double> init_qpos = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
-  safety_shield::ShieldType shield_type = safety_shield::ShieldType::SSM;
+  safety_shield::ShieldType shield_type = safety_shield::ShieldType::PFL;
 
   safety_shield::SafetyShield shield =
       safety_shield::SafetyShield(sample_time, trajectory_config_file, robot_config_file, mocap_config_file, init_x,
@@ -269,13 +269,16 @@ int main() {
   // n = shield_frequency / RL_frequency = 5 / 250 = 1 / 50
   spdlog::info("Debug started.");
   double t = 0.0;
+  double t_max = 10.0;
   for (int ep = 0; ep < 1; ep++) {
     for (int i = 0; i < qpos_vec.size() * 50; i++) {
       t += 0.001;
       shield.humanMeasurement(human_measurement, t);
       t += 0.003;
-      if (i % 50 == 0) {
-        shield.newLongTermTrajectory(qpos_vec[i / 50], {0.0, 0.0, 0.0, 0.0, 0.0, 0.0});
+      if (i % 500 == 0) {
+        // shield.newLongTermTrajectory(qpos_vec[i / 50], {0.0, 0.0, 0.0, 0.0, 0.0, 0.0});
+        std::vector<double> goal = {1.4 * sin(4 * t/t_max * 2*M_PI), 1.5, 0.0, 0.0, 0.0, 0.0};
+        shield.newLongTermTrajectory(goal, {0.0, 0.0, 0.0, 0.0, 0.0, 0.0});
       }
       safety_shield::Motion next_motion = shield.step(t);
     }
