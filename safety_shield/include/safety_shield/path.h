@@ -26,6 +26,24 @@
 namespace safety_shield {
 
 /**
+ * @brief Exception thrown when the human model is not found in the list.
+ */
+class PathVelocityNegativeException : public std::exception {
+  std::string msg_;
+ public:
+
+  PathVelocityNegativeException(double vel)
+    : msg_(std::string("[PathVelocityNegativeException] The path velocity ") + std::to_string(vel) +
+           std::string(" is below zero."))
+  {}
+
+  virtual const char* what() const throw()
+  {
+    return msg_.c_str();
+  }
+};
+
+/**
  * @brief A class that represents a path
  */
 class Path {
@@ -95,8 +113,7 @@ class Path {
   inline double calculateVel(double v_0, double dt, double a, double j) const {
     double v = v_0 + a * dt + 0.5 * j * dt * dt;
     if (v < 0) {
-      spdlog::debug("Negative velocity detected. Setting to 0.");
-      return 0;
+      throw PathVelocityNegativeException(v);
     } else {
       return v;
     }
@@ -114,6 +131,17 @@ class Path {
     return a_0 + j * dt;
   }
 
+  /**
+   * @brief Increment the motion by the given jerk
+   * 
+   * @param[out] pos current position -> will be updated 
+   * @param[out] vel current velocity -> will be updated
+   * @param[out] acc current acceleration -> will be updated
+   * @param[in] jerk current jerk -> will not be updated
+   * @param[in] duration duration
+   */
+  void incrementMotion(double& pos, double& vel, double& acc, const double& jerk, const double& duration);
+
  public:
   /**
    * @brief empty path constructor
@@ -127,6 +155,9 @@ class Path {
   ~Path() {}
 
   inline double calculateTimeForVel(double v_limit, double v, double a, double j) const {
+    if (std::abs(v - v_limit) < 1e-10) {
+      return 0;
+    }
     // Solve v_limit = prev_vel + prev_acc * dt + jerk * dt^2 / 2 for dt
     double square = std::sqrt(a * a - 2 * j * (v - v_limit));
     double left = (-a - square) / j;
@@ -318,12 +349,12 @@ class Path {
    * @brief Computes s-values when path falls under v_limit.
    * 
    * @details Not used in the current implementation and therefore not tested.
-   * @param[in] v_limit
-   * @param[out] time
-   * @param[out] position
-   * @param[out] vel
-   * @param[out] acc
-   * @param[out] jerk
+   * @param[in] v_limit velocity limit
+   * @param[out] time time when velocity falls under v_limit
+   * @param[out] position position when velocity falls under v_limit
+   * @param[out] vel velocity when velocity falls under v_limit
+   * @param[out] acc acceleration when velocity falls under v_limit
+   * @param[out] jerk jerk when velocity falls under v_limit
    */
   void getMotionUnderVel(double v_limit, double& time, double& position, double& vel, double& acc, double& jerk);
 

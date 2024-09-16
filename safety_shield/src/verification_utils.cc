@@ -83,7 +83,6 @@ bool checkVelocitySafety(
 
 std::vector<std::vector<double>> calculateMaxRobotLinkVelocitiesPerTimeInterval(
   const std::vector<Motion>& robot_motions,
-  const std::vector<double>& link_radii,
   const std::vector<double>& velocity_error
 ) {
   if (robot_motions.size() == 0) {
@@ -93,9 +92,6 @@ std::vector<std::vector<double>> calculateMaxRobotLinkVelocitiesPerTimeInterval(
   int n_links = robot_motions[0].getMaximumCartesianVelocities().size();
   if (velocity_error.size() != n_links) {
     throw std::length_error("Velocity error has to have the same size as the number of robot links.");
-  }
-  if (link_radii.size() != n_links) {
-    throw std::length_error("Link radii have to have the same size as the number of robot links.");
   }
   std::vector<std::vector<double>> max_velocities;
   for (int i = 1; i < robot_motions.size(); i++) {
@@ -121,6 +117,10 @@ std::vector<std::vector<double>> calculateMaxRobotEnergiesFromReflectedMasses(
   if (robot_link_velocities.size() != robot_link_reflected_masses.size()) {
     throw std::length_error("Robot link velocities and reflected masses have to have the same size.");
   }
+  if (robot_link_velocities.size() == 0) {
+    spdlog::error("Empty time intervals provided in verification_utils::calculateMaxRobotEnergiesFromReflectedMasses().");
+    return std::vector<std::vector<double>>();
+  }
   if (robot_link_velocities[0].size() != robot_link_reflected_masses[0].size()) {
     throw std::length_error("Number of links in Robot link velocities and reflected masses have to be the same.");
   }
@@ -138,6 +138,16 @@ std::vector<std::vector<double>> calculateMaxRobotEnergiesFromInertiaMatrices(
 ) {
   if (robot_inertia_matrices.size() != dq.size()) {
     throw std::length_error("Robot inertia matrices and joint velocities have to have the same size.");
+  }
+  if (robot_inertia_matrices.size() == 0) {
+    spdlog::error("Empty time intervals provided in verification_utils::calculateMaxRobotEnergiesFromInertiaMatrices().");
+    return std::vector<std::vector<double>>();
+  }
+  if (robot_inertia_matrices[0].size() != dq[0].size()) {
+    throw std::length_error("Number of links in Robot inertia matrices and joint velocities have to be the same.");
+  }
+  if (robot_inertia_matrices[0][0].rows() != dq[0].size() || robot_inertia_matrices[0][0].cols() != dq[0].size()) {
+    throw std::length_error("Number of joints in Robot inertia matrices and joint velocities have to be the same.");
   }
   int n_time_intervals = robot_inertia_matrices.size();
   std::vector<std::vector<double>> robot_link_energies;

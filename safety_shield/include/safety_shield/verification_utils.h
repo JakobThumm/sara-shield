@@ -128,13 +128,11 @@ bool checkVelocitySafety(
  * @brief Calculate the maximal Cartesian robot link velocities for each time interval.
  * 
  * @param robot_motions The motion of the robot at each edge of the time intervals.
- * @param link_radii The radii of the robot links (capsules).
  * @param velocity_error The maximal velocity error for each robot link.
  * @return std::vector<std::vector<double>> Maximal Cartesian velocity of each robot link for each time interval.
  */
 std::vector<std::vector<double>> calculateMaxRobotLinkVelocitiesPerTimeInterval(
   const std::vector<Motion>& robot_motions,
-  const std::vector<double>& link_radii,
   const std::vector<double>& velocity_error
 );
 

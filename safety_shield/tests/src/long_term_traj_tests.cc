@@ -11,6 +11,47 @@ namespace safety_shield {
 
 TEST_F(LongTermTrajTestIdx, GetLengthTest) {
   EXPECT_EQ(long_term_trajectory_.getLength(), 4);
+  LongTermTraj* ltt_pointer = new LongTermTraj();
+  delete ltt_pointer;
+}
+
+TEST_F(LongTermTrajTestIdx, ChangeTrajectoryTest) {
+  double sample_time = 0.001;
+  std::vector<Motion> mo_vec;
+  int n_joints = 2;
+  std::vector<double> p0;
+  std::vector<double> v0;
+  std::vector<double> j0;
+  for (int i = 0; i < n_joints; i++) {
+      p0.push_back(0.0);
+      v0.push_back(0.0);
+      j0.push_back(0.0);
+  }
+  std::vector<double> a0;
+  a0.push_back(12);
+  a0.push_back(13);
+  Motion m0(0, p0, v0, a0, j0);
+  mo_vec.push_back(m0);
+  std::vector<double> a1;
+  a1.push_back(1);
+  a1.push_back(2);
+  Motion m1(1, p0, v0, a1, j0);
+  mo_vec.push_back(m1);
+  EXPECT_NO_THROW(long_term_trajectory_.setLongTermTrajectory(mo_vec, sample_time));
+  // Sample time <= 0
+  EXPECT_THROW(long_term_trajectory_.setLongTermTrajectory(mo_vec, 0.0), std::invalid_argument);
+  // Wrong number of joints
+  std::vector<Motion> mo_vec_2;
+  std::vector<double> p0_1;
+  std::vector<double> v0_1;
+  std::vector<double> j0_1;
+  std::vector<double> a0_1;
+  Motion m0_1(0, p0_1, v0_1, a0_1, j0_1);
+  mo_vec_2.push_back(m0_1);
+  EXPECT_THROW(long_term_trajectory_.setLongTermTrajectory(mo_vec_2, sample_time), std::invalid_argument);
+  // Wrong length
+  std::vector<Motion> mo_vec_3;
+  EXPECT_THROW(long_term_trajectory_.setLongTermTrajectory(mo_vec_3, sample_time), std::invalid_argument);
 }
 
 TEST_F(LongTermTrajTestIdx, GetCurrentPosTest) {
@@ -284,17 +325,44 @@ TEST_F(LongTermTrajTestIdx, getModIndexTest) {
   EXPECT_NEAR(long_term_trajectory_.getModIndex(0.005), 0, 1e-9);
 }
 
+TEST(LongTermTrajUtilsTest, calcTimePointsForEquidistantIntervalsTest) {
+  std::vector<double> time_points = calcTimePointsForEquidistantIntervals(0.0, 1.05, 0.5);
+  EXPECT_DOUBLE_EQ(time_points[0], 0.0);
+  EXPECT_DOUBLE_EQ(time_points[1], 0.5);
+  EXPECT_DOUBLE_EQ(time_points[2], 1.0);
+  EXPECT_DOUBLE_EQ(time_points[3], 1.05);
+}
+
+TEST_F(LongTermTrajTestInterpolation, getMotionsOfAllTimeStepsFromPathTest) {
+  Path path = Path();
+  std::array<double, 3> times = {1, 2, 3};
+  std::array<double, 3> jerks = {1, 0, -1};
+  path.setPhases(times, jerks);
+  std::vector<double> time_points = {0.0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0};
+  std::vector<Motion> interval_edge_motions = getMotionsOfAllTimeStepsFromPath(long_term_trajectory_, path, time_points);
+  EXPECT_EQ(interval_edge_motions.size(), time_points.size());
+  EXPECT_NEAR(interval_edge_motions[0].getAngle()[0], 0.0, 1e-8);
+  EXPECT_NEAR(interval_edge_motions[1].getAngle()[0], 0.02083333333, 1e-8);
+  EXPECT_NEAR(interval_edge_motions[2].getAngle()[0], 0.16666666666, 1e-8);
+  EXPECT_NEAR(interval_edge_motions[3].getAngle()[0], 0.54166666666, 1e-8);
+  EXPECT_NEAR(interval_edge_motions[4].getAngle()[0], 1.16666666666, 1e-8);
+  EXPECT_NEAR(interval_edge_motions[5].getAngle()[0], 2.02083333333, 1e-8);
+  EXPECT_NEAR(interval_edge_motions[6].getAngle()[0], 3.0, 1e-8);
+  EXPECT_NEAR(interval_edge_motions[7].getAngle()[0], 4.0, 1e-8);
+  EXPECT_NEAR(interval_edge_motions[8].getAngle()[0], 4.0, 1e-8);
+}
+
 TEST_F(LongTermTrajTestVelocity, OverapproximativeVelocityTest) {
   double sum_deviation = 0;
   double epsilon = 1e-5;
-  for (int i = 0; i < long_term_trajectory_approximate.getLength(); i++) {
-    double approximate = long_term_trajectory_approximate.getMotion(i).getMaximumCartesianVelocity();
-    double exact = long_term_trajectory_exact.getMotion(i).getMaximumCartesianVelocity();
+  for (int i = 0; i < long_term_trajectory_approximate_.getLength(); i++) {
+    double approximate = long_term_trajectory_approximate_.getMotion(i).getMaximumCartesianVelocity();
+    double exact = long_term_trajectory_exact_.getMotion(i).getMaximumCartesianVelocity();
     sum_deviation += approximate / exact;
     EXPECT_TRUE(approximate >= exact - epsilon);
     std::cout << "exact: " << exact << ", approximate: " << approximate << std::endl;
   }
-  std::cout << "average deviation from exact is " << sum_deviation / long_term_trajectory_approximate.getLength() - 1
+  std::cout << "average deviation from exact is " << sum_deviation / long_term_trajectory_approximate_.getLength() - 1
             << std::endl;
 }
 
@@ -439,6 +507,48 @@ TEST_F(LongTermTrajTest, InterpolateTestAcceleratingLTT) {
   EXPECT_NEAR(motion_int.getVelocity()[0], 0.0, 1e-8);
   EXPECT_NEAR(motion_int.getAcceleration()[0], 1.0, 1e-8);
   EXPECT_NEAR(motion_int.getJerk()[0], 0.0, 1e-5);
+}
+
+TEST_F(LongTermTrajInterpolateWithVelocityTest, InterpolateWithCartVelTest) {
+  Motion motion_int = long_term_trajectory_.interpolate(0.01, 1.0, 0.0, 0.0);
+  EXPECT_NEAR(motion_int.getAngle()[0], 0.010049833333333, 1e-5);
+  EXPECT_NEAR(motion_int.getVelocity()[0], 1.00995, 1e-5);
+  EXPECT_NEAR(motion_int.getAcceleration()[0], 0.99, 1e-5);
+  EXPECT_NEAR(motion_int.getJerk()[0], -1.0, 1e-5);
+  double cart_v_max_0 = motion_int.getMaximumCartesianVelocities()[0];
+  Motion motion_int2 = long_term_trajectory_.interpolate(0.01, 0.5, 0.0, 0.0);
+  EXPECT_NEAR(motion_int2.getAngle()[0], 0.010049833333333, 1e-5);
+  EXPECT_NEAR(motion_int2.getVelocity()[0], 0.504975, 1e-5);
+  EXPECT_NEAR(motion_int2.getAcceleration()[0], 0.2475, 1e-5);
+  EXPECT_NEAR(motion_int2.getJerk()[0], -0.1250, 1e-5);
+  EXPECT_NEAR(motion_int2.getMaximumCartesianVelocities()[0], 0.5 * cart_v_max_0, 1e-5);
+  Motion motion_int3 = long_term_trajectory_.interpolate(0.01, 0.5, 1.0, 0.2);
+  EXPECT_NEAR(motion_int3.getAngle()[0], 0.010049833333333, 1e-5);
+  EXPECT_NEAR(motion_int3.getVelocity()[0], 0.504975, 1e-5);
+  EXPECT_NEAR(motion_int3.getAcceleration()[0], 1.25745, 1e-5);
+  EXPECT_NEAR(motion_int3.getJerk()[0], 1.561990000000000, 1e-5);
+  EXPECT_NEAR(motion_int3.getMaximumCartesianVelocities()[0], 0.5 * cart_v_max_0, 1e-5);
+}
+
+TEST_F(LongTermTrajInterpolateWithVelocityTest, GetMaxCartVelTest) {
+  double v_max = long_term_trajectory_.getMaxofMaximumCartesianVelocity();
+  double v_pred = 0.11 * 1.095;
+  EXPECT_NEAR(v_max, v_pred, 1e-5);
+  double v_max_0 = long_term_trajectory_.getMaxofMaximumCartesianVelocityWithS(0.0);
+  v_pred = 0.11 * 1.0;
+  EXPECT_NEAR(v_max_0, v_pred, 1e-5);
+  auto inertia_matrices = long_term_trajectory_.getInertiaMatrices(0);
+}
+
+TEST_F(LongTermTrajInterpolateWithVelocityTest, getInertiaMatricesOfAllTimeStepsFromPathTest) {
+  Path path = Path();
+  std::array<double, 3> times = {1, 2, 3};
+  std::array<double, 3> jerks = {1, 0, -1};
+  path.setPhases(times, jerks);
+  std::vector<double> time_points = {0.0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0};
+  std::vector<std::vector<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic>>> inertia_matrices = getInertiaMatricesOfAllTimeStepsFromPath(long_term_trajectory_, path, time_points);
+  EXPECT_EQ(inertia_matrices.size(), time_points.size());
+  EXPECT_EQ(inertia_matrices[0].size(), 1);
 }
 
 

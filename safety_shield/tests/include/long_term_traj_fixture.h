@@ -20,11 +20,13 @@
 #include <vector>
 #include <string>
 #include <iostream>
+#include <stdexcept>
 #include <yaml-cpp/yaml.h>
 
 #include "safety_shield/motion.h"
 #include "safety_shield/long_term_traj.h"
 #include "safety_shield/config_utils.h"
+#include "safety_shield/trajectory_utils.h"
 
 #ifndef LONG_TERM_TRAJ_FIXTURE_H
 #define LONG_TERM_TRAJ_FIXTURE_H
@@ -98,6 +100,97 @@ class LongTermTrajTestIdx : public ::testing::Test {
 };
 
 /**
+ * @brief Test fixture for verify long term trajectory class with starting index
+ */
+class LongTermTrajTestInterpolation : public ::testing::Test {
+ protected:
+  /**
+   * @brief The LTT object
+   */
+  LongTermTraj long_term_trajectory_;
+
+  /**
+   * @brief Create the LTT object
+   */
+  void SetUp() override {
+    std::vector<Motion> mo_vec;
+    int n_joints = 1;
+    std::vector<double> p0;
+    std::vector<double> v0;
+    std::vector<double> a0;
+    std::vector<double> j0;
+    for (int i = 0; i < n_joints; i++) {
+        p0.push_back(0.0);
+        v0.push_back(1.0);
+        a0.push_back(0.0);
+        j0.push_back(0.0);
+    }
+    Motion m0(0, p0, v0, a0, j0);
+    mo_vec.push_back(m0);
+    std::vector<double> p1;
+    p1.push_back(1);
+    Motion m1(1, p1, v0, a0, j0);
+    mo_vec.push_back(m1);
+    std::vector<double> p2;
+    p2.push_back(2);
+    Motion m2(2, p2, v0, a0, j0);
+    mo_vec.push_back(m2);
+    std::vector<double> p3;
+    p3.push_back(3);
+    Motion m3(3, p3, v0, a0, j0);
+    mo_vec.push_back(m3);
+    std::vector<double> p4;
+    p4.push_back(4);
+    Motion m4(4, p4, v0, a0, j0);
+    mo_vec.push_back(m4);
+    long_term_trajectory_ = LongTermTraj(mo_vec, 1.0, 0, {100.0}, {1000.0}, {10000.0});
+  }
+};
+
+/**
+ * @brief Test fixture for verify long term trajectory class with velocity calculation
+ */
+class LongTermTrajInterpolateWithVelocityTest : public ::testing::Test {
+protected:
+    /**
+     * @brief The LTT objects
+     */
+    LongTermTraj long_term_trajectory_;
+    RobotReach robot_reach_;
+
+
+    /**
+     * @brief Create the LTT object
+     */
+    void SetUp() override {
+        // setup for tests with jacobian matrix, testing with schunk robot
+        std::filesystem::path config_file = std::filesystem::current_path().parent_path() / "config/robot_reach_test_single_joint.yaml";
+        robot_reach_ = *(buildRobotReach(config_file.string(), 0.0, 0.0, 1.0, 0.0, 0.0, 0.0));
+        robot_reach_.setVelocityMethod(RobotReach::VelocityMethod::EXACT);
+        std::vector<Motion> motions;
+        int n_joints = 1;
+        std::vector<double> p0 = {0.0};
+        std::vector<double> v0 = {1.0};
+        std::vector<double> a0 = {1.0};
+        std::vector<double> j0 = {-1.0};
+        Motion m0(0, p0, v0, a0, j0);
+        motions.push_back(m0);
+        std::vector<double> p1 = {0.104833333333333};
+        std::vector<double> v1 = {1.095};
+        std::vector<double> a1 = {0.9};
+        std::vector<double> j1 = {0.0};
+        Motion m1(0.1, p1, v1, a1, j1);
+        motions.push_back(m1);
+        std::vector<double> v_max_allowed = {2.0};
+        std::vector<double> a_max_allowed = {10.0};
+        std::vector<double> j_max_allowed = {100.0};
+        int starting_index = 0;
+        long_term_trajectory_ = LongTermTraj(motions, 0.1, robot_reach_, 0, v_max_allowed, a_max_allowed, j_max_allowed);
+    }
+};
+
+
+/**
  * @brief Test fixture for verify long term trajectory class with velocity calculation
  */
 class LongTermTrajTestVelocity : public ::testing::Test {
@@ -105,8 +198,11 @@ protected:
     /**
      * @brief The LTT objects
      */
-    LongTermTraj long_term_trajectory_approximate;
-    LongTermTraj long_term_trajectory_exact;
+    LongTermTraj long_term_trajectory_approximate_;
+    LongTermTraj long_term_trajectory_exact_;
+    RobotReach robot_reach_approximate_;
+    RobotReach robot_reach_exact_;
+
 
     /**
      * @brief Create the LTT object
@@ -114,10 +210,10 @@ protected:
     void SetUp() override {
         // setup for tests with jacobian matrix, testing with schunk robot
         std::filesystem::path config_file = std::filesystem::current_path().parent_path() / "config/robot_parameters_schunk.yaml";
-        RobotReach robot_reach_approximate = *(buildRobotReach(config_file.string(), 0.0, 0.0, 1.0, 0.0, 0.0, 0.0));
-        RobotReach robot_reach_exact = *(buildRobotReach(config_file.string(), 0.0, 0.0, 1.0, 0.0, 0.0, 0.0));
-        robot_reach_approximate.setVelocityMethod(RobotReach::Velocity_method::APPROXIMATE);
-        robot_reach_exact.setVelocityMethod(RobotReach::Velocity_method::EXACT);
+        robot_reach_approximate_ = *(buildRobotReach(config_file.string(), 0.0, 0.0, 1.0, 0.0, 0.0, 0.0));
+        robot_reach_exact_ = *(buildRobotReach(config_file.string(), 0.0, 0.0, 1.0, 0.0, 0.0, 0.0));
+        robot_reach_approximate_.setVelocityMethod(RobotReach::VelocityMethod::APPROXIMATE);
+        robot_reach_exact_.setVelocityMethod(RobotReach::VelocityMethod::EXACT);
         std::vector<Motion> mo_vec;
         for(int i = 1; i < 10; ++i) {
             double dub = i;
@@ -125,8 +221,8 @@ protected:
             mo_vec.push_back(Motion(0, q, q));
         }
         std::vector<double> large_values = {10000.0, 10000.0, 10000.0, 10000.0, 10000.0, 10000.0};
-        long_term_trajectory_approximate = LongTermTraj(mo_vec, 0.001, robot_reach_approximate, 0, large_values, large_values, large_values);
-        long_term_trajectory_exact = LongTermTraj(mo_vec, 0.001, robot_reach_exact, 0, large_values, large_values, large_values);
+        long_term_trajectory_approximate_ = LongTermTraj(mo_vec, 0.001, robot_reach_approximate_, 0, large_values, large_values, large_values);
+        long_term_trajectory_exact_ = LongTermTraj(mo_vec, 0.001, robot_reach_exact_, 0, large_values, large_values, large_values);
     }
 };
 

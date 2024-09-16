@@ -13,12 +13,31 @@ Path::Path() : pos_(0.0), vel_(0.0), acc_(0.0), jerk_(0.0), is_current_(false) {
   }
 }
 
+void Path::incrementMotion(double& pos, double& vel, double& acc, const double& jerk, const double& duration) {
+  // Check if the velocity would drop below zero.
+  double admissable_duration = duration;
+  double new_vel;
+  try {
+    new_vel = calculateVel(vel, duration, acc, jerk);
+  } catch (PathVelocityNegativeException e) {
+    admissable_duration = calculateTimeForVel(0.0, vel, acc, jerk);
+    new_vel = 0.0;
+  }
+  pos = calculatePos(pos, admissable_duration, vel, acc, jerk);
+  vel = new_vel;
+  acc = calculateAcc(acc, admissable_duration, jerk);
+}
+
 void Path::increment(double duration) {
+  if (duration < 0.0) {
+    throw(std::invalid_argument("Path::increment duration: " + std::to_string(duration) + " < 0!"));
+  }
   double dt;
   for (int i = 0; i < 4; i++) {
-    if (i == 4) {
-      // If we exceeded the last phase, we increment the path with the remaining duration and set the jerk to zero
+    if (i == 3) {
+      // If we exceeded the last phase, we increment the path with the remaining duration and set the jerk  and acceleration to zero
       jerk_ = 0.0;
+      acc_ = 0.0;
       dt = duration;
     } else {
       if (times_[i] <= 0.0) {
@@ -27,9 +46,7 @@ void Path::increment(double duration) {
       jerk_ = jerks_[i];
       dt = std::min(times_[i], duration);
     }
-    pos_ = calculatePos(getPosition(), dt, getVelocity(), getAcceleration(), getJerk());
-    vel_ = calculateVel(getVelocity(), dt, getAcceleration(), getJerk());
-    acc_ = calculateAcc(getAcceleration(), dt, getJerk());
+    incrementMotion(pos_, vel_, acc_, jerk_, dt);  
     // Decrease the time of all phases by dt
     duration -= dt;
     for (int j = i; j < 3; j++) {
@@ -53,16 +70,14 @@ void Path::getFinalMotion(double& final_pos, double& final_vel, double& final_ac
     double dt = (times_[i] - l_time);
     double current_jerk = jerks_[i];
     // Constant jerk motion
-    final_pos = calculatePos(final_pos, dt, final_vel, final_acc, current_jerk);
-    final_vel = calculateVel(final_vel, dt, final_acc, current_jerk);
-    final_acc = calculateAcc(final_acc, dt, current_jerk);
+    incrementMotion(final_pos, final_vel, final_acc, current_jerk, dt);
     l_time = times_[i];
   }
 }
 
 void Path::getMotionUnderVel(double v_limit, double& time, double& pos, double& vel, double& acc, double& jerk) {
-  if (getVelocity() < v_limit) {
-    time = times_[0];
+  if (getVelocity() <= v_limit) {
+    time = 0;
     pos = getPosition();
     vel = getVelocity();
     acc = getAcceleration();
@@ -86,24 +101,22 @@ void Path::getMotionUnderVel(double v_limit, double& time, double& pos, double& 
     double dt = (times_[i] - l_time);
     double current_jerk = jerks_[i];
     // Constant jerk motion
-    next_pos = calculatePos(next_pos, dt, prev_vel, prev_acc, current_jerk);
-    next_vel = calculateVel(next_vel, dt, prev_acc, current_jerk);
-    next_acc = calculateAcc(next_acc, dt, current_jerk);
-    l_time = times_[i];
-
+    incrementMotion(next_pos, next_vel, next_acc, current_jerk, dt);
     // if in this phase, next_vel falls below vel, recompute values but with correct time via formula
     double epsilon = 1e-8;
     if (next_vel < v_limit + epsilon) {
-      double dt_limit = calculateTimeForVel(v_limit, prev_vel, prev_acc, jerks_[i]);
+      double dt_limit = calculateTimeForVel(v_limit, prev_vel, prev_acc, current_jerk);
       if (dt_limit < 0) {
         throw std::runtime_error("Error in Path::getMotionUnderVel: dt_limit is negative. Could not calculate the time when the velocity falls under the safe limit.");
       }
-      time = times_[i] + dt_limit;
-      pos = calculatePos(prev_pos, dt_limit, prev_vel, prev_acc, jerk);
-      vel = calculateVel(prev_vel, dt_limit, prev_acc, jerk);
-      acc = calculateAcc(prev_acc, dt_limit, jerk);
+      time = l_time + dt_limit;
+      incrementMotion(prev_pos, prev_vel, prev_acc, current_jerk, dt_limit);
+      pos = prev_pos;
+      vel = prev_vel;
+      acc = prev_acc;
       return;
     }
+    l_time = times_[i];
   }
   // if it is not in any phase, it can't be a failsafe-path
   time = -1;
@@ -113,6 +126,7 @@ void Path::getMotionUnderVel(double v_limit, double& time, double& pos, double& 
 double Path::getMaxVelocity() {
   double max_vel = getVelocity();
   double l_time = 0;
+  double pos = getPosition();
   double vel = getVelocity();
   double acc = getAcceleration();
   for (int i = 0; i < 3; i++) {
@@ -125,11 +139,15 @@ double Path::getMaxVelocity() {
       // 0 = acc + jerk * t
       // t = -acc / jerk < dt
       double mid_t = -acc / jerks_[i];
-      double mid_vel = calculateVel(vel, mid_t, acc, jerks_[i]);
-      max_vel = std::max(max_vel, mid_vel);
+      try {
+        double mid_vel = calculateVel(vel, mid_t, acc, jerks_[i]);
+        max_vel = std::max(max_vel, mid_vel);
+      } catch (PathVelocityNegativeException e) {
+        // Do nothing if velocity is negative
+      }
     }
-    vel = calculateVel(vel, dt, acc, jerks_[i]);
-    acc = calculateAcc(acc, dt, jerks_[i]);
+    // pos not needed here, but still used for the function call
+    incrementMotion(pos, vel, acc, jerks_[i], dt);
     max_vel = std::max(max_vel, vel);
     l_time = times_[i];
   }

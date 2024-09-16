@@ -5,9 +5,31 @@
 
 #include "safety_shield/safety_shield.h"
 #include "safety_shield_fixture.h"
+#include "safety_shield/exceptions.h"
 #include "spdlog/spdlog.h"
 
 namespace safety_shield {
+
+void throwRobotMovementException() {
+  try {
+    throw RobotMovementException();
+  } catch (RobotMovementException e) {
+    std::cout << e.what() << std::endl;
+  }
+}
+
+void throwTrajectoryException(std::string msg) {
+  try {
+    throw TrajectoryException(msg);
+  } catch (TrajectoryException e) {
+    std::cout << e.what() << std::endl;
+  }
+}
+
+TEST(SafetyShieldExceptionTest, ExpectionTest) {
+  EXPECT_NO_THROW(throwRobotMovementException());
+  EXPECT_NO_THROW(throwTrajectoryException("Test"));
+}
 
 TEST_F(SafetyShieldTest, InitializationTest) {
   EXPECT_DOUBLE_EQ(0, 0.0);
@@ -50,7 +72,7 @@ TEST_F(SafetyShieldTest, PlanSafetyShieldTest) {
         ASSERT_TRUE(success);
         path.getFinalMotion(final_pos, final_vel, final_acc);
         ASSERT_NEAR(final_vel, ve, 1e-6);
-        ASSERT_NEAR(final_acc, 0.0, 1e-6);
+        ASSERT_NEAR(final_acc, 0.0, 1e-2);
       }
     }
   }

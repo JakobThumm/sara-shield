@@ -69,6 +69,11 @@ bool VerifyISO::verifyHumanReachEnergy(const std::vector<std::vector<reach_lib::
   if (robot_reachable_sets.size() != robot_link_energies.size()) {
     throw std::length_error("The number of time intervals for the robot and robot link energies do not match.");
   }
+  if (robot_reachable_sets.size() == 0) {
+    spdlog::error("Empty time intervals provided in verifyHumanReachEnergy.");
+    collision_index = -1;
+    return false;
+  }
   if (robot_reachable_sets[0].size() != robot_link_energies[0].size()) {
     throw std::length_error("The number of robot links for the robot reachable sets and robot link energies do not match.");
   }

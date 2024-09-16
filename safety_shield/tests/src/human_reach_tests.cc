@@ -7,8 +7,53 @@
 
 namespace safety_shield {
 
+TEST_F(HumanReachTestKF, InitializationKFTest) {
+  EXPECT_DOUBLE_EQ(0, 0);
+  human_reach_kf_->reset();
+  delete human_reach_kf_;
+  delete human_reach_cm_kf_;
+}
+
+TEST_F(HumanReachTestKF, MeasurementTest) {
+  std::vector<reach_lib::Point> human_joint_pos_0 = {reach_lib::Point(0, 0, 0)};
+  double t_meas_0 = 0.0;
+  human_reach_kf_->measurement(human_joint_pos_0, t_meas_0);
+  human_reach_cm_kf_->measurement(human_joint_pos_0, t_meas_0);
+  human_reach_kf_->humanReachabilityAnalysis(0.0, 0.1);
+  human_reach_cm_kf_->humanReachabilityAnalysis(0.0, 0.1);
+  std::vector<reach_lib::Capsule> v_cap = human_reach_kf_->getArticulatedVelCapsules();
+  EXPECT_DOUBLE_EQ(v_cap[0].p1_.x, 0.0);
+  EXPECT_DOUBLE_EQ(v_cap[0].p1_.y, 0.0);
+  EXPECT_DOUBLE_EQ(v_cap[0].p1_.z, 0.0);
+  std::vector<reach_lib::Capsule> v_cap_cm = human_reach_cm_kf_->getArticulatedCombinedCapsules();
+  EXPECT_DOUBLE_EQ(v_cap_cm[0].p1_.x, 0.0);
+  EXPECT_DOUBLE_EQ(v_cap_cm[0].p1_.y, 0.0);
+  EXPECT_DOUBLE_EQ(v_cap_cm[0].p1_.z, 0.0);
+  std::vector<reach_lib::Point> human_joint_pos_1 = {reach_lib::Point(1.0, 0.0, 0.0)};
+  double t_meas_1 = 1.0;
+  human_reach_kf_->measurement(human_joint_pos_1, t_meas_1);
+  human_reach_cm_kf_->measurement(human_joint_pos_1, t_meas_1);
+  human_reach_kf_->humanReachabilityAnalysis(1.0, 0.1);
+  human_reach_cm_kf_->humanReachabilityAnalysis(1.0, 0.1);
+  v_cap = human_reach_kf_->getArticulatedVelCapsules();
+  EXPECT_TRUE(v_cap[0].p1_.x < 1.0);
+  EXPECT_DOUBLE_EQ(v_cap[0].p1_.y, 0.0);
+  EXPECT_DOUBLE_EQ(v_cap[0].p1_.z, 0.0);
+  v_cap_cm = human_reach_cm_kf_->getArticulatedCombinedCapsules();
+  EXPECT_TRUE(v_cap[0].p1_.x < 1.0);
+  EXPECT_DOUBLE_EQ(v_cap_cm[0].p1_.y, 0.0);
+  EXPECT_DOUBLE_EQ(v_cap_cm[0].p1_.z, 0.0);
+}
+
 TEST_F(HumanReachCombinedOnlyTest, InitializationCombinedOnlyTest) {
   EXPECT_DOUBLE_EQ(0, 0);
+  delete human_reach_;
+}
+
+TEST_F(HumanReachCombinedOnlyTest, ErrorHandlingTests) {
+  EXPECT_THROW(human_reach_->getArticulatedPosCapsules(), HumanModelNotFoundException);
+  EXPECT_THROW(human_reach_->getArticulatedVelCapsules(), HumanModelNotFoundException);
+  EXPECT_THROW(human_reach_->getArticulatedAccelCapsules(), HumanModelNotFoundException);
 }
 
 TEST_F(HumanReachCombinedOnlyTest, HumanReachMeasCombinedOnlyTest) {
@@ -82,6 +127,15 @@ TEST_F(HumanReachCombinedOnlyTest, HumanReachAnalysisCombinedTest) {
   EXPECT_DOUBLE_EQ(c_cap[0].r_, r);
 }
 
+TEST_F(HumanReachCombinedOnlyArmTest, GetHumanContactEnergies) {
+  auto max_contact_energy = human_reach_->getMaxContactEnergy();
+  ASSERT_EQ(max_contact_energy.size(), 1);
+  ASSERT_EQ(max_contact_energy[0].size(), 3);
+  EXPECT_DOUBLE_EQ(max_contact_energy[0][2], 0.75);
+  EXPECT_DOUBLE_EQ(max_contact_energy[0][1], 1.0);
+  EXPECT_DOUBLE_EQ(max_contact_energy[0][0], 1.0);
+}
+
 TEST_F(HumanReachCombinedOnlyArmTest, HumanReachAnalysisCombinedTest) {
   reach_lib::Point p1(0.0, 0.0, 0.0);
   reach_lib::Point p2(0.5, 0.0, 0.0);
@@ -147,6 +201,7 @@ TEST_F(HumanReachCombinedOnlyArmTest, HumanReachAnalysisCombinedTest) {
 
 TEST_F(HumanReachTest, InitializationTest) {
   EXPECT_DOUBLE_EQ(0, 0);
+  EXPECT_THROW(human_reach_->getArticulatedCombinedCapsules(), HumanModelNotFoundException);
 }
 
 TEST_F(HumanReachTest, HumanReachMeasTest) {
@@ -160,6 +215,45 @@ TEST_F(HumanReachTest, HumanReachMeasTest) {
   EXPECT_DOUBLE_EQ(human_reach_->getJointPos()[0].y, 2.0);
   EXPECT_DOUBLE_EQ(human_reach_->getJointPos()[0].z, 3.0);
   EXPECT_DOUBLE_EQ(human_reach_->getJointVel()[0].x, 0.0);
+  EXPECT_DOUBLE_EQ(human_reach_->getJointVel()[0].y, 0.0);
+  EXPECT_DOUBLE_EQ(human_reach_->getJointVel()[0].z, 0.0);
+  t_meas = 0.0;
+  reach_lib::Point p2(0, 0, 0);
+  human_joint_pos.pop_back();
+  human_joint_pos.push_back(p2);
+  human_reach_->measurement(human_joint_pos, t_meas);
+  // This should not change as the last timestep was in the past.
+  EXPECT_DOUBLE_EQ(human_reach_->getLastMeasTimestep(), 1.0);
+  EXPECT_DOUBLE_EQ(human_reach_->getJointPos()[0].x, 1.0);
+  EXPECT_DOUBLE_EQ(human_reach_->getJointPos()[0].y, 2.0);
+  EXPECT_DOUBLE_EQ(human_reach_->getJointPos()[0].z, 3.0);
+  EXPECT_DOUBLE_EQ(human_reach_->getJointVel()[0].x, 0.0);
+  EXPECT_DOUBLE_EQ(human_reach_->getJointVel()[0].y, 0.0);
+  EXPECT_DOUBLE_EQ(human_reach_->getJointVel()[0].z, 0.0);
+  t_meas = 1.0000000000000000000000001;
+  reach_lib::Point p3(0, 0, 0);
+  human_joint_pos.pop_back();
+  human_joint_pos.push_back(p3);
+  human_reach_->measurement(human_joint_pos, t_meas);
+  // This should now change but no velocity calculation.
+  EXPECT_DOUBLE_EQ(human_reach_->getLastMeasTimestep(), 1.0000000000000000000000001);
+  EXPECT_DOUBLE_EQ(human_reach_->getJointPos()[0].x, 0.0);
+  EXPECT_DOUBLE_EQ(human_reach_->getJointPos()[0].y, 0.0);
+  EXPECT_DOUBLE_EQ(human_reach_->getJointPos()[0].z, 0.0);
+  EXPECT_DOUBLE_EQ(human_reach_->getJointVel()[0].x, 0.0);
+  EXPECT_DOUBLE_EQ(human_reach_->getJointVel()[0].y, 0.0);
+  EXPECT_DOUBLE_EQ(human_reach_->getJointVel()[0].z, 0.0);
+  t_meas = 1.1;
+  reach_lib::Point p4(0.1, 0, 0);
+  human_joint_pos.pop_back();
+  human_joint_pos.push_back(p4);
+  human_reach_->measurement(human_joint_pos, t_meas);
+  // This should now change with velocity calculation.
+  EXPECT_DOUBLE_EQ(human_reach_->getLastMeasTimestep(), 1.1);
+  EXPECT_DOUBLE_EQ(human_reach_->getJointPos()[0].x, 0.1);
+  EXPECT_DOUBLE_EQ(human_reach_->getJointPos()[0].y, 0.0);
+  EXPECT_DOUBLE_EQ(human_reach_->getJointPos()[0].z, 0.0);
+  EXPECT_NEAR(human_reach_->getJointVel()[0].x, 1.0, 1e-8);
   EXPECT_DOUBLE_EQ(human_reach_->getJointVel()[0].y, 0.0);
   EXPECT_DOUBLE_EQ(human_reach_->getJointVel()[0].z, 0.0);
 }

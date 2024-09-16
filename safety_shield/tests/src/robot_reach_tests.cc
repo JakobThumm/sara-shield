@@ -11,6 +11,15 @@ namespace safety_shield {
 
 TEST_F(RobotReachTest, InitializationTest) {
   EXPECT_NEAR(0, 0.0, 1e-8);
+  robot_reach_->reset(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+}
+
+TEST_F(RobotReachTest, CrossMatrixTest) {
+  Eigen::Vector3d vec(1.0, 2.0, 3.0);
+  Eigen::Matrix3d result = robot_reach_->getCrossProductAsMatrix(vec);
+  Eigen::Matrix3d expect;
+  expect << 0, -3.0, 2.0, 3.0, 0, -1.0, -2.0, 1.0, 0;
+  EXPECT_TRUE(result.isApprox(expect));
 }
 
 TEST_F(RobotReachTest, ForwardKinematicTest0) {
@@ -493,6 +502,101 @@ TEST_F(RobotReachTestVelocity, JacobianSicilianoTest5) {
   EXPECT_NEAR(jacobian(5, 2), expect(5, 2), 1e-8);
 }
 
+TEST_F(RobotReachTestVelocity, maxVelocityOfMotionTest) {
+  std::vector<double> q_1 = {0.0, 0.0, 0.0};
+  std::vector<double> q_2 = {1.0, 0.0, 0.0};
+  std::vector<double> dq_1 = {1.0, 0.0, 0.0};
+  std::vector<double> dq_2 = {1.0, 1.0, 1.0};
+  Motion m_1 = Motion(0.0, q_1, dq_1, 0.0);
+  Motion m_2 = Motion(0.0, q_1, dq_2, 0.0);
+  Motion m_3 = Motion(0.0, q_2, dq_1, 0.0);
+  Motion m_4 = Motion(0.0, q_2, dq_2, 0.0);
+  double max_vel_1 = robot_reach_->maxVelocityOfMotion(m_1);
+  double max_vel_2 = robot_reach_->maxVelocityOfMotion(m_2);
+  double max_vel_3 = robot_reach_->maxVelocityOfMotion(m_3);
+  double max_vel_4 = robot_reach_->maxVelocityOfMotion(m_4);
+  // length = 3 * 1 + 1 = 4. v = 1.0 * 4.0 = 4.0
+  EXPECT_NEAR(max_vel_1, 4.0, 1e-8);
+  // v = 1*1 + 2*1 + 3*2 = 9.0
+  EXPECT_NEAR(max_vel_2, 9.0, 1e-8);
+  EXPECT_NEAR(max_vel_3, 4.0, 1e-8);
+  EXPECT_NEAR(max_vel_4, 9.0, 1e-8);
+}
+
+TEST_F(RobotReachTestVelocity, maxVelocityOfMotionExactTest) {
+  robot_reach_->setVelocityMethod(safety_shield::RobotReach::VelocityMethod::EXACT);
+  std::vector<double> q_1 = {0.0, 0.0, 0.0};
+  std::vector<double> q_2 = {1.0, 0.0, 0.0};
+  std::vector<double> dq_1 = {1.0, 0.0, 0.0};
+  std::vector<double> dq_2 = {1.0, 1.0, 1.0};
+  Motion m_1 = Motion(0.0, q_1, dq_1, 0.0);
+  Motion m_2 = Motion(0.0, q_1, dq_2, 0.0);
+  Motion m_3 = Motion(0.0, q_2, dq_1, 0.0);
+  Motion m_4 = Motion(0.0, q_2, dq_2, 0.0);
+  double max_vel_1 = robot_reach_->maxVelocityOfMotion(m_1);
+  double max_vel_2 = robot_reach_->maxVelocityOfMotion(m_2);
+  double max_vel_3 = robot_reach_->maxVelocityOfMotion(m_3);
+  double max_vel_4 = robot_reach_->maxVelocityOfMotion(m_4);
+  // length = 3 * 1 + 1 = 4. v = 1.0 * 4.0 = 4.0
+  EXPECT_NEAR(max_vel_1, 4.0, 1e-8);
+  // v = 1*1 + 2*1 + 3*2 = 9.0
+  EXPECT_NEAR(max_vel_2, 9.0, 1e-8);
+  EXPECT_NEAR(max_vel_3, 4.0, 1e-8);
+  EXPECT_NEAR(max_vel_4, 9.0, 1e-8);
+}
+
+TEST_F(RobotReachTestVelocity, calculateAllCapsuleVelocitiesTest) {
+  std::vector<double> q = {0.0, 0.0, 0.0};
+  std::vector<double> dq = {1.0, 1.0, 1.0};
+  robot_reach_->calculateAllTransformationMatricesAndCapsules(q);
+  std::vector<safety_shield::RobotReach::CapsuleVelocity> capsuleVels = robot_reach_->calculateAllCapsuleVelocities(dq);
+  // Cap 1
+  // v1 = [0, 0, 0], w1 = [0, 0, 1]
+  EXPECT_NEAR(capsuleVels[0].v1.v[0], 0.0, 1e-8);
+  EXPECT_NEAR(capsuleVels[0].v1.v[1], 0.0, 1e-8);
+  EXPECT_NEAR(capsuleVels[0].v1.v[2], 0.0, 1e-8);
+  EXPECT_NEAR(capsuleVels[0].v1.w[0], 0.0, 1e-8);
+  EXPECT_NEAR(capsuleVels[0].v1.w[1], 0.0, 1e-8);
+  EXPECT_NEAR(capsuleVels[0].v1.w[2], 1.0, 1e-8);
+  // v2 = [0, 1, 0], w2 = [0, 0, 1]
+  EXPECT_NEAR(capsuleVels[0].v2.v[0], 0.0, 1e-8);
+  EXPECT_NEAR(capsuleVels[0].v2.v[1], 1.0, 1e-8);
+  EXPECT_NEAR(capsuleVels[0].v2.v[2], 0.0, 1e-8);
+  EXPECT_NEAR(capsuleVels[0].v2.w[0], 0.0, 1e-8);
+  EXPECT_NEAR(capsuleVels[0].v2.w[1], 0.0, 1e-8);
+  EXPECT_NEAR(capsuleVels[0].v2.w[2], 1.0, 1e-8);
+  // Cap 2
+  // v1 = [0, 1, 0], w1 = [0, 0, 2]
+  EXPECT_NEAR(capsuleVels[1].v1.v[0], 0.0, 1e-8);
+  EXPECT_NEAR(capsuleVels[1].v1.v[1], 1.0, 1e-8);
+  EXPECT_NEAR(capsuleVels[1].v1.v[2], 0.0, 1e-8);
+  EXPECT_NEAR(capsuleVels[1].v1.w[0], 0.0, 1e-8);
+  EXPECT_NEAR(capsuleVels[1].v1.w[1], 0.0, 1e-8);
+  EXPECT_NEAR(capsuleVels[1].v1.w[2], 2.0, 1e-8);
+  // v2 = [0, 3, 0], w2 = [0, 0, 2]
+  EXPECT_NEAR(capsuleVels[1].v2.v[0], 0.0, 1e-8);
+  EXPECT_NEAR(capsuleVels[1].v2.v[1], 3.0, 1e-8);
+  EXPECT_NEAR(capsuleVels[1].v2.v[2], 0.0, 1e-8);
+  EXPECT_NEAR(capsuleVels[1].v2.w[0], 0.0, 1e-8);
+  EXPECT_NEAR(capsuleVels[1].v2.w[1], 0.0, 1e-8);
+  EXPECT_NEAR(capsuleVels[1].v2.w[2], 2.0, 1e-8);
+  // Cap 3
+  // v1 = [0, 3, 0], w1 = [0, 0, 3]
+  EXPECT_NEAR(capsuleVels[2].v1.v[0], 0.0, 1e-8);
+  EXPECT_NEAR(capsuleVels[2].v1.v[1], 3.0, 1e-8);
+  EXPECT_NEAR(capsuleVels[2].v1.v[2], 0.0, 1e-8);
+  EXPECT_NEAR(capsuleVels[2].v1.w[0], 0.0, 1e-8);
+  EXPECT_NEAR(capsuleVels[2].v1.w[1], 0.0, 1e-8);
+  EXPECT_NEAR(capsuleVels[2].v1.w[2], 3.0, 1e-8);
+  // v2 = [0, 6, 0], w2 = [0, 0, 3]
+  EXPECT_NEAR(capsuleVels[2].v2.v[0], 0.0, 1e-8);
+  EXPECT_NEAR(capsuleVels[2].v2.v[1], 6.0, 1e-8);
+  EXPECT_NEAR(capsuleVels[2].v2.v[2], 0.0, 1e-8);
+  EXPECT_NEAR(capsuleVels[2].v2.w[0], 0.0, 1e-8);
+  EXPECT_NEAR(capsuleVels[2].v2.w[1], 0.0, 1e-8);
+  EXPECT_NEAR(capsuleVels[2].v2.w[2], 3.0, 1e-8);
+}
+
 TEST_F(RobotReachTestInertiaMatrix, InertiaMatrixTest0) {
   std::vector<double> q = {M_PI_4, M_PI_4};
   robot_reach_->calculateAllTransformationMatricesAndCapsules(q);
@@ -523,7 +627,6 @@ TEST_F(RobotReachTestInertiaMatrix, InertiaMatrixTest0) {
   EXPECT_NEAR(B_22, B_22_predicted, 1e-8);
 }
 
-
 TEST_F(RobotReachSchunkTest, MaxReflectedMassTest) {
   std::vector<double> q = {0.2, 0.4, -0.32, 0.86, 0.926, 1.3};  // Some value that is no singularity
   robot_reach_->calculateAllTransformationMatricesAndCapsules(q);
@@ -531,6 +634,21 @@ TEST_F(RobotReachSchunkTest, MaxReflectedMassTest) {
   double sum_of_link_masses = 13.79;
   EXPECT_TRUE(max_reflected_masses[max_reflected_masses.size()-1] < sum_of_link_masses);
 }
+
+TEST_F(RobotReachSchunkTest, CalculateRobotLinkReflectedMassesPerTimeIntervalTest) {
+  std::vector<double> q = {0.2, 0.4, -0.32, 0.86, 0.926, 1.3};  // Some value that is no singularity
+  std::vector<double> dq = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+  Motion m(0.0, q, dq, 0.0);
+  std::vector<Motion> motion_vec = {m};
+  std::vector<std::vector<double>> reflected_masses = robot_reach_->calculateRobotLinkReflectedMassesPerTimeInterval(motion_vec);
+  EXPECT_EQ(reflected_masses.size(), 1);
+  EXPECT_EQ(reflected_masses[0].size(), 6);
+  for (int i = 0; i < 6; i++) {
+    EXPECT_TRUE(reflected_masses[0][i] >= 0);
+    // TODO: Test the actual functionality!
+  }
+}
+
 /*
 TEST_F(RobotReachPandaTest, MaxReflectedMassTest) {
   std::vector<double> q = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};

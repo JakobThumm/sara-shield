@@ -511,7 +511,9 @@ class LongTermTraj {
   /**
    * @brief gets LTT-maximum of maximum cartesian velocity
    */
-  double getMaxofMaximumCartesianVelocity() const;
+  inline double getMaxofMaximumCartesianVelocity() const {
+    return max_cart_vel_;
+  }
 
   /**
    * @brief gets maximum of cartesian velocity until s is reached

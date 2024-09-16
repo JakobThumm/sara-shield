@@ -51,6 +51,30 @@ class HumanReachTest : public ::testing::Test {
 };
 
 /**
+ * @brief Test fixture for human reach class with KF
+ */
+class HumanReachTestKF : public ::testing::Test {
+ protected:
+  /**
+   * @brief The human reach object
+   */
+  HumanReach* human_reach_kf_;
+  HumanReach* human_reach_cm_kf_;
+
+  /**
+   * @brief Create the human reach object
+   */
+  void SetUp() override {
+    std::filesystem::path config_file_kf =
+        std::filesystem::current_path().parent_path() / "config/human_reach_test_single_joint_kf.yaml";
+    human_reach_kf_ = buildHumanReach(config_file_kf.string());
+    std::filesystem::path config_file_cm_kf =
+        std::filesystem::current_path().parent_path() / "config/human_reach_test_single_joint_cm_kf.yaml";
+    human_reach_cm_kf_ = buildHumanReach(config_file_cm_kf.string());
+  }
+};
+
+/**
  * @brief Test fixture for human reach class with only combined model
  */
 class HumanReachCombinedOnlyTest : public ::testing::Test {

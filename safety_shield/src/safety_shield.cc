@@ -81,7 +81,7 @@ SafetyShield::SafetyShield(double sample_time, std::string trajectory_config_fil
   );
   ltp_ = long_term_planner::LongTermPlanner(nb_joints_, sample_time, q_min_allowed_, q_max_allowed_, v_max_allowed_,
                                             a_max_ltt_, j_max_ltt_);
-  RobotReach::Velocity_method velocity_method = static_cast<RobotReach::Velocity_method>(velocity_method_int);
+  RobotReach::VelocityMethod velocity_method = static_cast<RobotReach::VelocityMethod>(velocity_method_int);
   robot_reach_->setVelocityMethod(velocity_method);
   // Initialize the long term trajectory
   sliding_window_k_ = (int)std::floor(max_s_stop_ / sample_time_);
@@ -622,11 +622,12 @@ bool SafetyShield::verifySafety(Motion& current_motion, Motion& goal_motion, con
     }
     double dt = time_points[1] - time_points[0];
     std::vector<double> velocity_errors = robot_reach_->calculateMaxVelErrors(dt, v_max_allowed_, a_max_allowed_, j_max_allowed_);
+    /*
     std::vector<std::vector<double>> robot_link_velocities = calculateMaxRobotLinkVelocitiesPerTimeInterval(
       interval_edges_motions,
-      robot_link_radii,
       velocity_errors
     );
+    */
     std::vector<std::vector<double>> maximal_contact_energies = human_reach_->getMaxContactEnergy();
     // Solution with maximal allowed contact velocities (not fully implemented yet)
     /* 
