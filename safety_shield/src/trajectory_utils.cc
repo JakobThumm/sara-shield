@@ -18,9 +18,6 @@ std::vector<Motion> getMotionsOfAllTimeStepsFromPath(const LongTermTraj& ltt, co
   std::vector<Motion> motion_samples;
   motion_samples.push_back(ltt.interpolate(path_copy.getPosition(), path_copy.getVelocity(), path_copy.getAcceleration(), path_copy.getJerk()));
   for (int i = 0; i < time_points.size() - 1; i++) {
-    if (time_points[i+1] <= time_points[i]) {
-      throw std::invalid_argument("Time points must be in increasing order.");
-    }
     // increment path and push motion to list
     double time_interval_duration = time_points[i + 1] - time_points[i];
     path_copy.increment(time_interval_duration);

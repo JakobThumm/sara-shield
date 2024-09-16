@@ -17,6 +17,7 @@
 #include <gtest/gtest.h>
 
 #include "safety_shield/verify_iso.h"
+#include "safety_shield/verification_utils.h"
 
 #ifndef VERFIY_ISO_FIXTURE_H
 #define VERFIY_ISO_FIXTURE_H

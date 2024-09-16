@@ -15,6 +15,7 @@
  */
 
 #include <gtest/gtest.h>
+#include <stdexcept>
 
 #include "safety_shield/path.h"
 
@@ -40,6 +41,28 @@ class PathTest : public ::testing::Test {
     path_ = Path();
     std::array<double, 3> times = {1, 2, 3};
     std::array<double, 3> jerks = {1, 0, -1};
+    path_.setPhases(times, jerks);
+  }
+};
+
+/**
+ * @brief Test fixture for verify path class (simple)
+ */
+class PathStopTest : public ::testing::Test {
+ protected:
+  /**
+   * @brief The Path object
+   */
+  Path path_;
+
+  /**
+   * @brief Create the Path object
+   */
+  void SetUp() override {
+    path_ = Path();
+    path_.setVelocity(2.0);
+    std::array<double, 3> times = {1, 2, 3};
+    std::array<double, 3> jerks = {-1, 0, 1};
     path_.setPhases(times, jerks);
   }
 };

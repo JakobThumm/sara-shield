@@ -33,7 +33,7 @@ namespace safety_shield {
  */
 class RobotReach {
  public:
-  enum Velocity_method {
+  enum VelocityMethod {
     APPROXIMATE,
     EXACT,
   };
@@ -115,7 +115,7 @@ class RobotReach {
   /**
    * @brief if maximum cartesian velocities should be approximative or exact
    */
-  Velocity_method velocity_method_ = APPROXIMATE;
+  VelocityMethod velocity_method_ = APPROXIMATE;
 
   /**
    * @brief enclosing capsules for velocity calculation
@@ -257,7 +257,7 @@ class RobotReach {
 
   /**
    * @brief calculates maximum cartesian velocity for a specific robot configuration
-   * @details calls calculateAlltransformationMatricesAndCapsules() before
+   * @details calls calculateAllTransformationMatricesAndCapsules() before
    * @param motion configuration of robot
    * @return maximum cartesian velocity of motion
    */
@@ -292,7 +292,7 @@ class RobotReach {
 
   /**
    * @brief Calculate all velocities for a specific robot configuration.
-   * @assumption calculateAlltransformationMatricesAndCapsules() was called before
+   * @assumption calculateAllTransformationMatricesAndCapsules() was called before
    * @param[in] q_dot Joint velocities
    * @return std::vector<CapsuleVelocity> Vector of velocities in SE3 of both points of a capsule
    */
@@ -300,28 +300,28 @@ class RobotReach {
 
   /**
    * @brief Calculate all inertia matrices for a specific robot configuration.
-   * @assumption calculateAlltransformationMatricesAndCapsules() was called before
+   * @assumption calculateAllTransformationMatricesAndCapsules() was called before
    * @return std::vector<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic>> Inertia matrices of the links.
    */
   std::vector<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic>> calculateAllInertiaMatrices() const;
 
   /**
    * @brief Calculate all inverse translational mass matrices for a specific robot configuration.
-   * @assumption calculateAlltransformationMatricesAndCapsules() was called before
+   * @assumption calculateAllTransformationMatricesAndCapsules() was called before
    * @return std::vector<Eigen::Matrix<double, 3, 3>> The inverse translational mass matrices of the links.
    */
   std::vector<Eigen::Matrix<double, 3, 3>> calculateAllInvMassMatrices() const;
 
   /**
    * @brief Calculate all maximum reflected masses for a specific robot configuration.
-   * @assumption calculateAlltransformationMatricesAndCapsules() was called before
+   * @assumption calculateAllTransformationMatricesAndCapsules() was called before
    * @return std::vector<double> Maximum reflected masses of the links.
    */
   std::vector<double> calculateAllMaxReflectedMasses() const;
 
   /**
    * @brief Calculate the cartesian velocity of both defining point of a specific capsule
-   * @assumption calculateAlltransformationMatricesAndCapsules() was called before
+   * @assumption calculateAllTransformationMatricesAndCapsules() was called before
    * @param capsule which capsule
    * @param q_dot velocity configuration of robot
    * @return Velocity in SE3 of both Capusle points
@@ -330,7 +330,7 @@ class RobotReach {
 
   /**
    * @brief Calculate the cartesian velocity of both defining point of a specific capsule given a pre-computed jacobian
-   * @assumption calculateAlltransformationMatricesAndCapsules() was called before
+   * @assumption calculateAllTransformationMatricesAndCapsules() was called before
    * @param[in] capsule which capsule
    * @param[in] q_dot velocity configuration of robot
    * @param[in] jacobian Jacobian of the capsule
@@ -383,7 +383,7 @@ class RobotReach {
 
   /**
    * @brief Calculate the maximum norm of the cartesian velocity for a specific capsule
-   * @assumption calculateAlltransformationMatricesAndCapsules() was called before
+   * @assumption calculateAllTransformationMatricesAndCapsules() was called before
    * @param capsule which capsule
    * @param q_dot velocity configuration of robot
    * @return maximum cartesian velocity of capsule
@@ -400,7 +400,7 @@ class RobotReach {
    * @brief Returns Jacobian of a point attached to the i-th joint.
    * @details You often take robot_capsules_for_velocity_[joint].p1_ or robot_capsules_for_velocity_[joint].p2_ as
    * point.
-   * @assumption calculateAlltransformationMatricesAndCapsules() was called before
+   * @assumption calculateAllTransformationMatricesAndCapsules() was called before
    * @param joint Jacobian for which joint
    * @param point Jacobian for which point
    * @return Jacobian 6 x nb_joints
@@ -409,7 +409,7 @@ class RobotReach {
 
   /**
    * @brief computes approximate maximum cartesian velocity of a specific capsule
-   * @assumption calculateAlltransformationMatricesAndCapsules() was called before
+   * @assumption calculateAllTransformationMatricesAndCapsules() was called before
    * @param capsule
    * @param v linear velocity at joint
    * @param omega angular velocity at joint
@@ -419,7 +419,7 @@ class RobotReach {
 
   /**
    * @brief computes approximate maximum cartesian velocity of a specific capsule
-   * @assumption calculateAlltransformationMatricesAndCapsules() was called before
+   * @assumption calculateAllTransformationMatricesAndCapsules() was called before
    * @param capsule
    * @param v linear velocity at joint
    * @param omega angular velocity at joint
@@ -478,7 +478,7 @@ class RobotReach {
   /**
    * @brief sets velocity_method
    */
-  inline void setVelocityMethod(Velocity_method velocity_method) {
+  inline void setVelocityMethod(VelocityMethod velocity_method) {
     velocity_method_ = velocity_method;
   }
 };
