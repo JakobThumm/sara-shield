@@ -627,6 +627,55 @@ TEST_F(RobotReachTestInertiaMatrix, InertiaMatrixTest0) {
   EXPECT_NEAR(B_22, B_22_predicted, 1e-8);
 }
 
+/*
+Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> RobotReach::calculateLinkIntertiaMatrix(const int i, const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic>& robot_inertia_matrix) const {
+  if (robot_inertia_matrix.rows() != nb_joints_ || robot_inertia_matrix.cols() != nb_joints_) {
+    throw std::invalid_argument("Robot inertia matrix has wrong dimensions.");
+  }
+  Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> E_i = Eigen::MatrixXd::Zero(nb_joints_, nb_joints_);
+  E_i.block(0, 0, i + 1, i + 1) = Eigen::MatrixXd::Identity(i + 1, i + 1);
+  return E_i * robot_inertia_matrix * E_i;
+}
+*/
+TEST_F(RobotReachTestVelocity, LinkInertiaMatrixTest0) {
+  Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> robot_inertia_matrix(3, 3);
+  robot_inertia_matrix << 1.0, 2.0, 3.0,
+                           2.0, 4.0, 5.0,
+                           3.0, 5.0, 6.0;
+  auto inertia_matrix_0 = robot_reach_->calculateLinkIntertiaMatrix(0, robot_inertia_matrix);
+  auto inertia_matrix_1 = robot_reach_->calculateLinkIntertiaMatrix(1, robot_inertia_matrix);
+  auto inertia_matrix_2 = robot_reach_->calculateLinkIntertiaMatrix(2, robot_inertia_matrix);
+  EXPECT_DOUBLE_EQ(inertia_matrix_0(0, 0), 1.0);
+  EXPECT_DOUBLE_EQ(inertia_matrix_0(0, 1), 0.0);
+  EXPECT_DOUBLE_EQ(inertia_matrix_0(0, 2), 0.0);
+  EXPECT_DOUBLE_EQ(inertia_matrix_0(1, 0), 0.0);
+  EXPECT_DOUBLE_EQ(inertia_matrix_0(1, 1), 0.0);
+  EXPECT_DOUBLE_EQ(inertia_matrix_0(1, 2), 0.0);
+  EXPECT_DOUBLE_EQ(inertia_matrix_0(2, 0), 0.0);
+  EXPECT_DOUBLE_EQ(inertia_matrix_0(2, 1), 0.0);
+  EXPECT_DOUBLE_EQ(inertia_matrix_0(2, 2), 0.0);
+  // Second link
+  EXPECT_DOUBLE_EQ(inertia_matrix_1(0, 0), 1.0);
+  EXPECT_DOUBLE_EQ(inertia_matrix_1(0, 1), 2.0);
+  EXPECT_DOUBLE_EQ(inertia_matrix_1(0, 2), 0.0);
+  EXPECT_DOUBLE_EQ(inertia_matrix_1(1, 0), 2.0);
+  EXPECT_DOUBLE_EQ(inertia_matrix_1(1, 1), 4.0);
+  EXPECT_DOUBLE_EQ(inertia_matrix_1(1, 2), 0.0);
+  EXPECT_DOUBLE_EQ(inertia_matrix_1(2, 0), 0.0);
+  EXPECT_DOUBLE_EQ(inertia_matrix_1(2, 1), 0.0);
+  EXPECT_DOUBLE_EQ(inertia_matrix_1(2, 2), 0.0);
+  // Third link
+  EXPECT_DOUBLE_EQ(inertia_matrix_2(0, 0), 1.0);
+  EXPECT_DOUBLE_EQ(inertia_matrix_2(0, 1), 2.0);
+  EXPECT_DOUBLE_EQ(inertia_matrix_2(0, 2), 3.0);
+  EXPECT_DOUBLE_EQ(inertia_matrix_2(1, 0), 2.0);
+  EXPECT_DOUBLE_EQ(inertia_matrix_2(1, 1), 4.0);
+  EXPECT_DOUBLE_EQ(inertia_matrix_2(1, 2), 5.0);
+  EXPECT_DOUBLE_EQ(inertia_matrix_2(2, 0), 3.0);
+  EXPECT_DOUBLE_EQ(inertia_matrix_2(2, 1), 5.0);
+  EXPECT_DOUBLE_EQ(inertia_matrix_2(2, 2), 6.0);
+}
+
 TEST_F(RobotReachSchunkTest, MaxReflectedMassTest) {
   std::vector<double> q = {0.2, 0.4, -0.32, 0.86, 0.926, 1.3};  // Some value that is no singularity
   robot_reach_->calculateAllTransformationMatricesAndCapsules(q);

@@ -168,25 +168,35 @@ std::vector<RobotReach::CapsuleVelocity> RobotReach::calculateAllCapsuleVelociti
   return velocities;
 }
 
-std::vector<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic>> RobotReach::calculateAllInertiaMatrices() const {
-  std::vector<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic>> inertia_matrices;
+std::vector<Eigen::Matrix<double, 6, Eigen::Dynamic>> RobotReach::calculateAllCoMJacobians() const {
   std::vector<Eigen::Matrix<double, 6, Eigen::Dynamic>> link_jacobians(nb_joints_);
   for (int i = 0; i < nb_joints_; i++) {
     reach_lib::Point CoM = vectorToPoint((current_transformation_matrices_[i] * link_center_of_masses_[i]).col(3));
     link_jacobians[i] = calculateJacobian(i, CoM);
-    inertia_matrices.push_back(calculateInertiaMatrix(i, link_jacobians));
+  }
+  return link_jacobians;
+}
+
+std::vector<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic>> RobotReach::calculateAllInertiaMatrices() const {
+  // This needs Jacobians w.r.t. the center of mass of the links instead of the capsules.
+  // Therefore, we need to calculate the Jacobians again and cannot use the ones from calculateAllCapsuleVelocities.
+  std::vector<Eigen::Matrix<double, 6, Eigen::Dynamic>> link_jacobians = calculateAllCoMJacobians();
+  Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> robot_inertia_matrix = calculateInertiaMatrix(link_jacobians);
+  std::vector<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic>> inertia_matrices;
+  for (int i = 0; i < nb_joints_; i++) {
+    inertia_matrices.push_back(calculateLinkIntertiaMatrix(i, robot_inertia_matrix));
   }
   return inertia_matrices;
 }
 
 std::vector<Eigen::Matrix<double, 3, 3>> RobotReach::calculateAllInvMassMatrices() const {
   std::vector<Eigen::Matrix<double, 3, 3>> inv_mass_matrices;
-  std::vector<Eigen::Matrix<double, 6, Eigen::Dynamic>> link_jacobians(nb_joints_);
+  std::vector<Eigen::Matrix<double, 6, Eigen::Dynamic>> link_jacobians = calculateAllCoMJacobians();
+  Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> robot_inertia_matrix = calculateInertiaMatrix(link_jacobians);
+  std::vector<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic>> inertia_matrices;
   for (int i = 0; i < nb_joints_; i++) {
-    reach_lib::Point CoM = vectorToPoint((current_transformation_matrices_[i] * link_center_of_masses_[i]).col(3));
-    link_jacobians[i] = calculateJacobian(i, CoM);
-    auto inertia_matrix = calculateInertiaMatrix(i, link_jacobians);
-    inv_mass_matrices.push_back(calculateInvMassMatrix(link_jacobians[i], inertia_matrix));
+    auto link_inertia_matrix = calculateLinkIntertiaMatrix(i, robot_inertia_matrix);
+    inv_mass_matrices.push_back(calculateInvMassMatrix(link_jacobians[i], link_inertia_matrix));
   }
   return inv_mass_matrices;
 }
@@ -222,19 +232,29 @@ RobotReach::CapsuleVelocity RobotReach::calculateVelocityOfCapsuleWithJacobian(c
   return RobotReach::CapsuleVelocity(vel1, vel2);
 }
 
-Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> RobotReach::calculateInertiaMatrix(const int i, const std::vector<Eigen::Matrix<double, 6, Eigen::Dynamic>>& link_jacobians) const {
-  assert(i < nb_joints_);
-  assert(link_jacobians.size() > i);  // Jacobians should be calculated up to the i-th link.
+Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> RobotReach::calculateInertiaMatrix(const std::vector<Eigen::Matrix<double, 6, Eigen::Dynamic>>& link_jacobians) const {
   Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> inertia_matrix;
   // J_P = link_jacobians[i](Eigen::seq(0,3), Eigen::all)
   // J_O = link_jacobians[i](Eigen::seq(3,6), Eigen::all)
   // R = current_transformation_matrices_[i].block(0, 0, 3, 3)
   inertia_matrix = calculateLocalIntertiaMatrix(link_jacobians[0], link_masses_[0], current_transformation_matrices_[0].block(0, 0, 3, 3), link_inertias_[0]);
   for (int j = 1; j < nb_joints_; j++) {
-    auto J = (j < i) ? link_jacobians[j] : link_jacobians[i];
-    inertia_matrix = inertia_matrix + calculateLocalIntertiaMatrix(J, link_masses_[j], current_transformation_matrices_[j].block(0, 0, 3, 3), link_inertias_[j]);
+    inertia_matrix = inertia_matrix + calculateLocalIntertiaMatrix(
+      link_jacobians[j], link_masses_[j],
+      current_transformation_matrices_[j].block(0, 0, 3, 3),
+      link_inertias_[j]
+    );
   }
   return inertia_matrix;
+}
+
+Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> RobotReach::calculateLinkIntertiaMatrix(const int i, const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic>& robot_inertia_matrix) const {
+  if (robot_inertia_matrix.rows() != nb_joints_ || robot_inertia_matrix.cols() != nb_joints_) {
+    throw std::invalid_argument("Robot inertia matrix has wrong dimensions.");
+  }
+  Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> E_i = Eigen::MatrixXd::Zero(nb_joints_, nb_joints_);
+  E_i.block(0, 0, i + 1, i + 1) = Eigen::MatrixXd::Identity(i + 1, i + 1);
+  return E_i * robot_inertia_matrix * E_i;
 }
 
 Eigen::Matrix<double, 3, 3> RobotReach::calculateInvMassMatrix(

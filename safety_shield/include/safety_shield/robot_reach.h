@@ -299,6 +299,13 @@ class RobotReach {
   std::vector<CapsuleVelocity> calculateAllCapsuleVelocities(const std::vector<double> q_dot) const;
 
   /**
+   * @brief Calculate all Jacobians w.r.t. the center of masses of the links for a specific robot configuration.
+   * @assumption calculateAllTransformationMatricesAndCapsules() was called before
+   * @return std::vector<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic>> Inertia matrices of the links.
+   */
+  std::vector<Eigen::Matrix<double, 6, Eigen::Dynamic>> calculateAllCoMJacobians() const;
+
+  /**
    * @brief Calculate all inertia matrices for a specific robot configuration.
    * @assumption calculateAllTransformationMatricesAndCapsules() was called before
    * @return std::vector<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic>> Inertia matrices of the links.
@@ -339,13 +346,23 @@ class RobotReach {
   CapsuleVelocity calculateVelocityOfCapsuleWithJacobian(const int capsule, std::vector<double> q_dot, const Eigen::Matrix<double, 6, Eigen::Dynamic>& jacobian) const;
 
   /**
-   * @brief Calculate the inertia matrix of a specific link
+   * @brief Calculate the inertia matrix of the entire robot.
    * 
-   * @param[in] i link index
    * @param[in] link_jacobians Jacobians of the robot links up until link i.
-   * @return Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> inertia matrix of link i.
+   * @return Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> inertia matrix of the robot.
    */
-  Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> calculateInertiaMatrix(const int i, const std::vector<Eigen::Matrix<double, 6, Eigen::Dynamic>>& link_jacobians) const;
+  Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> calculateInertiaMatrix(const std::vector<Eigen::Matrix<double, 6, Eigen::Dynamic>>& link_jacobians) const;
+
+  /**
+   * @brief Calculate the inertia matrix of a specific link.
+   * 
+   * @details B_j = E_j * B * E_j, with E_j having ones on the diagonal until the j-th element and zeros elsewhere.
+   * 
+   * @param i the link index
+   * @param robot_inertia_matrix the inertia matrix of the entire robot
+   * @return Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> 
+   */
+  Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> calculateLinkIntertiaMatrix(const int i, const Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic>& robot_inertia_matrix) const; 
 
   /**
    * @brief Calculate the inverse translational mass matrix of a specific link
