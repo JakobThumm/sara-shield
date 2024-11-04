@@ -5,13 +5,13 @@ nb_joints: 6
 secure_radius: 0.02
 
 transformation_matrices: [
-#shoulder_pan_joint
+#Shoulder_pan_joint
 	1.0000, 0.0000, 0.0000, 0.0000, 
 	0.0000, 1.0000, 0.0000, 0.0000, 
 	0.0000, 0.0000, 1.0000, 0.1630, 
 	0.0000, 0.0000, 0.0000, 1.0000, 
 	### 
-#shoulder_lift_joint
+#Shoulder_lift_joint
 	0.0000, 0.0000, 1.0000, 0.0000, 
 	0.0000, 1.0000, 0.0000, 0.1380, 
 	-1.0000, 0.0000, 0.0000, 0.0000, 

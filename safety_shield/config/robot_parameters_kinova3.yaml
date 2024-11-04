@@ -5,7 +5,7 @@ nb_joints: 7
 secure_radius: 0.02
 
 transformation_matrices: [
-#shoulder_link
+#Shoulder_link
     1.0000, 0.0000, 0.0000, 0.0000, 
     0.0000, -1.0000, 0.0000, 0.0000, 
     0.0000, -0.0000, -1.0000, 0.1564, 
