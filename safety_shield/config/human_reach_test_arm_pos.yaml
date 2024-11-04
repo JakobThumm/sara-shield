@@ -48,3 +48,10 @@ extremities:
     length: 0.725
     thickness: 0.0
     max_contact_energy_unconstrained: 0.75
+
+
+unclampable_body_parts: [
+  ["rightUpperArm", "rightLowerArm"],
+  ["rightUpperArm", "rightHand"],
+  ["rightLowerArm", "rightHand"]
+]

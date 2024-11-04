@@ -17,6 +17,14 @@ RobotReach* buildRobotReach(
   std::vector<double> transformation_matrices = robot_config["transformation_matrices"].as<std::vector<double>>();
   std::vector<double> enclosures = robot_config["enclosures"].as<std::vector<double>>();
   double secure_radius = robot_config["secure_radius"].as<double>();
+  std::vector<std::pair<int, int>> unclampable_enclosures;
+  if (robot_config["unclampable_enclosures"]) {
+    unclampable_enclosures = robot_config["unclampable_enclosures"].as<std::vector<std::pair<int, int>>>();
+  }
+  std::unordered_map<int, std::set<int>> unclampable_enclosures_map;
+  for (auto const& enclosure : unclampable_enclosures) {
+    unclampable_enclosures_map[enclosure.first].insert(enclosure.second);
+  }
   std::vector<double> link_masses;
   if (robot_config["link_masses"]) {
     link_masses = robot_config["link_masses"].as<std::vector<double>>();
@@ -31,7 +39,8 @@ RobotReach* buildRobotReach(
   }
   return new RobotReach(transformation_matrices, nb_joints, enclosures, 
                         link_masses, inertia_matrices, center_of_masses,
-                        init_x, init_y, init_z, init_roll, init_pitch, init_yaw, secure_radius);
+                        init_x, init_y, init_z, init_roll, init_pitch, init_yaw, 
+                        secure_radius, unclampable_enclosures_map);
 }
 
 void readTrajectoryConfig(
@@ -122,6 +131,21 @@ HumanReach* buildHumanReach(
     initial_pos_var = human_config["initial_pos_var"].as<double>();
     initial_vel_var = human_config["initial_vel_var"].as<double>();
   }
+
+  std::vector<std::pair<std::string, std::string>> unclampable_body_parts;
+  if (human_config["unclampable_body_parts"]) {
+    unclampable_body_parts = human_config["unclampable_body_parts"].as<std::vector<std::pair<std::string, std::string>>>();
+  }
+  std::unordered_map<std::string, int> body_part_id_map;
+  int i = 0;
+  for (const auto& it : body_link_joints) {
+    body_part_id_map[it.first] = i;
+    i++;
+  }
+  std::unordered_map<int, std::set<int>> unclampable_body_part_map;
+  for (auto const& body_part : unclampable_body_parts) {
+    unclampable_body_part_map[body_part_id_map[body_part.first]].insert(body_part_id_map[body_part.second]);
+  }
   return createHumanReach(
     use_combined_model,
     use_kalman_filter,
@@ -132,6 +156,7 @@ HumanReach* buildHumanReach(
     max_contact_energy,
     joint_v_max, 
     joint_a_max,
+    unclampable_body_part_map,
     measurement_error_pos, 
     measurement_error_vel, 
     delay,

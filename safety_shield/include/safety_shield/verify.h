@@ -17,9 +17,11 @@
 #include <Eigen/Dense>
 #include <algorithm>
 #include <vector>
+#include <set>
 #include <stdexcept>
 
 #include "reach_lib.hpp"
+#include "safety_shield/robot_reach.h"
 #include "safety_shield/verification_utils.h"
 
 #ifndef VERIFY_H
@@ -33,7 +35,7 @@ namespace safety_shield {
 class Verify {
  public:
   /**
-   * @brief A basic VerifyISO constructor
+   * @brief A basic Verify constructor
    */
   Verify() {}
 

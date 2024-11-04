@@ -1,0 +1,132 @@
+motion_capture:
+  # cutains information
+  measurement_error_pos: 0.0
+  measurement_error_vel: 0.0
+  delay: 0.0
+
+  # Names of joints in correct outputted order
+  joint_names: [
+    "abdomen", "chest", "head", "hip", "lButtock", 
+    "lCollar", "lFoot", "lForeArm", "lHand", "lIndex1",
+    "lIndex2", "lMid1", "lMid2", "lPinky1", "lPinky2",
+    "lRing1", "lRing2", "lShin", "lShldr", "lThigh",
+    "lThumb1", "lThumb2", "leftEye", "neck", "rButtock",
+    "rCollar", "rFoot", "rForeArm", "rHand", "rIndex1",
+    "rIndex2", "rMid1", "rMid2", "rPinky1", "rPinky2",
+    "rRing1", "rRing2", "rShin", "rShldr", "rThigh",
+    "rThumb1", "rThumb2", "rightEye"
+  ]
+
+  joint_v_max: [
+    2, 2, 2, 2, 2, 
+    2, 2, 2, 2, 2,
+    2, 2, 2, 2, 2, 
+    2, 2, 2, 2, 2,
+    2, 2, 2, 2, 2, 
+    2, 2, 2, 2, 2,
+    2, 2, 2, 2, 2, 
+    2, 2, 2, 2, 2,
+    2, 2, 2
+  ]
+
+  joint_a_max: [
+    20, 20, 25, 20, 20, 
+    20, 30, 50, 50, 50,
+    50, 50, 50, 50, 50,
+    50, 50, 30, 50, 30,
+    50, 50, 25, 25, 20,
+    20, 30, 50, 50, 50,
+    50, 50, 50, 50, 50,
+    50, 50, 30, 50, 30,
+    50, 50, 25
+  ]
+
+  bodies:
+      - name: "lUpperArm" 
+        proximal: "lShldr"
+        distal: "lForeArm"
+        thickness: 0.2
+        max_contact_energy_unconstrained: 0.75
+
+      - name: "lLowerArm"
+        proximal: "lForeArm"
+        distal: "lHand"
+        thickness: 0.132
+        max_contact_energy_unconstrained: 1
+
+      - name: "lHand"
+        proximal: "lHand"
+        distal: "lHand"
+        thickness: 0.206
+        max_contact_energy_unconstrained: 1
+
+      - name: "rUpperArm" 
+        proximal: "rShldr"
+        distal: "rForeArm"
+        thickness: 0.2
+        max_contact_energy_unconstrained: 0.75
+
+      - name: "rLowerArm"
+        proximal: "rForeArm"
+        distal: "rHand"
+        thickness: 0.132
+        max_contact_energy_unconstrained: 1
+
+      - name: "rHand"
+        proximal: "rHand"
+        distal: "rHand"
+        thickness: 0.206
+        max_contact_energy_unconstrained: 1
+
+      - name: "torso"
+        proximal: "hip"
+        distal: "neck"
+        thickness: 0.434
+        max_contact_energy_unconstrained: 1
+
+      - name: "head"
+        proximal: "head"
+        distal: "head"
+        thickness: 0.434
+        max_contact_energy_unconstrained: 0.2
+
+
+  extremities:
+  - name: "lArm"
+    base: "lShldr"
+    end: "lHand"
+    length: 0.8
+    thickness: 0.0
+    max_contact_energy_unconstrained: 0.2
+    
+  - name: "rArm"
+    base: "rShldr"
+    end: "rHand"
+    length: 0.8
+    thickness: 0.0
+    max_contact_energy_unconstrained: 0.2
+
+unclampable_body_parts: [
+  ["lUpperArm", "lLowerArm"],
+  ["lUpperArm", "lHand"],
+  ["lUpperArm", "rUpperArm"],
+  ["lUpperArm", "torso"],
+  ["lUpperArm", "head"],
+  ["lLowerArm", "lHand"],
+  ["lLowerArm", "rUpperArm"],
+  ["lLowerArm", "torso"],
+  ["lLowerArm", "head"],
+  ["lHand", "rUpperArm"],
+  ["lHand", "torso"],
+  ["lHand", "head"],
+  ["rUpperArm", "rLowerArm"],
+  ["rUpperArm", "rHand"],
+  ["rUpperArm", "torso"],
+  ["rUpperArm", "head"],
+  ["rLowerArm", "rHand"],
+  ["rLowerArm", "torso"],
+  ["rLowerArm", "head"],
+  ["rHand", "torso"],
+  ["rHand", "head"],
+  ["torso", "head"]
+]

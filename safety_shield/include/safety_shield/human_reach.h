@@ -19,6 +19,7 @@
 #include <map>
 #include <string>
 #include <vector>
+#include <set>
 #include <typeinfo>
 
 #include "reach_lib.hpp"
@@ -95,6 +96,12 @@ class HumanReach {
   std::map<std::string, reach_lib::jointPair> body_link_joints_;
 
   /**
+   * @brief Map the the body parts to body parts that cannot be in collision with them.
+   * @details The format is [model_index][body_index].
+   */
+  std::vector<std::unordered_map<int, std::set<int>>> unclampable_map_;
+
+  /**
    * @brief List of human models to use.
    * @details Vector of pointers necessary to prevent object slicing.
    */
@@ -145,6 +152,7 @@ class HumanReach {
    * @param[in] max_contact_energy The maximal contact energy for each body part.
    * @param[in] max_v The maximum velocity of the joints
    * @param[in] max_a The maximum acceleration of the joints
+   * @param[in] unclampable_map Maps the body parts to body parts that cannot be in collision with them.
    * @param[in] measurement_error_pos Maximal positional measurement error
    * @param[in] measurement_error_vel Maximal velocity measurement error
    * @param[in] delay Delay in measurement processing pipeline
@@ -156,6 +164,7 @@ class HumanReach {
       const std::map<std::string, double>& max_contact_energy,
       std::vector<double>& max_v, 
       std::vector<double>& max_a,
+      std::unordered_map<int, std::set<int>>& unclampable_map,
       double measurement_error_pos, 
       double measurement_error_vel, 
       double delay);
@@ -170,6 +179,7 @@ class HumanReach {
    * @param[in] max_contact_energy The maximal contact energy for each body part.
    * @param[in] max_v The maximum velocity of the joints
    * @param[in] max_a The maximum acceleration of the joints
+   * @param[in] unclampable_map Maps the body parts to body parts that cannot be in collision with them.
    * @param[in] measurement_error_pos Maximal positional measurement error
    * @param[in] measurement_error_vel Maximal velocity measurement error
    * @param[in] delay Delay in measurement processing pipeline
@@ -185,6 +195,7 @@ class HumanReach {
       const std::map<std::string, double>& max_contact_energy,
       std::vector<double>& max_v, 
       std::vector<double>& max_a,
+      std::unordered_map<int, std::set<int>>& unclampable_map,
       double measurement_error_pos, 
       double measurement_error_vel, 
       double delay,
@@ -203,6 +214,7 @@ class HumanReach {
    * @param[in] max_contact_energy The maximal contact energy for each body part.
    * @param[in] max_v The maximum velocity of the joints
    * @param[in] max_a The maximum acceleration of the joints
+   * @param[in] unclampable_map Maps the body parts to body parts that cannot be in collision with them.
    * @param[in] extremity_base_names The base joints of extremities, e.g., right / left shoulder, right / left hip
    * socket
    * @param[in] extremity_end_names The end joints of extremities, e.g., right / left hand, right / left foot --> Is
@@ -221,6 +233,7 @@ class HumanReach {
       const std::map<std::string, double>& max_contact_energy,
       std::vector<double>& max_v, 
       std::vector<double>& max_a,
+      std::unordered_map<int, std::set<int>>& unclampable_map,
       std::vector<std::string>& extremity_base_names, 
       std::vector<std::string>& extremity_end_names, 
       std::vector<double>& extremity_length, 
@@ -239,6 +252,7 @@ class HumanReach {
    * part)
    * @param[in] max_v The maximum velocity of the joints
    * @param[in] max_a The maximum acceleration of the joints
+   * @param[in] unclampable_map Maps the body parts to body parts that cannot be in collision with them.
    * @param[in] extremity_base_names The base joints of extremities, e.g., right / left shoulder, right / left hip
    * socket
    * @param[in] extremity_end_names The end joints of extremities, e.g., right / left hand, right / left foot --> Is
@@ -261,6 +275,7 @@ class HumanReach {
       const std::map<std::string, double>& max_contact_energy,
       std::vector<double>& max_v, 
       std::vector<double>& max_a,
+      std::unordered_map<int, std::set<int>>& unclampable_map,
       std::vector<std::string>& extremity_base_names, 
       std::vector<std::string>& extremity_end_names, 
       std::vector<double>& extremity_length, 
@@ -482,6 +497,32 @@ class HumanReach {
   inline std::vector<std::vector<double>> getMaxContactEnergy() const {
     return max_contact_energy_;
   }
+
+  /**
+   * @brief Get the the radii of the human body parts in all motion models.
+   * 
+   * @return std::vector<std::vector<double>> 
+   */
+  inline std::vector<std::vector<double>> getAllHumanRadii() const {
+    std::vector<std::vector<double>> radii;
+    for (const auto& model : human_models_) {
+      std::vector<double> model_radii;
+      for (auto body_part : model->get_occupancy_p()) {
+        model_radii.push_back(body_part->get_thickness() / 2.0);
+      }
+      radii.push_back(model_radii);
+    }
+    return radii;
+  }
+
+  /**
+   * @brief Get the Unclampable Map object
+   * 
+   * @return std::vector<std::unordered_map<int, std::set<int>>> 
+   */
+  inline std::vector<std::unordered_map<int, std::set<int>>> getUnclampableMap() const {
+    return unclampable_map_;
+  }
 };
 
 HumanReach* createHumanReach(
@@ -494,6 +535,7 @@ HumanReach* createHumanReach(
       const std::map<std::string, double>& max_contact_energy, 
       std::vector<double>& max_v, 
       std::vector<double>& max_a,
+      std::unordered_map<int, std::set<int>>& unclampable_map,
       double measurement_error_pos, 
       double measurement_error_vel, 
       double delay,

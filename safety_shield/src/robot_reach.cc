@@ -4,8 +4,9 @@ namespace safety_shield {
 
 RobotReach::RobotReach(std::vector<double> transformation_matrices, int nb_joints, std::vector<double> geom_par,
                        std::vector<double> link_masses, std::vector<double> link_inertias, std::vector<double> link_center_of_masses,
-                       double x, double y, double z, double roll, double pitch, double yaw, double secure_radius)
-    : nb_joints_(nb_joints), link_masses_(link_masses), secure_radius_(secure_radius) {
+                       double x, double y, double z, double roll, double pitch, double yaw, double secure_radius,
+                       std::unordered_map<int, std::set<int>> unclampable_enclosures_map)
+    : nb_joints_(nb_joints), link_masses_(link_masses), secure_radius_(secure_radius), unclampable_enclosures_map_(unclampable_enclosures_map) {
   Eigen::Matrix4d transformation_matrix_first = xyzrpy2transformationMatrix(x, y, z, roll, pitch, yaw);
   transformation_matrices_.push_back(transformation_matrix_first);
   for (int joint = 0; joint < nb_joints; joint++) {
@@ -57,7 +58,9 @@ reach_lib::Capsule RobotReach::transformCapsule(const int& n_joint, const Eigen:
 
 std::vector<reach_lib::Capsule> RobotReach::reach(Motion& start_config, Motion& goal_config, double s_diff,
                                                   std::vector<double> alpha_i) const {
-  assert(alpha_i.size() == nb_joints_);
+  if (alpha_i.size() != nb_joints_) {
+    throw std::length_error("In RobotReach::reach: alpha_i must have the same size as the number of joints.");
+  }
   Eigen::Matrix4d T_before = transformation_matrices_[0];
   Eigen::Matrix4d T_after = transformation_matrices_[0];
   std::vector<reach_lib::Capsule> reach_capsules;
@@ -160,7 +163,9 @@ void RobotReach::calculateAllTransformationMatricesAndCapsules(const std::vector
 }
 
 std::vector<RobotReach::CapsuleVelocity> RobotReach::calculateAllCapsuleVelocities(const std::vector<double> q_dot) const {
-  assert(q_dot.size() == nb_joints_);  // Number of joints should match
+  if (q_dot.size() != nb_joints_) {
+    throw std::length_error("In RobotReach::calculateAllCapsuleVelocities: q_dot must have the same size as the number of joints.");
+  }
   std::vector<CapsuleVelocity> velocities;
   for (int i = 0; i < nb_joints_; i++) {
     velocities.push_back(calculateVelocityOfCapsule(i, q_dot));
