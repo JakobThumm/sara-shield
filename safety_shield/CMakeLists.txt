@@ -84,6 +84,9 @@ install(TARGETS ${PROJECT_NAME} DESTINATION /usr/lib)
 add_executable(debug src/debug.cc)
 target_link_libraries(debug ${PROJECT_NAME} long_term_planner spdlog yaml-cpp)
 
+add_executable(self_constrained_collision_debug src/self_constrained_collision_debug.cc)
+target_link_libraries(self_constrained_collision_debug ${PROJECT_NAME} long_term_planner spdlog yaml-cpp)
+
 add_executable(hrgym_scenario_debug src/hrgym_scenario_debug.cc)
 target_link_libraries(hrgym_scenario_debug ${PROJECT_NAME} long_term_planner spdlog yaml-cpp)
 #############

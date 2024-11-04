@@ -98,3 +98,36 @@ extremities:
     length: 0.825 # 95 percentile of reach to the front according to DIN 33402-2:2020-12
     thickness: 0.0
     max_contact_energy_unconstrained: 0.1  # Head value needed here.
+
+# 0: L_UpperArm
+# 1: L_LowerArm
+# 2: L_Hand
+# 3: R_UpperArm
+# 4: R_LowerArm
+# 5: R_Hand
+# 6: Torso
+# 7: Head
+unclampable_body_parts: [
+  ["L_UpperArm", "L_LowerArm"],
+  ["L_UpperArm", "L_Hand"],
+  ["L_UpperArm", "R_UpperArm"],
+  ["L_UpperArm", "Torso"],
+  ["L_UpperArm", "Head"],
+  ["L_LowerArm", "L_Hand"],
+  ["L_LowerArm", "R_UpperArm"],
+  ["L_LowerArm", "Torso"],
+  ["L_LowerArm", "Head"],
+  ["L_Hand", "R_UpperArm"],
+  ["L_Hand", "Torso"],
+  ["L_Hand", "Head"],
+  ["R_UpperArm", "R_LowerArm"],
+  ["R_UpperArm", "R_Hand"],
+  ["R_UpperArm", "Torso"],
+  ["R_UpperArm", "Head"],
+  ["R_LowerArm", "R_Hand"],
+  ["R_LowerArm", "Torso"],
+  ["R_LowerArm", "Head"],
+  ["R_Hand", "Torso"],
+  ["R_Hand", "Head"],
+  ["Torso", "Head"]
+]

@@ -233,9 +233,9 @@ class Path {
   }
 
   /**
-   * @brief Returns the path starting velocity
+   * @brief Returns the path current velocity
    *
-   * @return the starting velocity
+   * @return the current velocity
    */
   inline double getVelocity() {
     if (vel_ < 0) {

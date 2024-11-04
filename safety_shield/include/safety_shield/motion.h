@@ -19,6 +19,9 @@
 #include <vector>
 #include "spdlog/spdlog.h"
 
+#include <cmath>
+#include <vector>
+
 #ifndef MOTION_H
 #define MOTION_H
 

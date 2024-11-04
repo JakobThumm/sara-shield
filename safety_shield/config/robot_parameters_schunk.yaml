@@ -67,6 +67,16 @@ enclosures: [
   -0.00049264, 0.0031812, 0.104,
   0.072549]
 
+unclampable_enclosures: [
+  [0, 1],
+  [0, 2],
+  [1, 2],
+  [2, 3],
+  [2, 4],
+  [3, 4],
+  [4, 5]
+]
+
 # The exact dynamic parameters are strongly unclear!
 # We are taking values of https://github.com/ipa320/schunk_modular_robotics/blob/kinetic_dev/schunk_description/urdf/lwa4p_extended/lwa4p_extended.urdf.xacro
 # from Link 2 (Ball 1) to Link 6

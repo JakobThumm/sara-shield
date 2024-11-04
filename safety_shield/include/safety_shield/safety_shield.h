@@ -87,7 +87,7 @@ class SafetyShield {
    *
    * Takes the robot and human capsules as input and checks them for collision.
    */
-  Verify* verify_;
+  VerifyISO* verify_;
 
   /**
    * @brief The visualization of reachable sets
@@ -259,7 +259,10 @@ class SafetyShield {
   bool new_ltt_processed_ = false;
 
   /**
-   * @brief Last s value when replanning happend.
+   * @brief Last s value when replanning happend
+   *
+   * If the last starting position of the replanning is very close to this position, we can skip the replanning and use
+   * the previously planned trajectory.
    */
   double last_replan_s_ = -1.0;
 
@@ -297,6 +300,11 @@ class SafetyShield {
   long_term_planner::LongTermPlanner ltp_;
 
   /**
+   * @brief Axis-aligned bounding boxes of the environment elements.
+   */
+  std::vector<reach_lib::AABB> environment_elements_;
+
+  /**
    * @brief maximum cartesian velocity allowed at collision in m/s
    */
   double v_safe_ = 0.10;
@@ -312,6 +320,12 @@ class SafetyShield {
    * @brief duration is interval size * sampling time of safety shield
    */
   double reachability_set_duration_;
+
+  /**
+   * @brief This value is substracted from the maximal allowed q pos values before planning the LTT.
+   * 
+   */
+  double planning_qpos_tolerance_ = 0.01;
 
  protected:
   /**
@@ -378,11 +392,6 @@ class SafetyShield {
   }
 
   /**
-   * @brief Calculates and returns the current motion
-   */
-  Motion getCurrentMotion();
-
-  /**
    * @brief Determines if the current motion is in the acceleration bounds for replanning
    *
    * @param current_motion current motion
@@ -447,13 +456,16 @@ class SafetyShield {
    * @param robot_reach Robot reachable set calculation object
    * @param human_reach Human reachable set calculation object
    * @param verify Verification of reachable sets object
+   * @param environment_elements Elements of the environment (as AABB)
    * @param shield_type What type of safety shield to use, select from `OFF`, `SSM`, or `PFL`
    */
   SafetyShield(int nb_joints, double sample_time, double max_s_stop, const std::vector<double>& v_max_allowed,
                const std::vector<double>& a_max_allowed, const std::vector<double>& j_max_allowed,
                const std::vector<double>& a_max_path, const std::vector<double>& j_max_path,
                const LongTermTraj& long_term_trajectory, RobotReach* robot_reach, HumanReach* human_reach,
-               Verify* verify, ShieldType shield_type = ShieldType::SSM);
+               VerifyISO* verify, 
+               const std::vector<reach_lib::AABB> &environment_elements,
+               ShieldType shield_type = ShieldType::SSM);
 
   /**
    * @brief Construct a new Safety Shield object from config files.
@@ -469,11 +481,13 @@ class SafetyShield {
    * @param init_pitch Base pitch
    * @param init_yaw Base yaw
    * @param init_qpos Initial joint position of the robot
+   * @param environment_elements Elements of the environment (as AABB)
    * @param shield_type What type of safety shield to use, select from `OFF`, `SSM`, or `PFL`
    */
   SafetyShield(double sample_time, std::string trajectory_config_file, std::string robot_config_file,
                std::string mocap_config_file, double init_x, double init_y, double init_z, double init_roll,
                double init_pitch, double init_yaw, const std::vector<double>& init_qpos,
+               const std::vector<reach_lib::AABB> &environment_elements,
                ShieldType shield_type = ShieldType::SSM);
 
   /**
@@ -492,10 +506,12 @@ class SafetyShield {
    * @param init_yaw Base yaw
    * @param init_qpos Initial joint position of the robot
    * @param current_time Initial time
+   * @param environment_elements Elements of the environment (as AABB)
    * @param shield_type What type of safety shield to use, select from `OFF`, `SSM`, or `PFL`
    */
   void reset(double init_x, double init_y, double init_z, double init_roll, double init_pitch, double init_yaw,
-             const std::vector<double>& init_qpos, double current_time, ShieldType shield_type = ShieldType::SSM);
+             const std::vector<double>& init_qpos, double current_time, 
+             const std::vector<reach_lib::AABB> &environment_elements, ShieldType shield_type = ShieldType::SSM);
 
   /**
    * @brief Computes the new trajectory depending on dq and if the previous path is safe and publishes it
@@ -512,6 +528,11 @@ class SafetyShield {
    * @return next motion to be executed
    */
   Motion step(double cycle_begin_time);
+
+  /**
+   * @brief Calculates and returns the current motion
+   */
+  Motion getCurrentMotion();
 
   /**
    * @brief Evaluate if the new long term trajectory is processed and safe to use.
@@ -550,6 +571,42 @@ class SafetyShield {
    * @return false if unsafe
    */
   bool verifySafety(Motion& current_motion, Motion& goal_motion, const std::vector<double>& alpha_i);
+
+  /**
+   * @brief verify if the contact energy constraint is satisfied
+   * 
+   * @param[in] time_points Time points that define the edges of the time intervals.
+   * @param[in] interval_edges_motions Motions at the edges of the time intervals.
+   * @param[in] collision_index Index of the first collision in the time intervals, -1 if no collision.
+   * @return true if safe
+   * @return false if unsafe
+   */
+  bool verifyContactEnergySafety(std::vector<double> time_points, std::vector<Motion> interval_edges_motions, int& collision_index);
+
+  /**
+   * @brief verify if the contact velocity constraint is satisfied.
+   * 
+   * @details This function is not fully implemented and therefore not tested!!!
+   * @details This function is not in use.
+   * 
+   * @param[in] time_points Time points that define the edges of the time intervals.
+   * @param[in] interval_edges_motions Motions at the edges of the time intervals.
+   * @param[in] collision_index Index of the first collision in the time intervals, -1 if no collision.
+   * @return true if safe
+   * @return false if unsafe
+   */
+  bool verifyContactVelocitySafety(std::vector<double> time_points, std::vector<Motion> interval_edges_motions, int& collision_index);
+
+  /**
+   * @brief verify if the constrained contact constraint (clamping) is satisfied
+   * 
+   * @param[in] time_points Time points that define the edges of the time intervals.
+   * @param[in] interval_edges_motions Motions at the edges of the time intervals.
+   * @param[in] collision_index Index of the first collision in the time intervals, -1 if no collision.
+   * @return true if safe
+   * @return false if unsafe
+   */
+  bool verifyConstrainedContactSafety(std::vector<double> time_points, std::vector<Motion> interval_edges_motions, int& collision_index);
 
   /**
    * @brief Calculates a new trajectory from current joint state to desired goal state.

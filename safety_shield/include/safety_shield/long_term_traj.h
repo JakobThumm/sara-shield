@@ -127,6 +127,8 @@ class LongTermTraj {
   /**
    * @brief sets maximum cartesian velocity and the inertia matrices for all motions in LTT
    * @param[in] robot_reach used to calculate jacobians and velocities
+   * @sets capsule_velocities_
+   * @sets max_cart_vel_
    */
   void velocitiesOfAllMotions(RobotReach& robot_reach);
 

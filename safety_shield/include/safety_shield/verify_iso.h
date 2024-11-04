@@ -16,9 +16,13 @@
 
 #include <algorithm>
 #include <vector>
+#include <set>
+#include <unordered_map>
+#include <unordered_set>
 
 #include "reach_lib.hpp"
 #include "safety_shield/verify.h"
+#include "safety_shield/robot_reach.h"
 #include "spdlog/spdlog.h"  // https://github.com/gabime/spdlog
 
 #ifndef VERIFY_ISO_H
@@ -48,7 +52,38 @@ class VerifyISO : public Verify {
    *          False: Otherwise
    */
   bool verifyHumanReach(const std::vector<reach_lib::Capsule>& robot_capsules,
-                          std::vector<std::vector<reach_lib::Capsule>> human_capsules);
+                        std::vector<std::vector<reach_lib::Capsule>> human_capsules);
+
+  /**
+   * @brief Verify if clamping between the robot, all human models, and the environment is possible.
+   * 
+   * @details This function checks two types of constrained collisions.
+   *    1) A human body part is clamped between the robot and the environment.
+   *       We refer to this as an environmentally constrained collision (ECC).
+   *    2) A human body part is clamped between two robot links.
+   *       We refer to this as an internally constrained collision (ICC).
+   * 
+   * @param robot_capsules Reachable capsules of the robot
+   * @param human_capsules List of list of capsules. Each list of capsules corresponds to a human reachable set model.
+   * @param environment_elements List of environment elements
+   * @param human_radii List of list of radii. Each list of radii corresponds to a human reachable set model.
+   * @param unclampable_body_part_maps List of pairs of human body parts that cannot cause clamping because they are part of the same body chain.
+   * @param unclampable_enclosures_map List of pairs of robot links that cannot cause clamping.
+   * @param robot_capsule_velocities_it Iterator pointing to the beginning of the list of robot capsule velocities for this short-term plan.
+   * @param robot_capsule_velocities_end Iterator pointing to the end of the list of robot capsule velocities for this short-term plan.
+   * @param velocity_errors upper bound of the velocity error for each joint
+   * @return true: if no clamping can occur
+   * @return false: if clamping can occur
+   */
+  bool verifyClamping(const std::vector<reach_lib::Capsule>& robot_capsules, 
+      const std::vector<std::vector<reach_lib::Capsule>>& human_capsules,
+      const std::vector<reach_lib::AABB>& environment_elements,
+      const std::vector<std::vector<double>>& human_radii,
+      const std::vector<std::unordered_map<int, std::set<int>>>& unclampable_body_part_maps,
+      const std::unordered_map<int, std::set<int>>& unclampable_enclosures_map,
+      std::vector<std::vector<RobotReach::CapsuleVelocity>>::const_iterator robot_capsule_velocities_it,
+      std::vector<std::vector<RobotReach::CapsuleVelocity>>::const_iterator robot_capsule_velocities_end,
+      std::vector<double> velocity_errors);
 
   /**
    * @brief Verify the robot motion against the reachable occupancy of the human for each separate time interval

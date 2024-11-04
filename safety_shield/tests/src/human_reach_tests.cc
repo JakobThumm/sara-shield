@@ -407,7 +407,6 @@ TEST_F(HumanReachTestError, HumanReachAnalysisAccTestError) {
   EXPECT_DOUBLE_EQ(a_cap[0].r_, r);
 }
 
-// Currently failing due to https://github.com/Sven-Schepp/SaRA/issues/14
 TEST_F(HumanReachTestPos, HumanReachAnalysisPos) {
   reach_lib::Point p1(0, 0, 0);
   reach_lib::Point p2(0.2, 0.2, 0.2);

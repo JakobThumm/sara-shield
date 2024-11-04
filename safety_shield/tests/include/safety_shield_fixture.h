@@ -41,9 +41,10 @@ class SafetyShieldExposed : public SafetyShield {
   explicit SafetyShieldExposed(double sample_time, std::string trajectory_config_file, std::string robot_config_file,
                                std::string mocap_config_file, double init_x, double init_y, double init_z,
                                double init_roll, double init_pitch, double init_yaw,
-                               const std::vector<double> &init_qpos, ShieldType shield_type = ShieldType::SSM)
+                               const std::vector<double> &init_qpos, const std::vector<reach_lib::AABB> &environment_elements,
+                               ShieldType shield_type = ShieldType::SSM)
       : SafetyShield(sample_time, trajectory_config_file, robot_config_file, mocap_config_file, init_x, init_y, init_z,
-                     init_roll, init_pitch, init_yaw, init_qpos, shield_type) {}
+                     init_roll, init_pitch, init_yaw, init_qpos, environment_elements, shield_type) {}
 };
 
 /**
@@ -60,7 +61,6 @@ class SafetyShieldTest : public ::testing::Test {
    * @brief Create the safety shield object
    */
   void SetUp() override {
-    bool activate_shield = true;
     double sample_time = 0.001;
     std::string trajectory_config_file = std::string("../../safety_shield/config/trajectory_parameters_schunk.yaml");
     std::string robot_config_file = std::string("../../safety_shield/config/robot_parameters_schunk.yaml");
@@ -72,10 +72,23 @@ class SafetyShieldTest : public ::testing::Test {
     double init_pitch = 0.0;
     double init_yaw = 0.0;
     std::vector<double> init_qpos = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+    reach_lib::AABB table = reach_lib::AABB({-1.0, -1.0, -0.1}, {1.0, 1.0, 0.0});
+    std::vector<reach_lib::AABB> environment_elements = {table};
     ShieldType shield_type = ShieldType::SSM;
-
-    shield_ = SafetyShieldExposed(sample_time, trajectory_config_file, robot_config_file, mocap_config_file, init_x,
-                                  init_y, init_z, init_roll, init_pitch, init_yaw, init_qpos, shield_type);
+    shield_ = SafetyShieldExposed(
+      sample_time, 
+      trajectory_config_file,
+      robot_config_file,
+      mocap_config_file,
+      init_x, 
+      init_y, 
+      init_z, 
+      init_roll, 
+      init_pitch, 
+      init_yaw,
+      init_qpos,
+      environment_elements,
+      shield_type);
   }
 };
 }  // namespace safety_shield

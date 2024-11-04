@@ -257,11 +257,13 @@ int main() {
   double init_pitch = 0.0;
   double init_yaw = 0.0;
   std::vector<double> init_qpos = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+  reach_lib::AABB table = reach_lib::AABB({init_x - 1.0, init_y - 1.0, init_z - 0.1}, {init_x + 1.0, init_y + 1.0, init_z});
+  std::vector<reach_lib::AABB> environment_elements = {table};
   safety_shield::ShieldType shield_type = safety_shield::ShieldType::PFL;
 
   safety_shield::SafetyShield shield =
       safety_shield::SafetyShield(sample_time, trajectory_config_file, robot_config_file, mocap_config_file, init_x,
-                                  init_y, init_z, init_roll, init_pitch, init_yaw, init_qpos, shield_type);
+                                  init_y, init_z, init_roll, init_pitch, init_yaw, init_qpos, environment_elements, shield_type);
 
   auto qpos_vec = long_term_trajectory_head_scenario_several_pfl();
   auto human_measurement = human_measurement_head_scenario();
@@ -282,7 +284,7 @@ int main() {
       }
       safety_shield::Motion next_motion = shield.step(t);
     }
-    shield.reset(init_x, init_y, init_z, init_roll, init_pitch, init_yaw, init_qpos, t, shield_type);
+    shield.reset(init_x, init_y, init_z, init_roll, init_pitch, init_yaw, init_qpos, t, environment_elements, shield_type);
   }
   spdlog::info("Debug finished.");
   return 0;

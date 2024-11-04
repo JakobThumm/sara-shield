@@ -98,3 +98,29 @@ extremities:
     length: 1.0 # See Tabelle 21 — Reichweite nach vorn (Griffachse) - Half a hand length.
     thickness: 0.0
     max_contact_energy_unconstrained: 0.1  # Head value needed here.
+
+
+unclampable_body_parts: [
+  ["lUpperArm", "lLowerArm"],
+  ["lUpperArm", "lHand"],
+  ["lUpperArm", "rUpperArm"],
+  ["lUpperArm", "torso"],
+  ["lUpperArm", "head"],
+  ["lLowerArm", "lHand"],
+  ["lLowerArm", "rUpperArm"],
+  ["lLowerArm", "torso"],
+  ["lLowerArm", "head"],
+  ["lHand", "rUpperArm"],
+  ["lHand", "torso"],
+  ["lHand", "head"],
+  ["rUpperArm", "rLowerArm"],
+  ["rUpperArm", "rHand"],
+  ["rUpperArm", "torso"],
+  ["rUpperArm", "head"],
+  ["rLowerArm", "rHand"],
+  ["rLowerArm", "torso"],
+  ["rLowerArm", "head"],
+  ["rHand", "torso"],
+  ["rHand", "head"],
+  ["torso", "head"]
+]

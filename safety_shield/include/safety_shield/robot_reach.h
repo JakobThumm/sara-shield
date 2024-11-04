@@ -17,6 +17,7 @@
 #include <Eigen/Dense>
 #include <algorithm>
 #include <exception>
+#include <set>
 #include <vector>
 
 #include "reach_lib.hpp"
@@ -128,6 +129,11 @@ class RobotReach {
   std::vector<Eigen::Vector3d> z_vectors_;
 
   /**
+   * @brief Clamping between these capsule pairs is not possible
+   */
+  std::unordered_map<int, std::set<int>> unclampable_enclosures_map_;
+
+  /**
    * @brief current transformation matrices
    */
   std::vector<Eigen::Matrix4d> current_transformation_matrices_;
@@ -155,11 +161,13 @@ class RobotReach {
    * @param yaw initial yaw of base
    * @param secure_radius Expand the radius of the robot capsules by this amount to
    *  account for measurement and modelling errors.
+   * @param unclampable_enclosures_map Clamping between these capsule pairs is not possible
    */
   RobotReach(std::vector<double> transformation_matrices, int nb_joints, std::vector<double> geom_par,
              std::vector<double> link_masses, std::vector<double> link_inertias, std::vector<double> link_center_of_masses,
              double x = 0, double y = 0, double z = 0,
-             double roll = 0, double pitch = 0, double yaw = 0, double secure_radius = 0);
+             double roll = 0, double pitch = 0, double yaw = 0, double secure_radius = 0,
+             std::unordered_map<int, std::set<int>> unclampable_enclosures_map = std::unordered_map<int, std::set<int>>());
 
   /**
    *  @brief A robot destructor
@@ -262,6 +270,15 @@ class RobotReach {
    * @return maximum cartesian velocity of motion
    */
   double maxVelocityOfMotion(const Motion& motion);
+
+  /**
+   * @brief Get the unclampable enclosures object
+   * 
+   * @return std::unordered_map<int, std::set<int>>
+   */
+  inline std::unordered_map<int, std::set<int>> getUnclampableEnclosures() {
+    return unclampable_enclosures_map_;
+  }
 
   /**
    * @brief Calculate the maximal error in the Cartesian velocity of all robot links.

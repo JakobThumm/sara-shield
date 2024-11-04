@@ -23,7 +23,7 @@ q6: [0.0]
 alpha_i_max: 5.0
 
 # safety-rated speed specified by iso-norm
-v_safe: 0.05
+v_safe: 0.1
 
 # APPROXIMATE == 0
 # EXACT == 1
