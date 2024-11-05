@@ -98,18 +98,31 @@ HumanReach* buildHumanReach(
   const YAML::Node& bodies = human_config["bodies"];
   std::map<std::string, reach_lib::jointPair> body_link_joints;
   std::map<std::string, double> thickness;
-  std::map<std::string, double> max_contact_energy;
+  // There are 5 contact types: LINK, BLUNT, WEDGE, EDGE, SHEET
+  std::map<std::string, std::array<double, 5>> max_contact_energy_unconstrained;
+  std::map<std::string, std::array<double, 5>> max_contact_energy_constrained;
   for (YAML::const_iterator it = bodies.begin(); it != bodies.end(); ++it) {
     const YAML::Node& body = *it;
     body_link_joints[body["name"].as<std::string>()] = reach_lib::jointPair(
         joint_names[body["proximal"].as<std::string>()], joint_names[body["distal"].as<std::string>()]);
     thickness[body["name"].as<std::string>()] = body["thickness"].as<double>();
-    max_contact_energy[body["name"].as<std::string>()] = body["max_contact_energy_unconstrained"].as<double>();
+    max_contact_energy_unconstrained[body["name"].as<std::string>()][static_cast<int>(ContactType::LINK)] = body["max_contact_energy"]["unconstrained"]["link"].as<double>();
+    max_contact_energy_unconstrained[body["name"].as<std::string>()][static_cast<int>(ContactType::BLUNT)] = body["max_contact_energy"]["unconstrained"]["blunt"].as<double>();
+    max_contact_energy_unconstrained[body["name"].as<std::string>()][static_cast<int>(ContactType::WEDGE)] = body["max_contact_energy"]["unconstrained"]["wedge"].as<double>();
+    max_contact_energy_unconstrained[body["name"].as<std::string>()][static_cast<int>(ContactType::EDGE)] = body["max_contact_energy"]["unconstrained"]["edge"].as<double>();
+    max_contact_energy_unconstrained[body["name"].as<std::string>()][static_cast<int>(ContactType::SHEET)] = body["max_contact_energy"]["unconstrained"]["sheet"].as<double>();
+    max_contact_energy_constrained[body["name"].as<std::string>()][static_cast<int>(ContactType::LINK)] = body["max_contact_energy"]["constrained"]["link"].as<double>();
+    max_contact_energy_constrained[body["name"].as<std::string>()][static_cast<int>(ContactType::BLUNT)] = body["max_contact_energy"]["constrained"]["blunt"].as<double>();
+    max_contact_energy_constrained[body["name"].as<std::string>()][static_cast<int>(ContactType::WEDGE)] = body["max_contact_energy"]["constrained"]["wedge"].as<double>();
+    max_contact_energy_constrained[body["name"].as<std::string>()][static_cast<int>(ContactType::EDGE)] = body["max_contact_energy"]["constrained"]["edge"].as<double>();
+    max_contact_energy_constrained[body["name"].as<std::string>()][static_cast<int>(ContactType::SHEET)] = body["max_contact_energy"]["constrained"]["sheet"].as<double>();
   }
 
   bool use_combined_model = human_config["use_combined_model"].as<bool>();
   std::vector<std::string> extremity_base_names, extremity_end_names;
-  std::vector<double> extremity_length, extremity_thickness, extremity_max_contact_energy;
+  std::vector<double> extremity_length, extremity_thickness;
+  std::vector<std::array<double, 5>> extremity_max_contact_energy_unconstrained;
+  std::vector<std::array<double, 5>> extremity_max_contact_energy_constrained;
   if (!use_combined_model) {
     // Build extremities
     const YAML::Node& extremities = human_config["extremities"];
@@ -119,7 +132,19 @@ HumanReach* buildHumanReach(
       extremity_end_names.push_back(extremity["end"].as<std::string>());
       extremity_length.push_back(extremity["length"].as<double>());
       extremity_thickness.push_back(extremity["thickness"].as<double>());
-      extremity_max_contact_energy.push_back(extremity["max_contact_energy_unconstrained"].as<double>());
+      std::array<double, 5> unconstrained_array, constrained_array;
+      unconstrained_array[static_cast<int>(ContactType::LINK)] = extremity["max_contact_energy"]["unconstrained"]["link"].as<double>();
+      unconstrained_array[static_cast<int>(ContactType::BLUNT)] = extremity["max_contact_energy"]["unconstrained"]["blunt"].as<double>();
+      unconstrained_array[static_cast<int>(ContactType::WEDGE)] = extremity["max_contact_energy"]["unconstrained"]["wedge"].as<double>();
+      unconstrained_array[static_cast<int>(ContactType::EDGE)] = extremity["max_contact_energy"]["unconstrained"]["edge"].as<double>();
+      unconstrained_array[static_cast<int>(ContactType::SHEET)] = extremity["max_contact_energy"]["unconstrained"]["sheet"].as<double>();
+      constrained_array[static_cast<int>(ContactType::LINK)] = extremity["max_contact_energy"]["constrained"]["link"].as<double>();
+      constrained_array[static_cast<int>(ContactType::BLUNT)] = extremity["max_contact_energy"]["constrained"]["blunt"].as<double>();
+      constrained_array[static_cast<int>(ContactType::WEDGE)] = extremity["max_contact_energy"]["constrained"]["wedge"].as<double>();
+      constrained_array[static_cast<int>(ContactType::EDGE)] = extremity["max_contact_energy"]["constrained"]["edge"].as<double>();
+      constrained_array[static_cast<int>(ContactType::SHEET)] = extremity["max_contact_energy"]["constrained"]["sheet"].as<double>();
+      extremity_max_contact_energy_unconstrained.push_back(unconstrained_array);
+      extremity_max_contact_energy_constrained.push_back(constrained_array);
     }
   }
 
@@ -153,7 +178,8 @@ HumanReach* buildHumanReach(
     joint_names,
     body_link_joints, 
     thickness, 
-    max_contact_energy,
+    max_contact_energy_unconstrained,
+    max_contact_energy_constrained,
     joint_v_max, 
     joint_a_max,
     unclampable_body_part_map,
@@ -164,7 +190,8 @@ HumanReach* buildHumanReach(
     extremity_end_names, 
     extremity_length,
     extremity_thickness,
-    extremity_max_contact_energy,
+    extremity_max_contact_energy_unconstrained,
+    extremity_max_contact_energy_constrained,
     s_w,
     s_v,
     initial_pos_var,

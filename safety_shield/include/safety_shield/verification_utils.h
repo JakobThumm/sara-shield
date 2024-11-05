@@ -269,6 +269,35 @@ bool environmentallyConstrainedCollisionCheck(const std::vector<int>& robot_coll
     std::vector<double> velocity_errors);
 
 /**
+ * @brief Separate all robot-human collisions into constrained and unconstrained collisions.
+ * 
+ * @param[in] robot_capsules Reachable capsules of the robot
+ * @param[in] human_capsules List of human reachable set capsules.
+ * @param[in] environment_elements List of environment elements
+ * @param[in] human_radii List of radii of human body parts/extremities.
+ * @param[in] unclampable_body_part_map List of pairs of human body parts that cannot cause clamping because they are part of the same body chain.
+ * @param[in] unclampable_enclosures_map List of pairs of robot links that cannot cause clamping.
+ * @param[in] robot_capsule_velocities_it Iterator pointing to the beginning of the list of robot capsule velocities for this short-term plan.
+ * @param[in] robot_capsule_velocities_end Iterator pointing to the end of the list of robot capsule velocities for this short-term plan.
+ * @param[in] velocity_errors upper bound of the velocity error for each joint
+ * @param[out] unconstrained_collisions List of unconstrained collisions. List of std::pair<human_capsule_index, robot_capsule_index>
+ * @param[out] constrained_collisions List of constrained collisions. List of std::pair<human_capsule_index, robot_capsule_index>
+ */
+void separateConstrainedCollisions(
+  const std::vector<reach_lib::Capsule>& robot_capsules, 
+  const std::vector<reach_lib::Capsule>& human_capsules,
+  const std::vector<reach_lib::AABB>& environment_elements,
+  const std::vector<double>& human_radii,
+  const std::unordered_map<int, std::set<int>>& unclampable_body_part_map,
+  const std::unordered_map<int, std::set<int>>& unclampable_enclosures_map,
+  std::vector<std::vector<RobotReach::CapsuleVelocity>>::const_iterator robot_capsule_velocities_it,
+  std::vector<std::vector<RobotReach::CapsuleVelocity>>::const_iterator robot_capsule_velocities_end,
+  const std::vector<double>& velocity_errors,
+  std::vector<std::pair<int, int>>& unconstrained_collisions,
+  std::vector<std::pair<int, int>>& constrained_collisions
+);
+
+/**
  * @brief Verify if clamping between the robot, human, and environment is possible.
  * 
  * @details This function checks two types of constrained collisions.
@@ -333,6 +362,23 @@ bool checkContactEnergySafety(
   const std::map<int, std::vector<int>>& human_robot_contacts,
   const std::vector<double>& robot_link_energies,
   const std::vector<double>& maximal_contact_energies
+);
+
+/**
+ * @brief Check if any link that gets into contact with the human is too fast.
+ * 
+ * @param[in] collisions List of collision pairs <human_idx, robot_idx>
+ * @param[in] robot_energies Robot link energies.
+ * @param[in] max_contact_energies The maximal contact energy for each human body part. Size = [n_robot_links][n_human_models][n_human_bodies]
+ * @param[in] human_motion_model_id The human motion model id.
+ * @return true: All robot links are slower than the maximal contact velocity.
+ * @return false: Otherwise.
+ */
+bool checkContactEnergySafetyIndividualLinks(
+  const std::vector<std::pair<int, int>>& collisions,
+  const std::vector<double>& robot_energies,
+  const std::vector<std::vector<std::vector<double>>>& max_contact_energies,
+  int human_motion_model_id
 );
 
 /**

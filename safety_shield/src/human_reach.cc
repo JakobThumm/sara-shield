@@ -9,7 +9,8 @@ HumanReach* createHumanReach(
       std::map<std::string, int> joint_names,
       std::map<std::string, reach_lib::jointPair>& body_link_joints, 
       const std::map<std::string, double>& thickness, 
-      const std::map<std::string, double>& max_contact_energy,
+      const std::map<std::string, std::array<double, 5>>& max_contact_energy_unconstrained,
+      const std::map<std::string, std::array<double, 5>>& max_contact_energy_constrained,
       std::vector<double>& max_v, 
       std::vector<double>& max_a,
       std::unordered_map<int, std::set<int>>& unclampable_map,
@@ -20,31 +21,32 @@ HumanReach* createHumanReach(
       std::vector<std::string> extremity_end_names = std::vector<std::string>(), 
       std::vector<double> extremity_length = std::vector<double>(),
       std::vector<double> extremity_thickness = std::vector<double>(),
-      std::vector<double> extremity_max_contact_energy = std::vector<double>(),
+      std::vector<std::array<double, 5>> extremity_max_contact_energy_unconstrained = std::vector<std::array<double, 5>>(),
+      std::vector<std::array<double, 5>> extremity_max_contact_energy_constrained = std::vector<std::array<double, 5>>(),
       double s_w = 2.0e+2,
       double s_v = 1.0e-6,
       double initial_pos_var = 0.0,
       double initial_vel_var = 0.0) {
   if (use_single_motion_model) {
     if (use_kalman_filter) {
-      return new HumanReach(n_joints_meas, joint_names, body_link_joints, thickness, max_contact_energy, max_v, max_a, unclampable_map, measurement_error_pos, measurement_error_vel, delay, s_w, s_v, initial_pos_var, initial_vel_var);
+      return new HumanReach(n_joints_meas, joint_names, body_link_joints, thickness, max_contact_energy_unconstrained, max_contact_energy_constrained, max_v, max_a, unclampable_map, measurement_error_pos, measurement_error_vel, delay, s_w, s_v, initial_pos_var, initial_vel_var);
     } else {
-      return new HumanReach(n_joints_meas, joint_names, body_link_joints, thickness, max_contact_energy, max_v, max_a, unclampable_map, measurement_error_pos, measurement_error_vel, delay);
+      return new HumanReach(n_joints_meas, joint_names, body_link_joints, thickness, max_contact_energy_unconstrained, max_contact_energy_constrained, max_v, max_a, unclampable_map, measurement_error_pos, measurement_error_vel, delay);
     }
   } else {
     if (use_kalman_filter) {
-      return new HumanReach(n_joints_meas, joint_names, body_link_joints, thickness, max_contact_energy, max_v, max_a, unclampable_map, extremity_base_names, extremity_end_names, extremity_length, extremity_thickness, extremity_max_contact_energy, measurement_error_pos, measurement_error_vel, delay, s_w, s_v, initial_pos_var, initial_vel_var);
+      return new HumanReach(n_joints_meas, joint_names, body_link_joints, thickness, max_contact_energy_unconstrained, max_contact_energy_constrained, max_v, max_a, unclampable_map, extremity_base_names, extremity_end_names, extremity_length, extremity_thickness, extremity_max_contact_energy_unconstrained, extremity_max_contact_energy_constrained, measurement_error_pos, measurement_error_vel, delay, s_w, s_v, initial_pos_var, initial_vel_var);
     } else {
-      return new HumanReach(n_joints_meas, joint_names, body_link_joints, thickness, max_contact_energy, max_v, max_a, unclampable_map, extremity_base_names, extremity_end_names, extremity_length, extremity_thickness, extremity_max_contact_energy, measurement_error_pos, measurement_error_vel, delay);
+      return new HumanReach(n_joints_meas, joint_names, body_link_joints, thickness, max_contact_energy_unconstrained, max_contact_energy_constrained, max_v, max_a, unclampable_map, extremity_base_names, extremity_end_names, extremity_length, extremity_thickness, extremity_max_contact_energy_unconstrained, extremity_max_contact_energy_constrained, measurement_error_pos, measurement_error_vel, delay);
     }
   }
 }
 
-std::vector<double> buildMaxContactEnergy(
+std::vector<std::array<double, 5>> buildMaxContactEnergy(
   const std::map<std::string, reach_lib::jointPair>& body_link_joints, 
-  const std::map<std::string, double>& max_contact_energy
+  const std::map<std::string, std::array<double, 5>>& max_contact_energy
 ) {
-  std::vector<double> max_contact_energy_vec;
+  std::vector<std::array<double, 5>> max_contact_energy_vec;
   for (const auto& it : body_link_joints) {
     max_contact_energy_vec.push_back(max_contact_energy.at(it.first));
   }
@@ -55,7 +57,8 @@ HumanReach::HumanReach(int n_joints_meas,
       std::map<std::string, int> joint_names,
       std::map<std::string, reach_lib::jointPair>& body_link_joints, 
       const std::map<std::string, double>& thickness, 
-      const std::map<std::string, double>& max_contact_energy,
+      const std::map<std::string, std::array<double, 5>>& max_contact_energy_unconstrained,
+      const std::map<std::string, std::array<double, 5>>& max_contact_energy_constrained,
       std::vector<double>& max_v, 
       std::vector<double>& max_a,
       std::unordered_map<int, std::set<int>>& unclampable_map,
@@ -73,7 +76,8 @@ HumanReach::HumanReach(int n_joints_meas,
     new reach_lib::ArticulatedCombined(
       system, body_link_joints, thickness, max_v, max_a
   ));
-  max_contact_energy_.push_back(buildMaxContactEnergy(body_link_joints, max_contact_energy));
+  max_contact_energy_unconstrained_.push_back(buildMaxContactEnergy(body_link_joints, max_contact_energy_unconstrained));
+  max_contact_energy_constrained_.push_back(buildMaxContactEnergy(body_link_joints, max_contact_energy_constrained));
   for (int i = 0; i < n_joints_meas; i++) {
     joint_pos_.push_back(reach_lib::Point(0.0, 0.0, 0.0));
     joint_vel_.push_back(reach_lib::Point(0.0, 0.0, 0.0));
@@ -86,7 +90,8 @@ HumanReach::HumanReach(int n_joints_meas,
       std::map<std::string, int> joint_names,
       std::map<std::string, reach_lib::jointPair>& body_link_joints, 
       const std::map<std::string, double>& thickness, 
-      const std::map<std::string, double>& max_contact_energy,
+      const std::map<std::string, std::array<double, 5>>& max_contact_energy_unconstrained,
+      const std::map<std::string, std::array<double, 5>>& max_contact_energy_constrained,
       std::vector<double>& max_v, 
       std::vector<double>& max_a,
       std::unordered_map<int, std::set<int>>& unclampable_map,
@@ -97,7 +102,7 @@ HumanReach::HumanReach(int n_joints_meas,
       double s_v,
       double initial_pos_var,
       double initial_vel_var):
-      HumanReach(n_joints_meas, joint_names, body_link_joints, thickness, max_contact_energy, max_v, max_a, unclampable_map, measurement_error_pos, measurement_error_vel, delay) {
+      HumanReach(n_joints_meas, joint_names, body_link_joints, thickness, max_contact_energy_unconstrained, max_contact_energy_constrained, max_v, max_a, unclampable_map, measurement_error_pos, measurement_error_vel, delay) {
   use_kalman_filter_ = true;
   measurement_handler_ = new MeasurementHandler(n_joints_meas, s_w, s_v, initial_pos_var, initial_vel_var);
 }
@@ -106,7 +111,8 @@ HumanReach::HumanReach(int n_joints_meas,
       std::map<std::string, int> joint_names,
       std::map<std::string, reach_lib::jointPair>& body_link_joints, 
       const std::map<std::string, double>& thickness, 
-      const std::map<std::string, double>& max_contact_energy,
+      const std::map<std::string, std::array<double, 5>>& max_contact_energy_unconstrained,
+      const std::map<std::string, std::array<double, 5>>& max_contact_energy_constrained,
       std::vector<double>& max_v, 
       std::vector<double>& max_a,
       std::unordered_map<int, std::set<int>>& unclampable_map,
@@ -114,7 +120,8 @@ HumanReach::HumanReach(int n_joints_meas,
       std::vector<std::string>& extremity_end_names, 
       std::vector<double>& extremity_length,
       std::vector<double>& extremity_thickness,
-      std::vector<double>& extremity_max_contact_energy,
+      std::vector<std::array<double, 5>> extremity_max_contact_energy_unconstrained,
+      std::vector<std::array<double, 5>> extremity_max_contact_energy_constrained,
       double measurement_error_pos, 
       double measurement_error_vel, 
       double delay):
@@ -146,10 +153,14 @@ HumanReach::HumanReach(int n_joints_meas,
   human_models_.push_back(new reach_lib::ArticulatedAccel(
     system, body_link_joints, thickness, max_a
   ));
-  std::vector<double> max_contact_energy_bodies = buildMaxContactEnergy(body_link_joints, max_contact_energy);
-  max_contact_energy_.push_back(extremity_max_contact_energy);
-  max_contact_energy_.push_back(max_contact_energy_bodies);
-  max_contact_energy_.push_back(max_contact_energy_bodies);
+  std::vector<std::array<double, 5>> max_contact_energy_bodies_unconstrained = buildMaxContactEnergy(body_link_joints, max_contact_energy_unconstrained);
+  std::vector<std::array<double, 5>> max_contact_energy_bodies_constrained = buildMaxContactEnergy(body_link_joints, max_contact_energy_constrained);
+  max_contact_energy_unconstrained_.push_back(extremity_max_contact_energy_unconstrained);
+  max_contact_energy_unconstrained_.push_back(max_contact_energy_bodies_unconstrained);
+  max_contact_energy_unconstrained_.push_back(max_contact_energy_bodies_unconstrained);
+  max_contact_energy_constrained_.push_back(extremity_max_contact_energy_constrained);
+  max_contact_energy_constrained_.push_back(max_contact_energy_bodies_constrained);
+  max_contact_energy_constrained_.push_back(max_contact_energy_bodies_constrained);
   
   for (int i = 0; i < n_joints_meas; i++) {
     joint_pos_.push_back(reach_lib::Point(0.0, 0.0, 0.0));
@@ -165,15 +176,17 @@ HumanReach::HumanReach(int n_joints_meas,
       std::map<std::string, int> joint_names,
       std::map<std::string, reach_lib::jointPair>& body_link_joints, 
       const std::map<std::string, double>& thickness, 
-      const std::map<std::string, double>& max_contact_energy,
+      const std::map<std::string, std::array<double, 5>>& max_contact_energy_unconstrained,
+      const std::map<std::string, std::array<double, 5>>& max_contact_energy_constrained,
       std::vector<double>& max_v, 
       std::vector<double>& max_a,
       std::unordered_map<int, std::set<int>>& unclampable_map,
       std::vector<std::string>& extremity_base_names, 
       std::vector<std::string>& extremity_end_names, 
-      std::vector<double>& extremity_length,
+      std::vector<double>& extremity_length, 
       std::vector<double>& extremity_thickness,
-      std::vector<double>& extremity_max_contact_energy,
+      std::vector<std::array<double, 5>> extremity_max_contact_energy_unconstrained,
+      std::vector<std::array<double, 5>> extremity_max_contact_energy_constrained,
       double measurement_error_pos, 
       double measurement_error_vel, 
       double delay,
@@ -181,7 +194,7 @@ HumanReach::HumanReach(int n_joints_meas,
       double s_v,
       double initial_pos_var,
       double initial_vel_var):
-      HumanReach(n_joints_meas, joint_names, body_link_joints, thickness, max_contact_energy, max_v, max_a, unclampable_map, extremity_base_names, extremity_end_names, extremity_length, extremity_thickness, extremity_max_contact_energy, measurement_error_pos, measurement_error_vel, delay) {
+      HumanReach(n_joints_meas, joint_names, body_link_joints, thickness, max_contact_energy_unconstrained, max_contact_energy_constrained, max_v, max_a, unclampable_map, extremity_base_names, extremity_end_names, extremity_length, extremity_thickness, extremity_max_contact_energy_unconstrained, extremity_max_contact_energy_constrained, measurement_error_pos, measurement_error_vel, delay) {
   use_kalman_filter_ = true;
   measurement_handler_ = new MeasurementHandler(n_joints_meas, s_w, s_v, initial_pos_var, initial_vel_var);
 }
@@ -273,6 +286,25 @@ std::vector<std::vector<std::vector<reach_lib::Capsule>>> HumanReach::humanReach
     reachable_capsules.push_back(getAllCapsules());
   }
   return reachable_capsules;
+}
+
+std::vector<std::vector<double>> HumanReach::getMaxContactEnergy() const {
+  return getMaxContactEnergyFromType(false, ContactType::BLUNT);
+}
+
+std::vector<std::vector<double>> HumanReach::getMaxContactEnergyFromType(bool constrained, ContactType contact_type) const {
+  std::vector<std::vector<double>> max_contact_energy;
+  for (int i = 0; i < max_contact_energy_constrained_.size(); i++) {
+    max_contact_energy.push_back({});
+    for (int j = 0; j < max_contact_energy_constrained_[i].size(); j++) {
+      if (constrained) {
+        max_contact_energy[i].push_back(max_contact_energy_constrained_[i][j][static_cast<int>(contact_type)]);
+      } else {
+        max_contact_energy[i].push_back(max_contact_energy_unconstrained_[i][j][static_cast<int>(contact_type)]);
+      }
+    }
+  }
+  return max_contact_energy;
 }
 
 }  // namespace safety_shield

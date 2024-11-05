@@ -103,12 +103,19 @@ PYBIND11_MODULE(safety_shield_py, handle) {
         .value("OFF", safety_shield::ShieldType::OFF)
         .value("SSM", safety_shield::ShieldType::SSM)
         .value("PFL", safety_shield::ShieldType::PFL);
+  // Contact type
+  py::enum_<safety_shield::ContactType>(handle, "ContactType", py::arithmetic())
+        .value("LINK", safety_shield::ContactType::LINK)
+        .value("BLUNT", safety_shield::ContactType::BLUNT)
+        .value("WEDGE", safety_shield::ContactType::WEDGE)
+        .value("EDGE", safety_shield::ContactType::EDGE)
+        .value("SHEET", safety_shield::ContactType::SHEET);
   // Safety shield class
   py::class_<safety_shield::SafetyShield>(handle, "SafetyShield")
     .def(py::init<>())
     .def(py::init<double, std::string, std::string, std::string,
         double, double, double, double, double, double, const std::vector<double>&,
-        const std::vector<reach_lib::AABB>&, safety_shield::ShieldType>(),
+        const std::vector<reach_lib::AABB>&, safety_shield::ShieldType, safety_shield::ContactType>(),
       py::arg("sample_time"),
       py::arg("trajectory_config_file"),
       py::arg("robot_config_file"),
@@ -121,7 +128,8 @@ PYBIND11_MODULE(safety_shield_py, handle) {
       py::arg("init_yaw"),
       py::arg("init_qpos"),
       py::arg("environment_elements"),
-      py::arg("shield_type") = safety_shield::ShieldType::SSM)
+      py::arg("shield_type") = safety_shield::ShieldType::SSM,
+      py::arg("eef_contact_type") = safety_shield::ContactType::EDGE)
     .def("reset", &safety_shield::SafetyShield::reset, 
       py::arg("init_x"),
       py::arg("init_y"),
@@ -132,16 +140,19 @@ PYBIND11_MODULE(safety_shield_py, handle) {
       py::arg("init_qpos"),
       py::arg("current_time"),
       py::arg("environment_elements"),
-      py::arg("shield_type") = safety_shield::ShieldType::SSM)
+      py::arg("shield_type") = safety_shield::ShieldType::SSM,
+      py::arg("eef_contact_type") = safety_shield::ContactType::EDGE)
     .def("step", &safety_shield::SafetyShield::step, py::arg("cycle_begin_time"))
     .def("newLongTermTrajectory", &safety_shield::SafetyShield::newLongTermTrajectory, py::arg("goal_position"), py::arg("goal_velocity"))
     .def("setLongTermTrajectory", &safety_shield::SafetyShield::setLongTermTrajectory, py::arg("traj"))
+    .def("setEEFContactType", &safety_shield::SafetyShield::setEEFContactType, py::arg("contact_type"))
     .def("humanMeasurement", static_cast<void (safety_shield::SafetyShield::*)(const std::vector<std::vector<double>> human_measurement, double time)>(&safety_shield::SafetyShield::humanMeasurement), py::arg("human_measurement"), py::arg("time"))
     .def("getRobotReachCapsules", &safety_shield::SafetyShield::getRobotReachCapsules)
     .def("getHumanReachCapsules", &safety_shield::SafetyShield::getHumanReachCapsules, py::arg("type") = 0)
     .def("getSafety", &safety_shield::SafetyShield::getSafety)
     .def("getShieldType", &safety_shield::SafetyShield::getShieldType)
     .def("getCurrentMotion", &safety_shield::SafetyShield::getCurrentMotion)
+    .def("getEEFContactType", &safety_shield::SafetyShield::getEEFContactType)
   ;
   
 }

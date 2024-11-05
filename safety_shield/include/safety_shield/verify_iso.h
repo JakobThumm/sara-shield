@@ -87,6 +87,8 @@ class VerifyISO : public Verify {
 
   /**
    * @brief Verify the robot motion against the reachable occupancy of the human for each separate time interval
+   * 
+   * @details Only checks if an intersection between the robot and human capsules exists. (SSM mode)
    *
    * @param[in] robot_reachable_sets Reachable sets of the robot in each time interval. Size = [n_time_intervals, n_robot_links]
    * @param[in] human_reachable_sets Reachable sets of the human in each time interval. Size = [n_time_intervals, n_human_models, n_human_bodies]
@@ -104,6 +106,9 @@ class VerifyISO : public Verify {
   /**
    * @brief Verify the robot motion against the reachable occupancy of the human for each separate time interval
    *
+   * @details Verifies if the contact energy of the robot upon collision with the human is below a certain threshold.
+   * @details Calculation based on the reflected mass of the robot link. [Not implemented yet]
+   * 
    * @param[in] robot_reachable_sets Reachable sets of the robot in each time interval. Size = [n_time_intervals, n_robot_links]
    * @param[in] human_reachable_sets Reachable sets of the human in each time interval. Size = [n_time_intervals, n_human_models, n_human_bodies]
    * @param[in] robot_link_velocities The maximal velocity of each robot link in each time interval. Size = [n_time_intervals, n_robot_links]
@@ -121,9 +126,12 @@ class VerifyISO : public Verify {
                                    const std::vector<std::vector<double>>& maximal_contact_energies,
                                    int& collision_index);
 
-    /**
+  /**
    * @brief Verify the robot motion against the reachable occupancy of the human for each separate time interval
    *
+   * @details Verifies if the contact energy of the robot upon collision with the human is below a certain threshold.
+   * @details Calculation based on the inertia matrices of the robot links.
+   * 
    * @param[in] robot_reachable_sets Reachable sets of the robot in each time interval. Size = [n_time_intervals, n_robot_links]
    * @param[in] human_reachable_sets Reachable sets of the human in each time interval. Size = [n_time_intervals, n_human_models, n_human_bodies]
    * @param[in] robot_link_inertia_matrices The robot link inertia matrices per link. Size = [n_time_intervals, n_robot_links]
@@ -140,6 +148,45 @@ class VerifyISO : public Verify {
                               const std::vector<Motion>& motions,
                               const std::vector<std::vector<double>>& maximal_contact_energies,
                               int& collision_index);
+
+  /**
+   * @brief Verify the robot motion against the reachable occupancy of the human for each separate time interval
+   *
+   * @details First classifies each contact between constrained and unconstrained collision
+   * @details Then ensures the energy limits for the respective contact case are met.
+   * 
+   * @param[in] robot_reachable_sets Reachable sets of the robot in each time interval. Size = [n_time_intervals, n_robot_links]
+   * @param[in] human_reachable_sets Reachable sets of the human in each time interval. Size = [n_time_intervals, n_human_models, n_human_bodies]
+   * @param[in] robot_link_inertia_matrices The robot link inertia matrices per link. Size = [n_time_intervals, n_robot_links]
+   * @param[in] motions The robot motions per timeinterval (used to get dq). Size = [n_time_intervals]
+   * @param[in] max_contact_energies_unconstrained The maximal contact energy for each human body part. Size = [n_robot_links][n_human_models][n_human_bodies]
+   * @param[in] max_contact_energies_constrained The maximal contact energy for each human body part. Size = [n_robot_links][n_human_models][n_human_bodies]
+   * @param environment_elements List of environment elements
+   * @param human_radii List of list of radii. Each list of radii corresponds to a human reachable set model.
+   * @param unclampable_body_part_maps List of pairs of human body parts that cannot cause clamping because they are part of the same body chain.
+   * @param unclampable_enclosures_map List of pairs of robot links that cannot cause clamping.
+   * @param robot_capsule_velocities_it The pointer to the capsule velocity at the start of the interval.
+   * @param robot_capsule_velocities_end The pointer to the capsule velocity at the end of the interval.
+   * @param velocity_errors upper bound of the velocity error for each joint
+   * @param[out] collision_index The first index of the time step where the collision occured
+   *
+   * @returns True: if the robot capsules do not collide with one set of the human capsules in each time step, i.e., the motion is safe.
+   *          False: Otherwise
+   */
+  bool verifyHumanReachEnergyContactCases(const std::vector<std::vector<reach_lib::Capsule>>& robot_reachable_sets,
+      const std::vector<std::vector<std::vector<reach_lib::Capsule>>>& human_reachable_sets,
+      const std::vector<std::vector<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic>>>& robot_inertia_matrices,
+      const std::vector<Motion>& motions,
+      const std::vector<std::vector<std::vector<double>>>& max_contact_energies_unconstrained,
+      const std::vector<std::vector<std::vector<double>>>& max_contact_energies_constrained,
+      const std::vector<reach_lib::AABB>& environment_elements,
+      const std::vector<std::vector<double>>& human_radii,
+      const std::vector<std::unordered_map<int, std::set<int>>>& unclampable_body_part_maps,
+      const std::unordered_map<int, std::set<int>>& unclampable_enclosures_map,
+      std::vector<std::vector<std::vector<RobotReach::CapsuleVelocity>>::const_iterator> robot_capsule_velocities_it,
+      std::vector<std::vector<std::vector<RobotReach::CapsuleVelocity>>::const_iterator> robot_capsule_velocities_end,
+      std::vector<double> velocity_errors,  
+      int& collision_index);
 
   /**
    * @brief Verify the robot motion against the reachable occupancy of the human for each separate time interval

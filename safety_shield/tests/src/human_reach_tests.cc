@@ -128,12 +128,33 @@ TEST_F(HumanReachCombinedOnlyTest, HumanReachAnalysisCombinedTest) {
 }
 
 TEST_F(HumanReachCombinedOnlyArmTest, GetHumanContactEnergies) {
-  auto max_contact_energy = human_reach_->getMaxContactEnergy();
+  auto max_contact_energy = human_reach_->getMaxContactEnergy();  // Should be false, BLUNT
   ASSERT_EQ(max_contact_energy.size(), 1);
   ASSERT_EQ(max_contact_energy[0].size(), 3);
-  EXPECT_DOUBLE_EQ(max_contact_energy[0][2], 0.75);
-  EXPECT_DOUBLE_EQ(max_contact_energy[0][1], 1.0);
-  EXPECT_DOUBLE_EQ(max_contact_energy[0][0], 1.0);
+  EXPECT_DOUBLE_EQ(max_contact_energy[0][2], 1.5);
+  EXPECT_DOUBLE_EQ(max_contact_energy[0][1], 1.3);
+  EXPECT_DOUBLE_EQ(max_contact_energy[0][0], 0.49);
+  EXPECT_DOUBLE_EQ(human_reach_->getAllHumanRadii()[0][2], 0.05);
+  EXPECT_DOUBLE_EQ(human_reach_->getAllHumanRadii()[0][1], 0.06);
+  EXPECT_DOUBLE_EQ(human_reach_->getAllHumanRadii()[0][0], 0.104);
+  auto max_contact_energy_constrained_edge = human_reach_->getMaxContactEnergyFromType(true, ContactType::EDGE);
+  ASSERT_EQ(max_contact_energy_constrained_edge.size(), 1);
+  ASSERT_EQ(max_contact_energy_constrained_edge[0].size(), 3);
+  EXPECT_DOUBLE_EQ(max_contact_energy_constrained_edge[0][2], 0.02);
+  EXPECT_DOUBLE_EQ(max_contact_energy_constrained_edge[0][1], 0.02);
+  EXPECT_DOUBLE_EQ(max_contact_energy_constrained_edge[0][0], 0.02);
+  auto max_contact_energy_constrained_blunt = human_reach_->getMaxContactEnergyFromType(true, ContactType::BLUNT);
+  ASSERT_EQ(max_contact_energy_constrained_blunt.size(), 1);
+  ASSERT_EQ(max_contact_energy_constrained_blunt[0].size(), 3);
+  EXPECT_DOUBLE_EQ(max_contact_energy_constrained_blunt[0][2], 0.375);
+  EXPECT_DOUBLE_EQ(max_contact_energy_constrained_blunt[0][1], 0.325);
+  EXPECT_DOUBLE_EQ(max_contact_energy_constrained_blunt[0][0], 0.12);
+  auto max_contact_energy_constrained_link = human_reach_->getMaxContactEnergyFromType(true, ContactType::LINK);
+  ASSERT_EQ(max_contact_energy_constrained_link.size(), 1);
+  ASSERT_EQ(max_contact_energy_constrained_link[0].size(), 3);
+  EXPECT_DOUBLE_EQ(max_contact_energy_constrained_link[0][2], 0.0);
+  EXPECT_DOUBLE_EQ(max_contact_energy_constrained_link[0][1], 0.0);
+  EXPECT_DOUBLE_EQ(max_contact_energy_constrained_link[0][0], 0.0);
 }
 
 TEST_F(HumanReachCombinedOnlyArmTest, HumanReachAnalysisCombinedTest) {
@@ -156,7 +177,7 @@ TEST_F(HumanReachCombinedOnlyArmTest, HumanReachAnalysisCombinedTest) {
   double t = (t_command - t_meas) + t_break + human_reach_->getDelay();
   double a_max = 50;
   double thickness_1 = 0.1;
-  double thickness_2 = 0.1;
+  double thickness_2 = 0.12;
   double thickness_3 = 0.208;
   double v_0 = 1.0;
   reach_lib::Point dy_0(0.0, 1.0, 0.0);
