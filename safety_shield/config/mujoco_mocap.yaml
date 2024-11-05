@@ -37,52 +37,148 @@ joint_a_max: [
 
 bodies:
   - name: "L_UpperArm" 
-    proximal: "L_Shoulder"  # ToDo: Remove 'L'
+    proximal: "L_Shoulder"
     distal: "L_Elbow"
     thickness: 0.2 # 95 percentile of upper leg diameter according to DIN 33402-2:2020-12 (There is no information on upper arm diameter.)
-    max_contact_energy_unconstrained: 0.75
+    max_contact_energy:
+      unconstrained: 
+        link: 1.5  # We assume blunt contacts for robot links
+        blunt: 1.5 # From ISO/TS 15066:2016
+        wedge: 0.5  # From Kirschner 2024: Towards Unconstrained Collision Injury Protection Data Sets: Initial Surrogate Experiments for the Human Hand
+        edge: 0.2  # From Kirschner 2024: Towards Unconstrained Collision Injury Protection Data Sets: Initial Surrogate Experiments for the Human Hand
+        sheet: 0.5  # From Kirschner 2024: Towards Unconstrained Collision Injury Protection Data Sets: Initial Surrogate Experiments for the Human Hand
+      constrained:
+        link: 0.0  # We don't want to allow clamping for robot links.
+        blunt: 0.375  # From ISO/TS 15066:2016
+        wedge: 0.05  # From Kirschner 2024: Towards Safe Robot Use with Edged or Pointed Objects: A Surrogate Study Assembling a Human Hand Injury Protection Database
+        edge: 0.02  # From Kirschner 2024: Towards Safe Robot Use with Edged or Pointed Objects: A Surrogate Study Assembling a Human Hand Injury Protection Database
+        sheet: 0.11  # From Kirschner 2024: Towards Safe Robot Use with Edged or Pointed Objects: A Surrogate Study Assembling a Human Hand Injury Protection Database
 
   - name: "L_LowerArm"
     proximal: "L_Elbow"
     distal: "L_Wrist"
     thickness: 0.132 # 95 percentile of lower leg diameter according to DIN 33402-2:2020-12 (There is no information on lower arm diameter.)
-    max_contact_energy_unconstrained: 1
+    max_contact_energy:
+      unconstrained: 
+        link: 1.3  # We assume blunt contacts for robot links
+        blunt: 1.3  # From ISO/TS 15066:2016
+        wedge: 2.0  # From Kirschner 2024: Towards Unconstrained Collision Injury Protection Data Sets: Initial Surrogate Experiments for the Human Hand
+        edge: 0.375  # From Kirschner 2024: Towards Unconstrained Collision Injury Protection Data Sets: Initial Surrogate Experiments for the Human Hand
+        sheet: 0.9  # From Kirschner 2024: Towards Unconstrained Collision Injury Protection Data Sets: Initial Surrogate Experiments for the Human Hand
+      constrained:
+        link: 0.0  # We don't want to allow clamping for robot links.
+        blunt: 0.325  # From ISO/TS 15066:2016
+        wedge: 0.05  # From Kirschner 2024: Towards Safe Robot Use with Edged or Pointed Objects: A Surrogate Study Assembling a Human Hand Injury Protection Database
+        edge: 0.02  # From Kirschner 2024: Towards Safe Robot Use with Edged or Pointed Objects: A Surrogate Study Assembling a Human Hand Injury Protection Database
+        sheet: 0.11  # From Kirschner 2024: Towards Safe Robot Use with Edged or Pointed Objects: A Surrogate Study Assembling a Human Hand Injury Protection Database
 
   - name: "L_Hand"
     proximal: "L_Wrist"
     distal: "L_Hand"
     thickness: 0.206 # 95 percentile of hand length according to DIN 33402-2:2020-12
-    max_contact_energy_unconstrained: 1
+    max_contact_energy:
+      unconstrained: 
+        link: 0.49  # We assume blunt contacts for robot links
+        blunt: 0.49  # From ISO/TS 15066:2016
+        wedge: 2.0  # From Kirschner 2024: Towards Unconstrained Collision Injury Protection Data Sets: Initial Surrogate Experiments for the Human Hand
+        edge: 0.375  # From Kirschner 2024: Towards Unconstrained Collision Injury Protection Data Sets: Initial Surrogate Experiments for the Human Hand
+        sheet: 0.9  # From Kirschner 2024: Towards Unconstrained Collision Injury Protection Data Sets: Initial Surrogate Experiments for the Human Hand
+      constrained:
+        link: 0.0  # We don't want to allow clamping for robot links.
+        blunt: 0.12  # From ISO/TS 15066:2016
+        wedge: 0.05  # From Kirschner 2024: Towards Safe Robot Use with Edged or Pointed Objects: A Surrogate Study Assembling a Human Hand Injury Protection Database
+        edge: 0.02  # From Kirschner 2024: Towards Safe Robot Use with Edged or Pointed Objects: A Surrogate Study Assembling a Human Hand Injury Protection Database
+        sheet: 0.11  # From Kirschner 2024: Towards Safe Robot Use with Edged or Pointed Objects: A Surrogate Study Assembling a Human Hand Injury Protection Database
 
   - name: "R_UpperArm" 
     proximal: "R_Shoulder"
     distal: "R_Elbow"
     thickness: 0.2 # 95 percentile of upper leg diameter according to DIN 33402-2:2020-12 (There is no information on upper arm diameter.)
-    max_contact_energy_unconstrained: 0.75
+    max_contact_energy:
+      unconstrained: 
+        link: 1.5  # We assume blunt contacts for robot links
+        blunt: 1.5 # From ISO/TS 15066:2016
+        wedge: 0.5  # From Kirschner 2024: Towards Unconstrained Collision Injury Protection Data Sets: Initial Surrogate Experiments for the Human Hand
+        edge: 0.2  # From Kirschner 2024: Towards Unconstrained Collision Injury Protection Data Sets: Initial Surrogate Experiments for the Human Hand
+        sheet: 0.5  # From Kirschner 2024: Towards Unconstrained Collision Injury Protection Data Sets: Initial Surrogate Experiments for the Human Hand
+      constrained:
+        link: 0.0  # We don't want to allow clamping for robot links.
+        blunt: 0.375  # From ISO/TS 15066:2016
+        wedge: 0.05  # From Kirschner 2024: Towards Safe Robot Use with Edged or Pointed Objects: A Surrogate Study Assembling a Human Hand Injury Protection Database
+        edge: 0.02  # From Kirschner 2024: Towards Safe Robot Use with Edged or Pointed Objects: A Surrogate Study Assembling a Human Hand Injury Protection Database
+        sheet: 0.11  # From Kirschner 2024: Towards Safe Robot Use with Edged or Pointed Objects: A Surrogate Study Assembling a Human Hand Injury Protection Database
 
   - name: "R_LowerArm"
     proximal: "R_Elbow"
     distal: "R_Wrist"
     thickness: 0.132 # 95 percentile of lower leg diameter according to DIN 33402-2:2020-12 (There is no information on lower arm diameter.)
-    max_contact_energy_unconstrained: 1
+    max_contact_energy:
+      unconstrained: 
+        link: 1.3  # We assume blunt contacts for robot links
+        blunt: 1.3  # From ISO/TS 15066:2016
+        wedge: 2.0  # From Kirschner 2024: Towards Unconstrained Collision Injury Protection Data Sets: Initial Surrogate Experiments for the Human Hand
+        edge: 0.375  # From Kirschner 2024: Towards Unconstrained Collision Injury Protection Data Sets: Initial Surrogate Experiments for the Human Hand
+        sheet: 0.9  # From Kirschner 2024: Towards Unconstrained Collision Injury Protection Data Sets: Initial Surrogate Experiments for the Human Hand
+      constrained:
+        link: 0.0  # We don't want to allow clamping for robot links.
+        blunt: 0.325  # From ISO/TS 15066:2016
+        wedge: 0.05  # From Kirschner 2024: Towards Safe Robot Use with Edged or Pointed Objects: A Surrogate Study Assembling a Human Hand Injury Protection Database
+        edge: 0.02  # From Kirschner 2024: Towards Safe Robot Use with Edged or Pointed Objects: A Surrogate Study Assembling a Human Hand Injury Protection Database
+        sheet: 0.11  # From Kirschner 2024: Towards Safe Robot Use with Edged or Pointed Objects: A Surrogate Study Assembling a Human Hand Injury Protection Database
 
   - name: "R_Hand"
     proximal: "R_Wrist"
     distal: "R_Hand"
     thickness: 0.206 # 95 percentile of hand length according to DIN 33402-2:2020-12
-    max_contact_energy_unconstrained: 1
+    max_contact_energy:
+      unconstrained: 
+        link: 0.49  # We assume blunt contacts for robot links
+        blunt: 0.49  # From ISO/TS 15066:2016
+        wedge: 2.0  # From Kirschner 2024: Towards Unconstrained Collision Injury Protection Data Sets: Initial Surrogate Experiments for the Human Hand
+        edge: 0.375  # From Kirschner 2024: Towards Unconstrained Collision Injury Protection Data Sets: Initial Surrogate Experiments for the Human Hand
+        sheet: 0.9  # From Kirschner 2024: Towards Unconstrained Collision Injury Protection Data Sets: Initial Surrogate Experiments for the Human Hand
+      constrained:
+        link: 0.0  # We don't want to allow clamping for robot links.
+        blunt: 0.12  # From ISO/TS 15066:2016
+        wedge: 0.05  # From Kirschner 2024: Towards Safe Robot Use with Edged or Pointed Objects: A Surrogate Study Assembling a Human Hand Injury Protection Database
+        edge: 0.02  # From Kirschner 2024: Towards Safe Robot Use with Edged or Pointed Objects: A Surrogate Study Assembling a Human Hand Injury Protection Database
+        sheet: 0.11  # From Kirschner 2024: Towards Safe Robot Use with Edged or Pointed Objects: A Surrogate Study Assembling a Human Hand Injury Protection Database
 
   - name: "Torso"
     proximal: "Torso"
     distal: "Neck"
     thickness: 0.434 # Lays in 95% of Shoulder width according to DIN 33402-2:2020-12
-    max_contact_energy_unconstrained: 1
+    max_contact_energy:
+      unconstrained: 
+        link: 1.6  # We assume blunt contacts for robot links
+        blunt: 1.6 # From ISO/TS 15066:2016
+        wedge: 0.5  # From Kirschner 2024: Towards Unconstrained Collision Injury Protection Data Sets: Initial Surrogate Experiments for the Human Hand
+        edge: 0.2  # From Kirschner 2024: Towards Unconstrained Collision Injury Protection Data Sets: Initial Surrogate Experiments for the Human Hand
+        sheet: 0.5  # From Kirschner 2024: Towards Unconstrained Collision Injury Protection Data Sets: Initial Surrogate Experiments for the Human Hand
+      constrained:
+        link: 0.0  # We don't want to allow clamping for robot links.
+        blunt: 0.4  # From ISO/TS 15066:2016
+        wedge: 0.05  # From Kirschner 2024: Towards Safe Robot Use with Edged or Pointed Objects: A Surrogate Study Assembling a Human Hand Injury Protection Database
+        edge: 0.02  # From Kirschner 2024: Towards Safe Robot Use with Edged or Pointed Objects: A Surrogate Study Assembling a Human Hand Injury Protection Database
+        sheet: 0.11  # From Kirschner 2024: Towards Safe Robot Use with Edged or Pointed Objects: A Surrogate Study Assembling a Human Hand Injury Protection Database
   
   - name: "Head"
     proximal: "Neck"
     distal: "Head"
     thickness: 0.434 # Lays in 95% of Shoulder width according to DIN 33402-2:2020-12
-    max_contact_energy_unconstrained: 0.2
+    max_contact_energy:  # For the head, we take the minimum of ISO/TS 15066:2016 and Kirschner 2024
+      unconstrained: 
+        link: 0.11  # We assume blunt contacts for robot links
+        blunt: 0.11  # From ISO/TS 15066:2016
+        wedge: 0.11  # From ISO/TS 15066:2016
+        edge: 0.11  # From ISO/TS 15066:2016
+        sheet: 0.11  # From ISO/TS 15066:2016
+      constrained:
+        link: 0.0  # We don't want to allow clamping for robot links.
+        blunt: 0.0275  # From ISO/TS 15066:2016
+        wedge: 0.0275  # From ISO/TS 15066:2016
+        edge: 0.02  # From Kirschner 2024: Towards Safe Robot Use with Edged or Pointed Objects: A Surrogate Study Assembling a Human Hand Injury Protection Database
+        sheet: 0.0275  # From ISO/TS 15066:2016
 
 extremities:
   - name: "L_Arm"
@@ -90,15 +186,38 @@ extremities:
     end: "L_Hand"
     length: 0.825 # 95 percentile of reach to the front according to DIN 33402-2:2020-12
     thickness: 0.0
-    max_contact_energy_unconstrained: 0.2  # Head value needed here.
+    max_contact_energy:  # For the head, we take the minimum of ISO/TS 15066:2016 and Kirschner 2024
+      unconstrained: 
+        link: 0.11  # We assume blunt contacts for robot links
+        blunt: 0.11  # From ISO/TS 15066:2016
+        wedge: 0.11  # From ISO/TS 15066:2016
+        edge: 0.11  # From ISO/TS 15066:2016
+        sheet: 0.11  # From ISO/TS 15066:2016
+      constrained:
+        link: 0.0  # We don't want to allow clamping for robot links.
+        blunt: 0.0275  # From ISO/TS 15066:2016
+        wedge: 0.0275  # From ISO/TS 15066:2016
+        edge: 0.02  # From Kirschner 2024: Towards Safe Robot Use with Edged or Pointed Objects: A Surrogate Study Assembling a Human Hand Injury Protection Database
+        sheet: 0.0275  # From ISO/TS 15066:2016
     
   - name: "R_Arm"
     base: "R_Shoulder"
     end: "R_Hand"
     length: 0.825 # 95 percentile of reach to the front according to DIN 33402-2:2020-12
     thickness: 0.0
-    max_contact_energy_unconstrained: 0.2  # Head value needed here.
-
+    max_contact_energy:  # For the head, we take the minimum of ISO/TS 15066:2016 and Kirschner 2024
+      unconstrained: 
+        link: 0.11  # We assume blunt contacts for robot links
+        blunt: 0.11  # From ISO/TS 15066:2016
+        wedge: 0.11  # From ISO/TS 15066:2016
+        edge: 0.11  # From ISO/TS 15066:2016
+        sheet: 0.11  # From ISO/TS 15066:2016
+      constrained:
+        link: 0.0  # We don't want to allow clamping for robot links.
+        blunt: 0.0275  # From ISO/TS 15066:2016
+        wedge: 0.0275  # From ISO/TS 15066:2016
+        edge: 0.02  # From Kirschner 2024: Towards Safe Robot Use with Edged or Pointed Objects: A Surrogate Study Assembling a Human Hand Injury Protection Database
+        sheet: 0.0275  # From ISO/TS 15066:2016
 
 # 0: L_UpperArm
 # 1: L_LowerArm

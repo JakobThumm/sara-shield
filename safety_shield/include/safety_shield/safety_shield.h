@@ -293,6 +293,20 @@ class SafetyShield {
    */
   std::vector<std::vector<reach_lib::Capsule>> human_capsules_;
 
+  /**
+   * @brief The worst-case contact type on the end effector.
+   */
+  ContactType eef_contact_type_;
+
+  /**
+   * @brief Maximum contact energies for (un)constrained contacts.
+   * @details The format is [robot_link_index][model_index][body_index].
+   * @details The robot links and the end effector have different allowed contact energies,
+   *    as the end-effector can have sharp edges.
+   */
+  std::vector<std::vector<std::vector<double>>> max_contact_energies_unconstrained_;
+  std::vector<std::vector<std::vector<double>>> max_contact_energies_constrained_;
+
   //////// For replanning new trajectory //////
   /**
    * @brief Trajecory planner
@@ -458,6 +472,7 @@ class SafetyShield {
    * @param verify Verification of reachable sets object
    * @param environment_elements Elements of the environment (as AABB)
    * @param shield_type What type of safety shield to use, select from `OFF`, `SSM`, or `PFL`
+   * @param eef_contact_type The worst-case contact type on the end effector.
    */
   SafetyShield(int nb_joints, double sample_time, double max_s_stop, const std::vector<double>& v_max_allowed,
                const std::vector<double>& a_max_allowed, const std::vector<double>& j_max_allowed,
@@ -465,7 +480,8 @@ class SafetyShield {
                const LongTermTraj& long_term_trajectory, RobotReach* robot_reach, HumanReach* human_reach,
                VerifyISO* verify, 
                const std::vector<reach_lib::AABB> &environment_elements,
-               ShieldType shield_type = ShieldType::SSM);
+               ShieldType shield_type = ShieldType::SSM,
+               ContactType eef_contact_type = ContactType::EDGE);
 
   /**
    * @brief Construct a new Safety Shield object from config files.
@@ -483,12 +499,14 @@ class SafetyShield {
    * @param init_qpos Initial joint position of the robot
    * @param environment_elements Elements of the environment (as AABB)
    * @param shield_type What type of safety shield to use, select from `OFF`, `SSM`, or `PFL`
+   * @param eef_contact_type The worst-case contact type on the end effector.
    */
   SafetyShield(double sample_time, std::string trajectory_config_file, std::string robot_config_file,
                std::string mocap_config_file, double init_x, double init_y, double init_z, double init_roll,
                double init_pitch, double init_yaw, const std::vector<double>& init_qpos,
                const std::vector<reach_lib::AABB> &environment_elements,
-               ShieldType shield_type = ShieldType::SSM);
+               ShieldType shield_type = ShieldType::SSM,
+               ContactType eef_contact_type = ContactType::EDGE);
 
   /**
    * @brief A SafetyShield destructor
@@ -508,10 +526,12 @@ class SafetyShield {
    * @param current_time Initial time
    * @param environment_elements Elements of the environment (as AABB)
    * @param shield_type What type of safety shield to use, select from `OFF`, `SSM`, or `PFL`
+   * @param eef_contact_type The worst-case contact type on the end effector.
    */
   void reset(double init_x, double init_y, double init_z, double init_roll, double init_pitch, double init_yaw,
              const std::vector<double>& init_qpos, double current_time, 
-             const std::vector<reach_lib::AABB> &environment_elements, ShieldType shield_type = ShieldType::SSM);
+             const std::vector<reach_lib::AABB> &environment_elements, ShieldType shield_type = ShieldType::SSM,
+             ContactType eef_contact_type = ContactType::EDGE);
 
   /**
    * @brief Computes the new trajectory depending on dq and if the previous path is safe and publishes it
@@ -584,6 +604,31 @@ class SafetyShield {
   bool verifyContactEnergySafety(std::vector<double> time_points, std::vector<Motion> interval_edges_motions, int& collision_index);
 
   /**
+   * @brief verify if the contact energy constraint is satisfied.
+   * 
+   * @details First classifies the contact type and then checks if the contact energy constraint is satisfied.
+   * 
+   * @param[in] time_points Time points that define the edges of the time intervals.
+   * @param[in] interval_edges_motions Motions at the edges of the time intervals.
+   * @param[in] collision_index Index of the first collision in the time intervals, -1 if no collision.
+   * @return true if safe
+   * @return false if unsafe
+   */
+  bool verifyContactEnergySafetyByContactType(std::vector<double> time_points, std::vector<Motion> interval_edges_motions, int& collision_index);
+
+  /**
+   * @brief Build the robot capsule velocity pointers for the given interval edges motions.
+   * 
+   * @param[in] interval_edges_motions The motions at the edges of the time intervals.
+   * @param[out] vel_cap_start The pointer to the capsule velocity at the start of the interval.
+   * @param[out] vel_cap_end The pointer to the capsule velocity at the end of the interval.
+   */
+  void buildRobotVelocityPointers(
+    const std::vector<Motion>& interval_edges_motions,
+    std::vector<std::vector<std::vector<RobotReach::CapsuleVelocity>>::const_iterator>& vel_cap_start,
+    std::vector<std::vector<std::vector<RobotReach::CapsuleVelocity>>::const_iterator>& vel_cap_end);
+
+  /**
    * @brief verify if the contact velocity constraint is satisfied.
    * 
    * @details This function is not fully implemented and therefore not tested!!!
@@ -629,6 +674,24 @@ class SafetyShield {
    * @throws TrajectoryException Incorrect LTT
    */
   void setLongTermTrajectory(LongTermTraj& traj);
+
+  /**
+   * @brief Set the worst-case contact type on the end effector.
+   * @details Use this function if your end effector tool changes.
+   * @details Calls buildMaxContactEnergies() to update the contact energies.
+   * 
+   * @param contact_type choose between BLUNT, EDGE, WEDGE, and SHEET
+   */
+  inline void setEEFContactType(ContactType contact_type) {
+    eef_contact_type_ = contact_type;
+    buildMaxContactEnergies();
+  }
+
+  /**
+   * @brief Build the max_contact_energies_(un)constrained_ objects.
+   * @details The HumanReach object has to be initialized before calling this function.
+   */
+  void buildMaxContactEnergies();
 
   /**
    * @brief Calculate the list of motions on the LTT based on the current path and the given time points.
@@ -720,6 +783,10 @@ class SafetyShield {
 
   inline double getSampleTime() const {
     return sample_time_;
+  }
+
+  inline ContactType getEEFContactType() const {
+    return eef_contact_type_;
   }
 
 };

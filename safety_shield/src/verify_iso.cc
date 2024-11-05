@@ -58,6 +58,56 @@ bool VerifyISO::verifyHumanReachEnergyInertiaMatrices(const std::vector<std::vec
   return verifyHumanReachEnergy(robot_reachable_sets, human_reachable_sets, robot_link_energies, maximal_contact_energies, collision_index);
 }
 
+bool VerifyISO::verifyHumanReachEnergyContactCases(const std::vector<std::vector<reach_lib::Capsule>>& robot_reachable_sets,
+    const std::vector<std::vector<std::vector<reach_lib::Capsule>>>& human_reachable_sets,
+    const std::vector<std::vector<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic>>>& robot_inertia_matrices,
+    const std::vector<Motion>& motions,
+    const std::vector<std::vector<std::vector<double>>>& max_contact_energies_unconstrained,
+    const std::vector<std::vector<std::vector<double>>>& max_contact_energies_constrained,
+    const std::vector<reach_lib::AABB>& environment_elements,
+    const std::vector<std::vector<double>>& human_radii,
+    const std::vector<std::unordered_map<int, std::set<int>>>& unclampable_body_part_maps,
+    const std::unordered_map<int, std::set<int>>& unclampable_enclosures_map,
+    std::vector<std::vector<std::vector<RobotReach::CapsuleVelocity>>::const_iterator> robot_capsule_velocities_it,
+    std::vector<std::vector<std::vector<RobotReach::CapsuleVelocity>>::const_iterator> robot_capsule_velocities_end,
+    std::vector<double> velocity_errors,  
+    int& collision_index) {
+  std::vector<std::vector<double>> dq;
+  for (const auto& motion : motions) {
+    dq.push_back(motion.getVelocity());
+  }
+  std::vector<std::vector<double>> robot_link_energies = calculateMaxRobotEnergiesFromInertiaMatrices(robot_inertia_matrices, dq);
+  // Iterate over all time intervals
+  for (int t = 0; t < robot_reachable_sets.size(); t++) {
+    // Iterate over all human models
+    for (int m = 0; m < human_reachable_sets[t].size(); m++) {
+      std::vector<std::pair<int, int>> unconstrained_collisions, constrained_collisions;
+      separateConstrainedCollisions(
+        robot_reachable_sets[t], 
+        human_reachable_sets[t][m],
+        environment_elements,
+        human_radii[m],
+        unclampable_body_part_maps[m],
+        unclampable_enclosures_map,
+        robot_capsule_velocities_it[t],
+        robot_capsule_velocities_end[t],
+        velocity_errors,
+        unconstrained_collisions,
+        constrained_collisions
+      );
+      if (!checkContactEnergySafetyIndividualLinks(unconstrained_collisions, robot_link_energies[t], max_contact_energies_unconstrained, m)) {
+        collision_index = t;
+        return false;
+      }
+      if (!checkContactEnergySafetyIndividualLinks(constrained_collisions, robot_link_energies[t], max_contact_energies_constrained, m)) {
+        collision_index = t;
+        return false;
+      }
+    }
+  }
+  return true;                        
+}
+
 bool VerifyISO::verifyHumanReachEnergy(const std::vector<std::vector<reach_lib::Capsule>>& robot_reachable_sets,
   const std::vector<std::vector<std::vector<reach_lib::Capsule>>>& human_reachable_sets,
   const std::vector<std::vector<double>>& robot_link_energies,

@@ -32,6 +32,18 @@
 namespace safety_shield {
 
 /**
+ * @brief Contact type enum.
+ *
+ * @details
+ *  LINK: Contact with a non-end effector link.
+ *  BLUNT: End effector has a blunt shape.
+ *  WEDGE: End effector has a wedge shape. (See Kirschner et al. 2024 for more details)
+ *  EDGE: End effector has an edge shape. (See Kirschner et al. 2024 for more details)
+ *  SHEET: End effector has a sheet shape. (See Kirschner et al. 2024 for more details)
+ */
+enum class ContactType { LINK, BLUNT, WEDGE, EDGE, SHEET };
+
+/**
  * @brief Exception thrown when the human model is not found in the list.
  */
 class HumanModelNotFoundException : public std::exception {
@@ -108,10 +120,11 @@ class HumanReach {
   std::vector<reach_lib::Articulated*> human_models_;
 
   /**
-   * @brief Threshold on the energy of the robot element in an unconstrained contact for each body part.
-   * @details The format is [model_index][body_index].
+   * @brief Threshold on the energy of the robot element in a contact for each body part.
+   * @details The format is [model_index][body_index][ContactType].
    */
-  std::vector<std::vector<double>> max_contact_energy_;
+  std::vector<std::vector<std::array<double, 5>>> max_contact_energy_unconstrained_;
+  std::vector<std::vector<std::array<double, 5>>> max_contact_energy_constrained_;
 
   /**
    * @brief We need two measurements for velocity calculation.
@@ -149,7 +162,8 @@ class HumanReach {
    * @param[in] body_link_joints Maps the body name to the proximal and distal joint ids (key: Body name, value: Joint pair)
    * @param[in] thickness Defines the thickness of the body parts (key: Name of body part, value: Thickness of body
    * part)
-   * @param[in] max_contact_energy The maximal contact energy for each body part.
+   * @param[in] max_contact_energy_unconstrained The maximal contact energy for each body part in an unconstrained collision.
+   * @param[in] max_contact_energy_constrained The maximal contact energy for each body part in a constrained collision.
    * @param[in] max_v The maximum velocity of the joints
    * @param[in] max_a The maximum acceleration of the joints
    * @param[in] unclampable_map Maps the body parts to body parts that cannot be in collision with them.
@@ -161,7 +175,8 @@ class HumanReach {
       std::map<std::string, int> joint_names,
       std::map<std::string, reach_lib::jointPair>& body_link_joints, 
       const std::map<std::string, double>& thickness, 
-      const std::map<std::string, double>& max_contact_energy,
+      const std::map<std::string, std::array<double, 5>>& max_contact_energy_unconstrained,
+      const std::map<std::string, std::array<double, 5>>& max_contact_energy_constrained,
       std::vector<double>& max_v, 
       std::vector<double>& max_a,
       std::unordered_map<int, std::set<int>>& unclampable_map,
@@ -176,7 +191,8 @@ class HumanReach {
    * @param[in] body_link_joints Maps the body name to the proximal and distal joint ids (key: Body name, value: Joint pair)
    * @param[in] thickness Defines the thickness of the body parts (key: Name of body part, value: Thickness of body
    * part)
-   * @param[in] max_contact_energy The maximal contact energy for each body part.
+   * @param[in] max_contact_energy_unconstrained The maximal contact energy for each body part in an unconstrained collision.
+   * @param[in] max_contact_energy_constrained The maximal contact energy for each body part in a constrained collision.
    * @param[in] max_v The maximum velocity of the joints
    * @param[in] max_a The maximum acceleration of the joints
    * @param[in] unclampable_map Maps the body parts to body parts that cannot be in collision with them.
@@ -192,7 +208,8 @@ class HumanReach {
       std::map<std::string, int> joint_names,
       std::map<std::string, reach_lib::jointPair>& body_link_joints, 
       const std::map<std::string, double>& thickness, 
-      const std::map<std::string, double>& max_contact_energy,
+      const std::map<std::string, std::array<double, 5>>& max_contact_energy_unconstrained,
+      const std::map<std::string, std::array<double, 5>>& max_contact_energy_constrained,
       std::vector<double>& max_v, 
       std::vector<double>& max_a,
       std::unordered_map<int, std::set<int>>& unclampable_map,
@@ -211,7 +228,8 @@ class HumanReach {
    * @param[in] body_link_joints Maps the body name to the proximal and distal joint ids (key: Body name, value: Joint pair)
    * @param[in] thickness Defines the thickness of the body parts (key: Name of body part, value: Thickness of body
    * part)
-   * @param[in] max_contact_energy The maximal contact energy for each body part.
+   * @param[in] max_contact_energy_unconstrained The maximal contact energy for each body part in an unconstrained collision.
+   * @param[in] max_contact_energy_constrained The maximal contact energy for each body part in a constrained collision.
    * @param[in] max_v The maximum velocity of the joints
    * @param[in] max_a The maximum acceleration of the joints
    * @param[in] unclampable_map Maps the body parts to body parts that cannot be in collision with them.
@@ -221,7 +239,8 @@ class HumanReach {
    * used for thickness of extremities
    * @param[in] extremity_length The max length of the extremities (related to extremity_base_names)
    * @param[in] extremity_thickness The thickness of the extremities (usually zero, as it is already considered in extremity_length)
-   * @param[in] extremity_max_contact_energy The maximal contact energy for each extremity.
+   * @param[in] extremity_max_contact_energy_unconstrained The maximal contact energy for each extremity in an unconstrained collision.
+   * @param[in] extremity_max_contact_energy_constrained The maximal contact energy for each extremity in a constrained collision.
    * @param[in] measurement_error_pos Maximal positional measurement error
    * @param[in] measurement_error_vel Maximal velocity measurement error
    * @param[in] delay Delay in measurement processing pipeline
@@ -230,7 +249,8 @@ class HumanReach {
       std::map<std::string, int> joint_names,
       std::map<std::string, reach_lib::jointPair>& body_link_joints, 
       const std::map<std::string, double>& thickness, 
-      const std::map<std::string, double>& max_contact_energy,
+      const std::map<std::string, std::array<double, 5>>& max_contact_energy_unconstrained,
+      const std::map<std::string, std::array<double, 5>>& max_contact_energy_constrained,
       std::vector<double>& max_v, 
       std::vector<double>& max_a,
       std::unordered_map<int, std::set<int>>& unclampable_map,
@@ -238,7 +258,8 @@ class HumanReach {
       std::vector<std::string>& extremity_end_names, 
       std::vector<double>& extremity_length, 
       std::vector<double>& extremity_thickness,
-      std::vector<double>& extremity_max_contact_energy,
+      std::vector<std::array<double, 5>> extremity_max_contact_energy_unconstrained,
+      std::vector<std::array<double, 5>> extremity_max_contact_energy_constrained,
       double measurement_error_pos, 
       double measurement_error_vel, 
       double delay);
@@ -250,6 +271,8 @@ class HumanReach {
    * @param[in] body_link_joints Maps the body name to the proximal and distal joint ids (key: Body name, value: Joint pair)
    * @param[in] thickness Defines the thickness of the body parts (key: Name of body part, value: Thickness of body
    * part)
+   * @param[in] max_contact_energy_unconstrained The maximal contact energy for each body part in an unconstrained collision.
+   * @param[in] max_contact_energy_constrained The maximal contact energy for each body part in a constrained collision.
    * @param[in] max_v The maximum velocity of the joints
    * @param[in] max_a The maximum acceleration of the joints
    * @param[in] unclampable_map Maps the body parts to body parts that cannot be in collision with them.
@@ -259,7 +282,8 @@ class HumanReach {
    * used for thickness of extremities
    * @param[in] extremity_length The max length of the extremities (related to extremity_base_names)
    * @param[in] extremity_thickness The thickness of the extremities (usually zero, as it is already considered in extremity_length)
-   * @param[in] extremity_max_contact_energy The maximal contact energy for each extremity.
+   * @param[in] extremity_max_contact_energy_unconstrained The maximal contact energy for each extremity in an unconstrained collision.
+   * @param[in] extremity_max_contact_energy_constrained The maximal contact energy for each extremity in a constrained collision.
    * @param[in] measurement_error_pos Maximal positional measurement error
    * @param[in] measurement_error_vel Maximal velocity measurement error
    * @param[in] delay Delay in measurement processing pipeline
@@ -272,7 +296,8 @@ class HumanReach {
       std::map<std::string, int> joint_names,
       std::map<std::string, reach_lib::jointPair>& body_link_joints, 
       const std::map<std::string, double>& thickness, 
-      const std::map<std::string, double>& max_contact_energy,
+      const std::map<std::string, std::array<double, 5>>& max_contact_energy_unconstrained,
+      const std::map<std::string, std::array<double, 5>>& max_contact_energy_constrained,
       std::vector<double>& max_v, 
       std::vector<double>& max_a,
       std::unordered_map<int, std::set<int>>& unclampable_map,
@@ -280,7 +305,8 @@ class HumanReach {
       std::vector<std::string>& extremity_end_names, 
       std::vector<double>& extremity_length, 
       std::vector<double>& extremity_thickness,
-      std::vector<double>& extremity_max_contact_energy,
+      std::vector<std::array<double, 5>> extremity_max_contact_energy_unconstrained,
+      std::vector<std::array<double, 5>> extremity_max_contact_energy_constrained,
       double measurement_error_pos, 
       double measurement_error_vel, 
       double delay,
@@ -490,13 +516,22 @@ class HumanReach {
   }
 
   /**
-   * @brief Get the maximal contact energy for each body part.
+   * @brief Get the maximal contact energy for unconstrained contacts for each body part.
    *
    * @return std::vector<double>
    */
-  inline std::vector<std::vector<double>> getMaxContactEnergy() const {
-    return max_contact_energy_;
-  }
+  std::vector<std::vector<double>> getMaxContactEnergy() const;
+
+
+  /**
+   * @brief Get the maximal contact energy for each body part.
+   * 
+   * @param[in] constrained Whether to get the constrained or unconstrained contact energy.
+   * @param[in] contact_type The type of contact.
+   *
+   * @return std::vector<std::vector<double>> maximal contact energies, shape = [N human models, M human bodies]
+   */
+  std::vector<std::vector<double>> getMaxContactEnergyFromType(bool constrained, ContactType contact_type) const;
 
   /**
    * @brief Get the the radii of the human body parts in all motion models.
@@ -532,7 +567,8 @@ HumanReach* createHumanReach(
       std::map<std::string, int> joint_names,
       std::map<std::string, reach_lib::jointPair>& body_link_joints, 
       const std::map<std::string, double>& thickness, 
-      const std::map<std::string, double>& max_contact_energy, 
+      const std::map<std::string, std::array<double, 5>>& max_contact_energy_unconstrained,
+      const std::map<std::string, std::array<double, 5>>& max_contact_energy_constrained,
       std::vector<double>& max_v, 
       std::vector<double>& max_a,
       std::unordered_map<int, std::set<int>>& unclampable_map,
@@ -543,15 +579,16 @@ HumanReach* createHumanReach(
       std::vector<std::string> extremity_end_names, 
       std::vector<double> extremity_length, 
       std::vector<double> extremity_thickness,
-      std::vector<double> extremity_max_contact_energy,
+      std::vector<std::array<double, 5>> extremity_max_contact_energy_unconstrained,
+      std::vector<std::array<double, 5>> extremity_max_contact_energy_constrained,
       double s_w,
       double s_v,
       double initial_pos_var,
       double initial_vel_var);
       
-std::vector<double> buildMaxContactEnergy(
+std::vector<std::array<double, 5>> buildMaxContactEnergy(
   const std::map<std::string, reach_lib::jointPair>& body_link_joints, 
-  const std::map<std::string, double>& max_contact_energy
+  const std::map<std::string, std::array<double, 5>>& max_contact_energy
 );
 
 }  // namespace safety_shield
