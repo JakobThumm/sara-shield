@@ -130,6 +130,21 @@ class Verify {
                                    const std::vector<std::vector<double>>& maximal_contact_energies,
                                    int& collision_index) = 0;
 
+  virtual bool verifyHumanReachEnergyContactCases(const std::vector<std::vector<reach_lib::Capsule>>& robot_reachable_sets,
+      const std::vector<std::vector<std::vector<reach_lib::Capsule>>>& human_reachable_sets,
+      const std::vector<std::vector<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic>>>& robot_inertia_matrices,
+      const std::vector<Motion>& motions,
+      const std::vector<std::vector<std::vector<double>>>& max_contact_energies_unconstrained,
+      const std::vector<std::vector<std::vector<double>>>& max_contact_energies_constrained,
+      const std::vector<reach_lib::AABB>& environment_elements,
+      const std::vector<std::vector<double>>& human_radii,
+      const std::vector<std::unordered_map<int, std::set<int>>>& unclampable_body_part_maps,
+      const std::unordered_map<int, std::set<int>>& unclampable_enclosures_map,
+      std::vector<std::vector<std::vector<RobotReach::CapsuleVelocity>>::const_iterator> robot_capsule_velocities_it,
+      std::vector<std::vector<std::vector<RobotReach::CapsuleVelocity>>::const_iterator> robot_capsule_velocities_end,
+      std::vector<double> velocity_errors,  
+      int& collision_index) = 0;
+
   /**
    * @brief Verify the robot motion against the reachable occupancy of the human for each separate time interval
    *

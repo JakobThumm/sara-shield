@@ -83,7 +83,19 @@ extremities:
     end: "rightWrist"
     length: 0.725
     thickness: 0.0
-    max_contact_energy_unconstrained: 0.75
+    max_contact_energy:  # For the head, we take the minimum of ISO/TS 15066:2016 and Kirschner 2024
+      unconstrained: 
+        link: 0.11  # We assume blunt contacts for robot links
+        blunt: 0.11  # From ISO/TS 15066:2016
+        wedge: 0.11  # From ISO/TS 15066:2016
+        edge: 0.11  # From ISO/TS 15066:2016
+        sheet: 0.11  # From ISO/TS 15066:2016
+      constrained:
+        link: 0.0  # We don't want to allow clamping for robot links.
+        blunt: 0.0275  # From ISO/TS 15066:2016
+        wedge: 0.0275  # From ISO/TS 15066:2016
+        edge: 0.02  # From Kirschner 2024: Towards Safe Robot Use with Edged or Pointed Objects: A Surrogate Study Assembling a Human Hand Injury Protection Database
+        sheet: 0.0275  # From ISO/TS 15066:2016
 
 unclampable_body_parts: [
   ["rightUpperArm", "rightLowerArm"],

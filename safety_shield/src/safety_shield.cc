@@ -17,7 +17,8 @@ SafetyShield::SafetyShield(int nb_joints, double sample_time, double max_s_stop,
                            const std::vector<double>& j_max_allowed, const std::vector<double>& a_max_path,
                            const std::vector<double>& j_max_path, const LongTermTraj& long_term_trajectory,
                            RobotReach* robot_reach, HumanReach* human_reach,
-                           VerifyISO* verify, const std::vector<reach_lib::AABB> &environment_elements, ShieldType shield_type)
+                           VerifyISO* verify, const std::vector<reach_lib::AABB> &environment_elements, ShieldType shield_type,
+                           ContactType eef_contact_type)
     : nb_joints_(nb_joints),
       max_s_stop_(max_s_stop),
       v_max_allowed_(v_max_allowed),
@@ -33,7 +34,8 @@ SafetyShield::SafetyShield(int nb_joints, double sample_time, double max_s_stop,
       human_reach_(human_reach),
       verify_(verify),
       environment_elements_(environment_elements),
-      shield_type_(shield_type) {
+      shield_type_(shield_type),
+      eef_contact_type_(eef_contact_type) {
   sliding_window_k_ = (int)std::floor(max_s_stop_ / sample_time_);
   std::vector<double> prev_dq;
   for (int i = 0; i < nb_joints_; i++) {
@@ -49,17 +51,18 @@ SafetyShield::SafetyShield(int nb_joints, double sample_time, double max_s_stop,
   next_motion_ = determineNextMotion(is_safe_);
   std::vector<double> q_min(nb_joints, -3.141);
   std::vector<double> q_max(nb_joints, -3.141);
-  ltp_ =
-      long_term_planner::LongTermPlanner(nb_joints, sample_time, q_min, q_max, v_max_allowed, a_max_path, j_max_path);
+  ltp_ = long_term_planner::LongTermPlanner(nb_joints, sample_time, q_min, q_max, v_max_allowed, a_max_path, j_max_path);
   reachability_set_duration_ = reachability_set_interval_size_ * sample_time_;
+  buildMaxContactEnergies();
   spdlog::info("Safety shield created.");
 }
 
 SafetyShield::SafetyShield(double sample_time, std::string trajectory_config_file, std::string robot_config_file,
                            std::string mocap_config_file, double init_x, double init_y, double init_z, double init_roll,
                            double init_pitch, double init_yaw, const std::vector<double>& init_qpos,
-                           const std::vector<reach_lib::AABB> &environment_elements, ShieldType shield_type)
-    : sample_time_(sample_time), path_s_(0), path_s_discrete_(0), environment_elements_(environment_elements), shield_type_(shield_type) {
+                           const std::vector<reach_lib::AABB> &environment_elements, ShieldType shield_type, ContactType eef_contact_type)
+    : sample_time_(sample_time), path_s_(0), path_s_discrete_(0), environment_elements_(environment_elements),
+     shield_type_(shield_type), eef_contact_type_(eef_contact_type) {
   ///////////// Build robot reach
   robot_reach_ = buildRobotReach(robot_config_file, init_x, init_y, init_z, init_roll, init_pitch, init_yaw);
   nb_joints_ = robot_reach_->getNbJoints();
@@ -103,6 +106,7 @@ SafetyShield::SafetyShield(double sample_time, std::string trajectory_config_fil
   reachability_set_duration_ = reachability_set_interval_size_ * sample_time_;
   //////////// Build human reach
   human_reach_ = buildHumanReach(mocap_config_file);
+  buildMaxContactEnergies();
   ///////////// Build verifier
   verify_ = new safety_shield::VerifyISO();
   /////////// Other settings
@@ -124,10 +128,13 @@ SafetyShield::SafetyShield(double sample_time, std::string trajectory_config_fil
 
 void SafetyShield::reset(double init_x, double init_y, double init_z, double init_roll, double init_pitch,
                          double init_yaw, const std::vector<double>& init_qpos, double current_time,
-                         const std::vector<reach_lib::AABB> &environment_elements, ShieldType shield_type) {
+                         const std::vector<reach_lib::AABB> &environment_elements, ShieldType shield_type,
+                         ContactType eef_contact_type) {
   shield_type_ = shield_type;
   robot_reach_->reset(init_x, init_y, init_z, init_roll, init_pitch, init_yaw);
   human_reach_->reset();
+  eef_contact_type_ = eef_contact_type;
+  buildMaxContactEnergies();
   environment_elements_ = environment_elements;
   std::vector<double> prev_dq;
   for (int i = 0; i < nb_joints_; i++) {
@@ -616,12 +623,15 @@ bool SafetyShield::verifySafety(Motion& current_motion, Motion& goal_motion, con
   human_capsules_time_intervals_ = human_reach_->humanReachabilityAnalysisTimeIntervals(cycle_begin_time_, time_points);
   int collision_index = -1;
   if (shield_type_ == ShieldType::PFL) {
+    is_safe = verifyContactEnergySafetyByContactType(time_points, interval_edges_motions, collision_index);
+    /*
     // is_safe = unconstrainedContactConstraint AND constrainedContactConstraint
     is_safe = verifyContactEnergySafety(time_points, interval_edges_motions, collision_index);
     // Weird way of writing AND to make sure that the collision index is set to the correct value.
     if (is_safe) {
       is_safe = verifyConstrainedContactSafety(time_points, interval_edges_motions, collision_index);    
     }
+    */
     // Debugging
     // if (!is_safe) {
     //   spdlog::warn("Collision detected at time point {} with robot EEF velocity {}.", time_points[collision_index], robot_link_velocities[collision_index][nb_joints_ - 1]);
@@ -675,8 +685,55 @@ bool SafetyShield::verifyContactVelocitySafety(std::vector<double> time_points, 
   return is_safe;
 }
 
+bool SafetyShield::verifyContactEnergySafetyByContactType(std::vector<double> time_points, std::vector<Motion> interval_edges_motions, int& collision_index) {
+  std::vector<std::vector<std::vector<RobotReach::CapsuleVelocity>>::const_iterator> vel_cap_start, vel_cap_end;
+  buildRobotVelocityPointers(interval_edges_motions, vel_cap_start, vel_cap_end);
+  std::vector<double> velocity_errors = robot_reach_->calculateMaxVelErrors(sample_time_, v_max_allowed_, a_max_allowed_, j_max_allowed_);
+  std::vector<std::vector<double>> human_radii = human_reach_->getAllHumanRadii();
+  std::vector<std::unordered_map<int, std::set<int>>> unclampable_body_part_maps = human_reach_->getUnclampableMap();
+  std::unordered_map<int, std::set<int>> unclampable_enclosures_map = robot_reach_->getUnclampableEnclosures();
+  std::vector<std::vector<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic>>> inertias_beginning_of_intervals = 
+    getInertiaMatricesFromCurrentLTTandPath(std::vector<double>(time_points.begin(), time_points.end() - 1));
+  return verify_->verifyHumanReachEnergyContactCases(
+    robot_capsules_time_intervals_,
+    human_capsules_time_intervals_,
+    inertias_beginning_of_intervals,
+    std::vector<Motion>(interval_edges_motions.begin(), interval_edges_motions.end() - 1),
+    max_contact_energies_unconstrained_,
+    max_contact_energies_constrained_,
+    environment_elements_,
+    human_radii,
+    unclampable_body_part_maps,
+    unclampable_enclosures_map,
+    vel_cap_start,
+    vel_cap_end,
+    velocity_errors,
+    collision_index);
+}
+
+void SafetyShield::buildRobotVelocityPointers(
+    const std::vector<Motion>& interval_edges_motions,
+    std::vector<std::vector<std::vector<RobotReach::CapsuleVelocity>>::const_iterator>& vel_cap_start,
+    std::vector<std::vector<std::vector<RobotReach::CapsuleVelocity>>::const_iterator>& vel_cap_end) {
+  for (int i = 0; i < interval_edges_motions.size()-1; i++) {
+    // We don't move this loop to the verification class as we need to call the getVelocityCapsuleIterator function here.
+    if (new_ltt_) {
+      vel_cap_start.push_back(new_long_term_trajectory_.getVelocityCapsuleIterator(
+        new_long_term_trajectory_.getLowerIndex(interval_edges_motions[i].getS())));
+      vel_cap_end.push_back(new_long_term_trajectory_.getVelocityCapsuleIterator(
+        new_long_term_trajectory_.getUpperIndex(interval_edges_motions[i+1].getS())));
+    } else {
+      vel_cap_start.push_back(long_term_trajectory_.getVelocityCapsuleIterator(
+        long_term_trajectory_.getLowerIndex(interval_edges_motions[i].getS())));
+      vel_cap_end.push_back(long_term_trajectory_.getVelocityCapsuleIterator(
+        long_term_trajectory_.getUpperIndex(interval_edges_motions[i+1].getS())));
+    }
+  }
+}
+
 bool SafetyShield::verifyConstrainedContactSafety(std::vector<double> time_points, std::vector<Motion> interval_edges_motions, int& collision_index) {
-  std::vector<std::vector<RobotReach::CapsuleVelocity>>::const_iterator vel_cap_start, vel_cap_end;
+  std::vector<std::vector<std::vector<RobotReach::CapsuleVelocity>>::const_iterator> vel_cap_start, vel_cap_end;
+  buildRobotVelocityPointers(interval_edges_motions, vel_cap_start, vel_cap_end);
   std::vector<double> velocity_errors = robot_reach_->calculateMaxVelErrors(sample_time_, v_max_allowed_, a_max_allowed_, j_max_allowed_);
   std::vector<std::vector<double>> human_radii = human_reach_->getAllHumanRadii();
   std::vector<std::unordered_map<int, std::set<int>>> unclampable_body_part_maps = human_reach_->getUnclampableMap();
@@ -684,21 +741,9 @@ bool SafetyShield::verifyConstrainedContactSafety(std::vector<double> time_point
   bool is_safe = true;
   collision_index = -1;
   for (int i = 0; i < time_points.size()-2; i++) {
-    // We don't move this loop to the verification class as we need to call the getVelocityCapsuleIterator function here.
-    if (new_ltt_) {
-      vel_cap_start = new_long_term_trajectory_.getVelocityCapsuleIterator(
-        new_long_term_trajectory_.getLowerIndex(interval_edges_motions[i].getS()));
-      vel_cap_end = new_long_term_trajectory_.getVelocityCapsuleIterator(
-        new_long_term_trajectory_.getUpperIndex(interval_edges_motions[i+1].getS()));
-    } else {
-      vel_cap_start = long_term_trajectory_.getVelocityCapsuleIterator(
-        long_term_trajectory_.getLowerIndex(interval_edges_motions[i].getS()));
-      vel_cap_end = long_term_trajectory_.getVelocityCapsuleIterator(
-        long_term_trajectory_.getUpperIndex(interval_edges_motions[i+1].getS()));
-    }
     is_safe = verify_->verifyClamping(robot_capsules_time_intervals_[i], human_capsules_time_intervals_[i], environment_elements_,
       human_radii, unclampable_body_part_maps, unclampable_enclosures_map,
-      vel_cap_start, vel_cap_end, velocity_errors);
+      vel_cap_start[i], vel_cap_end[i], velocity_errors);
     if (!is_safe) {
       collision_index = i;
       break;
@@ -824,6 +869,19 @@ bool SafetyShield::calculateLongTermTrajectory(const std::vector<double>& start_
     );
   }
   return true;
+}
+
+void SafetyShield::buildMaxContactEnergies() {
+  max_contact_energies_unconstrained_ = {};
+  max_contact_energies_constrained_ = {};
+  // First, add the link contact energies
+  for (int i = 0; i < nb_joints_ - 1; i++) {
+    max_contact_energies_unconstrained_.push_back(human_reach_->getMaxContactEnergyFromType(false, ContactType::LINK));
+    max_contact_energies_constrained_.push_back(human_reach_->getMaxContactEnergyFromType(true, ContactType::LINK));
+  }
+  // Then, add the EEF contact energies
+  max_contact_energies_unconstrained_.push_back(human_reach_->getMaxContactEnergyFromType(false, eef_contact_type_));
+  max_contact_energies_constrained_.push_back(human_reach_->getMaxContactEnergyFromType(true, eef_contact_type_));
 }
 
 std::vector<Motion> SafetyShield::getMotionsFromCurrentLTTandPath(const std::vector<double>& time_points) {
