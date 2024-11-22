@@ -27,7 +27,7 @@ int main() {
   std::vector<reach_lib::AABB> environment_elements = {table};
   safety_shield::ShieldType shield_type = safety_shield::ShieldType::PFL;
 
-  safety_shield::SafetyShield shield =
+  safety_shield::SafetyShield* shield = new
       safety_shield::SafetyShield(sample_time, trajectory_config_file, robot_config_file, mocap_config_file, init_x,
                                   init_y, init_z, init_roll, init_pitch, init_yaw, init_qpos, environment_elements, shield_type);
   
@@ -61,23 +61,24 @@ int main() {
   auto start = std::chrono::system_clock::now();
   
   double t = 0.0;
-  for (int ep = 0; ep < 5; ep++) {
+  for (int ep = 0; ep < 1; ep++) {
     for (int i = 0; i < 100; i++) {  // i < 100; i<10000
       t += 0.001;
-      shield.humanMeasurement(dummy_human_meas, t);
+      shield->humanMeasurement(dummy_human_meas, t);
       t += 0.003;
       if (i % 10 == 0) {  // % 2
         std::vector<double> qpos{0.2 * t, t, t,
                                  t,       t, std::min(t, 3.1)};  // qpos{0.2*t, 0.0, 0.0, 0.0, 0.0, std::min(t, 3.1)};
         std::vector<double> qvel{0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
-        shield.newLongTermTrajectory(qpos, qvel);
+        shield->newLongTermTrajectory(qpos, qvel);
         // spdlog::info("new LTT");
       }
-      safety_shield::Motion next_motion = shield.step(t);
+      safety_shield::Motion next_motion = shield->step(t);
       // spdlog::info("finished step");
     }
-    shield.reset(init_x, init_y, init_z, init_roll, init_pitch, init_yaw, init_qpos, t, environment_elements, shield_type);
+    shield->reset(init_x, init_y, init_z, init_roll, init_pitch, init_yaw, init_qpos, t, environment_elements, shield_type);
   }
+  delete shield;
   auto end = std::chrono::system_clock::now();
   std::chrono::duration<double> elapsed_seconds = end-start;
   spdlog::info("Debug finished.");

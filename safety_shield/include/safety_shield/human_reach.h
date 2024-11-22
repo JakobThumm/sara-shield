@@ -322,6 +322,7 @@ class HumanReach {
     for (auto& model : human_models_) {
       delete model;
     }
+    delete measurement_handler_;
   }
 
   /**

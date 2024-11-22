@@ -511,7 +511,11 @@ class SafetyShield {
   /**
    * @brief A SafetyShield destructor
    */
-  ~SafetyShield(){};
+  ~SafetyShield(){
+    delete robot_reach_;
+    delete human_reach_;
+    delete verify_;
+  };
 
   /**
    * @brief Resets the safety shield completely.
