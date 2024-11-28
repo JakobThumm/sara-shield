@@ -40,6 +40,20 @@ std::vector<reach_lib::Point> get_human_measurement_close() {
   return dummy_human_meas;
 }
 
+std::vector<reach_lib::Point> get_human_measurement_clamp() {
+  std::vector<reach_lib::Point> dummy_human_meas(9);
+  dummy_human_meas[0] =  reach_lib::Point(0.0, -10.0, 0.0);
+  dummy_human_meas[1] =  reach_lib::Point(0.0, -10.0, 0.0);
+  dummy_human_meas[2] =  reach_lib::Point(0.033, -0.614, -0.1);
+  dummy_human_meas[3] =  reach_lib::Point(0.0, -10.0, 0.0);
+  dummy_human_meas[4] =  reach_lib::Point(0.0, -10.0, 0.0);
+  dummy_human_meas[5] =  reach_lib::Point(0.0, -10.0, 0.0);
+  dummy_human_meas[6] =  reach_lib::Point(0.0, -10.0, 0.0);
+  dummy_human_meas[7] =  reach_lib::Point(0.0, -10.0, 0.0);
+  dummy_human_meas[8] =  reach_lib::Point(0.0, -10.0, 0.0);
+  return dummy_human_meas;
+}
+
 int main() {
   double sample_time = 0.004;
   std::string trajectory_config_file = std::string("../config/trajectory_parameters_schunk.yaml");
@@ -47,12 +61,12 @@ int main() {
   std::string mocap_config_file = std::string("../config/human_reach_TUM_lab.yaml");
   double init_x = 0.0;
   double init_y = 0.0;
-  double init_z = 0.912;
+  double init_z = -0.054;
   double init_roll = 0.0;
   double init_pitch = 0.0;
   double init_yaw = -M_PI_2;
   std::vector<double> init_qpos = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
-  reach_lib::AABB table = reach_lib::AABB({-0.75, -1.0, 0.82 - 0.05}, {0.75, 1.0, 0.82});
+  reach_lib::AABB table = reach_lib::AABB({-1.50, -0.88, init_z - 0.2}, {1.05, 1.0, init_z - 0.176});
   std::vector<reach_lib::AABB> environment_elements = {table};
   safety_shield::ShieldType shield_type = safety_shield::ShieldType::PFL;
 
@@ -60,7 +74,7 @@ int main() {
       safety_shield::SafetyShield(sample_time, trajectory_config_file, robot_config_file, mocap_config_file, init_x,
                                   init_y, init_z, init_roll, init_pitch, init_yaw, init_qpos, environment_elements, shield_type);
 
-  std::vector<std::vector<double>> desired_goals = {
+  std::vector<std::vector<double>> desired_goals_pendulum = {
     {1.0, 0.0, 0.0, 0.3, 0.5, 1.0},
     {1.0, 1.4, 0.0, -0.6, 0.3, 0.0},
     {0.0, 0.5, -0.9, 0.0, 0.0, 0.0},
@@ -69,8 +83,14 @@ int main() {
     {-2.0, 0.0, 0.0, 1.0, 0.0, 1.0},
     {0.0, 0.0, 0.0, 0.0, 0.0, 0.0}
   };
-  auto human_measurement_close = get_human_measurement_close();
-  auto human_measurement_far = get_human_measurement_far();
+  std::vector<std::vector<double>> desired_goals_clamping_table = {
+    {0, 1.1, -1.1, 0, -0.75, 0},
+    {0.0, 0.0, 0.0, 0.0, 0.0, 0.0}
+  };
+
+  // Define scenario
+  std::vector<std::vector<double>> desired_goals = desired_goals_clamping_table;
+  auto human_measurement = get_human_measurement_clamp();
 
   // n = shield_frequency / RL_frequency = 5 / 250 = 1 / 50
   spdlog::info("Debug started.");
@@ -90,7 +110,7 @@ int main() {
     episode_finished = false;
     while (!episode_finished) {
       t += sample_time/4.0;
-      shield.humanMeasurement(human_measurement_far, t);
+      shield.humanMeasurement(human_measurement, t);
       t += 3.0/4.0 * sample_time;
       clkStart = clock();
       safety_shield::Motion next_motion = shield.step(t);
