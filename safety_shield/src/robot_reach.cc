@@ -194,6 +194,12 @@ std::vector<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic>> RobotReach::c
   return inertia_matrices;
 }
 
+Eigen::Matrix<double, 3, 3> RobotReach::calculateInvMassMatrixEEF() const {
+  std::vector<Eigen::Matrix<double, 6, Eigen::Dynamic>> link_jacobians = calculateAllCoMJacobians();
+  Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> robot_inertia_matrix = calculateInertiaMatrix(link_jacobians);
+  return calculateInvMassMatrix(link_jacobians[nb_joints_ - 1], robot_inertia_matrix);
+}
+
 std::vector<Eigen::Matrix<double, 3, 3>> RobotReach::calculateAllInvMassMatrices() const {
   std::vector<Eigen::Matrix<double, 3, 3>> inv_mass_matrices;
   std::vector<Eigen::Matrix<double, 6, Eigen::Dynamic>> link_jacobians = calculateAllCoMJacobians();
@@ -206,13 +212,21 @@ std::vector<Eigen::Matrix<double, 3, 3>> RobotReach::calculateAllInvMassMatrices
   return inv_mass_matrices;
 }
 
+double RobotReach::calculateEEFKineticEnergy(Eigen::Vector<double, Eigen::Dynamic> dq) const {
+  std::vector<Eigen::Matrix<double, 6, Eigen::Dynamic>> link_jacobians = calculateAllCoMJacobians();
+  Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> robot_inertia_matrix = calculateInertiaMatrix(link_jacobians);
+  return 0.5 * dq.transpose() * robot_inertia_matrix * dq;
+}
+
+double RobotReach::calculateReflectedMass(Eigen::Matrix<double, 3, 3> inv_mass_matrix, Eigen::Vector3d normal) const {
+  return 1.0 / (normal.transpose() * inv_mass_matrix * normal);
+}
+
 std::vector<double> RobotReach::calculateAllMaxReflectedMasses() const {
   auto inv_mass_matrices = calculateAllInvMassMatrices();
   std::vector<double> max_reflected_masses;
   for (int i = 0; i < nb_joints_; i++) {
-    std::cout << "Inv Mass Matrix: \n " << inv_mass_matrices[i] << std::endl;
     Eigen::Vector3d eigenvalues = inv_mass_matrices[i].eigenvalues().real();
-    std::cout << "Eigenvalues: " << eigenvalues << std::endl;
     double smallestAbsEigenvalue = eigenvalues.cwiseAbs().minCoeff();
     max_reflected_masses.push_back(1.0 / smallestAbsEigenvalue);
   }

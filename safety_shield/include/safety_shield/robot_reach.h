@@ -330,6 +330,13 @@ class RobotReach {
   std::vector<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic>> calculateAllInertiaMatrices() const;
 
   /**
+   * @brief Calculate the inverse translational mass matrix of the EEF for a specific robot configuration.
+   * @assumption calculateAllTransformationMatricesAndCapsules() was called before
+   * @return Eigen::Matrix<double, 3, 3> The inverse translational mass matrix of the EEF.
+   */
+  Eigen::Matrix<double, 3, 3> calculateInvMassMatrixEEF() const;
+
+  /**
    * @brief Calculate all inverse translational mass matrices for a specific robot configuration.
    * @assumption calculateAllTransformationMatricesAndCapsules() was called before
    * @return std::vector<Eigen::Matrix<double, 3, 3>> The inverse translational mass matrices of the links.
@@ -337,11 +344,28 @@ class RobotReach {
   std::vector<Eigen::Matrix<double, 3, 3>> calculateAllInvMassMatrices() const;
 
   /**
+   * @brief Calculate the reflected mass of the end effector along a contact normal. From Khatib 1995: Inertial Properties in Robotic Manipulation: An Object-Level Framework.
+   * @assumption calculateAllTransformationMatricesAndCapsules() was called before
+   * @param inv_mass_matrix The inverse mass matrix calculated using calculateInvMassMatrixEEF().
+   * @param normal The contact normal along which the reflected mass should be calculated.
+   * @return double reflected mass of the end effector.
+   */
+  double calculateReflectedMass(Eigen::Matrix<double, 3, 3> inv_mass_matrix, Eigen::Vector3d normal) const;
+
+  /**
    * @brief Calculate all maximum reflected masses for a specific robot configuration.
    * @assumption calculateAllTransformationMatricesAndCapsules() was called before
    * @return std::vector<double> Maximum reflected masses of the links.
    */
   std::vector<double> calculateAllMaxReflectedMasses() const;
+
+  /**
+   * @brief Calculate the kinetic energy of the robot end effector for a specific robot configuration and joint velocities.
+   * @assumption calculateAllTransformationMatricesAndCapsules() was called before
+   * @param dq robot joint velocities
+   * @return double robot kinetic energy at the end effector
+   */
+  double calculateEEFKineticEnergy(Eigen::Vector<double, Eigen::Dynamic> dq) const;
 
   /**
    * @brief Calculate the cartesian velocity of both defining point of a specific capsule
