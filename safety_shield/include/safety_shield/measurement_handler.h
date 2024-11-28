@@ -189,6 +189,7 @@ class MeasurementHandler {
    */
   MeasurementHandler() {
     n_joints_meas_ = 0;
+    kalman_filters_.resize(0);
     buildH();
     buildCv();
   }

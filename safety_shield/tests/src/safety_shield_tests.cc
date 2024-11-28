@@ -43,7 +43,7 @@ TEST_F(SafetyShieldTest, CalculateMaxAccJerkTest) {
   // a_max_allowed: [10, 10, 10, 10, 10, 10]
   // j_max_allowed: [400, 400, 400, 400, 400, 400]
   double a_max_manoeuvre, j_max_manoeuvre;
-  shield_.calculateMaxAccJerk(prev_speed, a_max_part, j_max_part, a_max_manoeuvre, j_max_manoeuvre);
+  shield_->calculateMaxAccJerk(prev_speed, a_max_part, j_max_part, a_max_manoeuvre, j_max_manoeuvre);
   EXPECT_NEAR(a_max_manoeuvre, (10.0 - 2.0) / (1.0 + 2.0 * 0.2), 1e-5);
   EXPECT_NEAR(j_max_manoeuvre, (400.0 - 10.0 - 3 * 2.0 * a_max_manoeuvre) / (1.0 + 2.0 * 0.2), 1e-5);
 }
@@ -62,13 +62,13 @@ TEST_F(SafetyShieldTest, PlanSafetyShieldTest) {
     vel = double(i) / 10.0;
     for (int j = -40; j < 40; j++) {
       acc = double(j) / 5.0;
-      double t_to_a_0 = ceil((abs(acc) / j_max) / shield_.getSampleTime()) * shield_.getSampleTime();
+      double t_to_a_0 = ceil((abs(acc) / j_max) / shield_->getSampleTime()) * shield_->getSampleTime();
       if (vel + acc * t_to_a_0 / 2 < 0) {
         continue;
       }
       for (int k = 0; k < 101; k++) {
         ve = double(k) / 100.0;
-        success = shield_.planSafetyShield(pos, vel, acc, ve, a_max, j_max, path);
+        success = shield_->planSafetyShield(pos, vel, acc, ve, a_max, j_max, path);
         ASSERT_TRUE(success);
         path.getFinalMotion(final_pos, final_vel, final_acc);
         ASSERT_NEAR(final_vel, ve, 1e-6);

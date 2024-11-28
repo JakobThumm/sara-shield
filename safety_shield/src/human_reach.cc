@@ -84,6 +84,7 @@ HumanReach::HumanReach(int n_joints_meas,
   }
   unclampable_map_.resize(1);
   unclampable_map_[0] = unclampable_map;
+  measurement_handler_ = new MeasurementHandler();
 }
 
 HumanReach::HumanReach(int n_joints_meas,
@@ -170,6 +171,7 @@ HumanReach::HumanReach(int n_joints_meas,
   unclampable_map_.resize(3);
   unclampable_map_[0] = unclampable_map;
   unclampable_map_[1] = unclampable_map;
+  measurement_handler_ = new MeasurementHandler();
 }
 
 HumanReach::HumanReach(int n_joints_meas,

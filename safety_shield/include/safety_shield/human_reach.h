@@ -153,7 +153,9 @@ class HumanReach {
   /**
    * @brief Empty constructor
    */
-  HumanReach() {}
+  HumanReach() {
+    measurement_handler_ = new MeasurementHandler();
+  }
 
   /**
    * @brief HumanReach constructor when using the single motion models (combined).

@@ -236,13 +236,21 @@ TEST_F(VerifyIsoTest, EnvironmentallyConstrainedCollisionCheckTest) {
 
 TEST_F(VerifyIsoTest, BuildHumanContactGraphTest) {
   std::vector<reach_lib::Capsule> human_capsules = {
+    // 0: intersects with -2-, 6
     reach_lib::Capsule({1, 1, 0}, {1, 3, 0}, 1),
+    // 1: intersects with 6
     reach_lib::Capsule({4, 1, 0}, {4, 3, 0}, 1),
+    // 2: intersects with -0-, 3
     reach_lib::Capsule({1, 0, 0}, {1, -3, 0}, 1),
+    // 3: intersects with 2
     reach_lib::Capsule({2, -3, 0}, {2, -3, 0}, 1),
+    // 4: intersects with nothing
     reach_lib::Capsule({5, -2, 0}, {5, -2, 0}, 1),
+    // 5: intersects with 7
     reach_lib::Capsule({7, 4, 0}, {7, 4, 0}, 1),
+    // 6: intersects with 0, 1
     reach_lib::Capsule({1, 4, 0}, {4, 4, 0}, 1),
+    // 7: intersects with 5
     reach_lib::Capsule({8, 4, 0}, {8, 4, 0}, 1),
   };
   std::unordered_map<int, std::set<int>> unclampable_body_part_map = {
@@ -262,14 +270,26 @@ TEST_F(VerifyIsoTest, BuildHumanContactGraphTest) {
   for (const auto& body : human_contact_graph) {
     debug_out += std::to_string(body) + ", ";
   }
-  EXPECT_EQ(human_contact_graph.size(), 3) << debug_out;
+  // [0]: 0, 6 
+  // [1]: 1, 6 
+  // [2]: 2, 3
+  // [3]: 4
+  // [4]: 5, 7
+  EXPECT_EQ(human_contact_graph.size(), 2) << debug_out;
   EXPECT_TRUE(human_contact_graph.find(0) != human_contact_graph.end()) << debug_out;
-  EXPECT_TRUE(human_contact_graph.find(1) != human_contact_graph.end()) << debug_out;
   EXPECT_TRUE(human_contact_graph.find(6) != human_contact_graph.end()) << debug_out;
-  EXPECT_EQ(visited_body_parts.size(), 3);
+  EXPECT_EQ(visited_body_parts.size(), 2);
   EXPECT_FALSE(visited_body_parts.find(0) == visited_body_parts.end());
-  EXPECT_FALSE(visited_body_parts.find(1) == visited_body_parts.end());
   EXPECT_FALSE(visited_body_parts.find(6) == visited_body_parts.end());
+  current_body_part = 1;
+  human_contact_graph = {current_body_part};
+  visited_body_parts.insert(current_body_part);
+  buildHumanContactGraph(current_body_part, human_capsules, unclampable_body_part_map, visited_body_parts, human_contact_graph);
+  EXPECT_EQ(human_contact_graph.size(), 2);
+  EXPECT_TRUE(human_contact_graph.find(1) != human_contact_graph.end());
+  EXPECT_TRUE(human_contact_graph.find(6) != human_contact_graph.end());
+  EXPECT_EQ(visited_body_parts.size(), 3);
+  EXPECT_FALSE(visited_body_parts.find(1) == visited_body_parts.end());
   current_body_part = 2;
   human_contact_graph = {current_body_part};
   visited_body_parts.insert(current_body_part);
@@ -280,33 +300,25 @@ TEST_F(VerifyIsoTest, BuildHumanContactGraphTest) {
   EXPECT_EQ(visited_body_parts.size(), 5);
   EXPECT_FALSE(visited_body_parts.find(2) == visited_body_parts.end());
   EXPECT_FALSE(visited_body_parts.find(3) == visited_body_parts.end());
-  current_body_part = 4;
-  human_contact_graph = {current_body_part};
-  visited_body_parts.insert(current_body_part);
-  buildHumanContactGraph(current_body_part, human_capsules, unclampable_body_part_map, visited_body_parts, human_contact_graph);
-  EXPECT_EQ(human_contact_graph.size(), 1);
-  EXPECT_TRUE(human_contact_graph.find(4) != human_contact_graph.end());
-  EXPECT_EQ(visited_body_parts.size(), 6);
-  EXPECT_FALSE(visited_body_parts.find(4) == visited_body_parts.end());
-  current_body_part = 5;
-  human_contact_graph = {current_body_part};
-  visited_body_parts.insert(current_body_part);
-  buildHumanContactGraph(current_body_part, human_capsules, unclampable_body_part_map, visited_body_parts, human_contact_graph);
-  EXPECT_EQ(human_contact_graph.size(), 2);
-  EXPECT_TRUE(human_contact_graph.find(5) != human_contact_graph.end());
-  EXPECT_TRUE(human_contact_graph.find(7) != human_contact_graph.end());
-  EXPECT_EQ(visited_body_parts.size(), 8);
 }
 
 TEST_F(VerifyIsoTest, BuildHumanContactGraphsTest) {
   std::vector<reach_lib::Capsule> human_capsules = {
+    // 0: intersects with -2-, 6
     reach_lib::Capsule({1, 1, 0}, {1, 3, 0}, 1),
+    // 1: intersects with 6
     reach_lib::Capsule({4, 1, 0}, {4, 3, 0}, 1),
+    // 2: intersects with -0-, 3
     reach_lib::Capsule({1, 0, 0}, {1, -3, 0}, 1),
+    // 3: intersects with 2
     reach_lib::Capsule({2, -3, 0}, {2, -3, 0}, 1),
+    // 4: intersects with nothing
     reach_lib::Capsule({5, -2, 0}, {5, -2, 0}, 1),
+    // 5: intersects with 7
     reach_lib::Capsule({7, 4, 0}, {7, 4, 0}, 1),
+    // 6: intersects with 0, 1
     reach_lib::Capsule({1, 4, 0}, {4, 4, 0}, 1),
+    // 7: intersects with 5
     reach_lib::Capsule({8, 4, 0}, {8, 4, 0}, 1),
   };
   std::unordered_map<int, std::set<int>> unclampable_body_part_map = {
@@ -317,34 +329,45 @@ TEST_F(VerifyIsoTest, BuildHumanContactGraphsTest) {
     {6, {7}}
   };
   std::vector<std::unordered_set<int>> human_contact_graphs = buildHumanContactGraphs(human_capsules, unclampable_body_part_map);
-  EXPECT_EQ(human_contact_graphs.size(), 4);
-  // [0]: 0, 1, 6 (any order)
-  EXPECT_EQ(human_contact_graphs[0].size(), 3);
+  EXPECT_EQ(human_contact_graphs.size(), 5);
+  // [0]: 0, 6 
+  EXPECT_EQ(human_contact_graphs[0].size(), 2);
   EXPECT_TRUE(human_contact_graphs[0].find(0) != human_contact_graphs[0].end());
-  EXPECT_TRUE(human_contact_graphs[0].find(1) != human_contact_graphs[0].end());
   EXPECT_TRUE(human_contact_graphs[0].find(6) != human_contact_graphs[0].end());
-  // [1]: 2, 3 (any order)
+  // [1]: 1, 6 
   EXPECT_EQ(human_contact_graphs[1].size(), 2);
-  EXPECT_TRUE(human_contact_graphs[1].find(2) != human_contact_graphs[0].end());
-  EXPECT_TRUE(human_contact_graphs[1].find(3) != human_contact_graphs[0].end());
-  // [2]: 4
-  EXPECT_EQ(human_contact_graphs[2].size(), 1);
-  EXPECT_TRUE(human_contact_graphs[2].find(4) != human_contact_graphs[0].end());
-  // [3]: 5, 7 (any order)
-  EXPECT_EQ(human_contact_graphs[3].size(), 2);
-  EXPECT_TRUE(human_contact_graphs[3].find(5) != human_contact_graphs[0].end());
-  EXPECT_TRUE(human_contact_graphs[3].find(7) != human_contact_graphs[0].end());
+  EXPECT_TRUE(human_contact_graphs[1].find(1) != human_contact_graphs[0].end());
+  EXPECT_TRUE(human_contact_graphs[1].find(6) != human_contact_graphs[0].end());
+  // [2]: 2, 3
+  EXPECT_EQ(human_contact_graphs[2].size(), 2);
+  EXPECT_TRUE(human_contact_graphs[2].find(2) != human_contact_graphs[0].end());
+  EXPECT_TRUE(human_contact_graphs[2].find(3) != human_contact_graphs[0].end());
+  // [3]: 4
+  EXPECT_EQ(human_contact_graphs[3].size(), 1);
+  EXPECT_TRUE(human_contact_graphs[3].find(4) != human_contact_graphs[0].end());
+  // [4]: 5, 7
+  EXPECT_EQ(human_contact_graphs[4].size(), 2);
+  EXPECT_TRUE(human_contact_graphs[4].find(5) != human_contact_graphs[0].end());
+  EXPECT_TRUE(human_contact_graphs[4].find(7) != human_contact_graphs[0].end());
 }
 
 TEST_F(VerifyIsoTest, CombineContactMapsTest) {
   std::vector<reach_lib::Capsule> human_capsules = {
+    // 0: intersects with -2-, 6
     reach_lib::Capsule({1, 1, 0}, {1, 3, 0}, 1),
+    // 1: intersects with 6
     reach_lib::Capsule({4, 1, 0}, {4, 3, 0}, 1),
+    // 2: intersects with -0-, 3
     reach_lib::Capsule({1, 0, 0}, {1, -3, 0}, 1),
+    // 3: intersects with 2
     reach_lib::Capsule({2, -3, 0}, {2, -3, 0}, 1),
+    // 4: intersects with nothing
     reach_lib::Capsule({5, -2, 0}, {5, -2, 0}, 1),
+    // 5: intersects with 7
     reach_lib::Capsule({7, 4, 0}, {7, 4, 0}, 1),
+    // 6: intersects with 0, 1
     reach_lib::Capsule({1, 4, 0}, {4, 4, 0}, 1),
+    // 7: intersects with 5
     reach_lib::Capsule({8, 4, 0}, {8, 4, 0}, 1),
   };
   std::unordered_map<int, std::set<int>> unclampable_body_part_map = {
@@ -368,19 +391,25 @@ TEST_F(VerifyIsoTest, CombineContactMapsTest) {
     environment_collision_map,
     combined_human_radii
   );
-  EXPECT_EQ(combined_human_radii.size(), 4);
-  EXPECT_EQ(combined_human_radii[0], 6000010.1);
-  EXPECT_EQ(combined_human_radii[1], 3200);
-  EXPECT_EQ(combined_human_radii[2], 40000);
-  EXPECT_EQ(combined_human_radii[3], 70500000);
+  // [0]: 0, 6 
+  // [1]: 1, 6 
+  // [2]: 2, 3
+  // [3]: 4
+  // [4]: 5, 7
+  EXPECT_EQ(combined_human_radii.size(), 5);
+  EXPECT_EQ(combined_human_radii[0], 6000000.1);
+  EXPECT_EQ(combined_human_radii[1], 6000010);
+  EXPECT_EQ(combined_human_radii[2], 3200);
+  EXPECT_EQ(combined_human_radii[3], 40000);
+  EXPECT_EQ(combined_human_radii[4], 70500000);
   EXPECT_EQ(robot_collision_map[0].size(), 1);
   EXPECT_TRUE(robot_collision_map[0].find(0) != robot_collision_map[0].end());
   EXPECT_EQ(robot_collision_map[1].size(), 0);
   EXPECT_EQ(robot_collision_map[2].size(), 0);
   EXPECT_EQ(robot_collision_map[3].size(), 0);
-  EXPECT_EQ(environment_collision_map[0].size(), 1);
-  EXPECT_TRUE(environment_collision_map[0].find(0) != environment_collision_map[0].end());
-  EXPECT_EQ(environment_collision_map[1].size(), 0);
+  EXPECT_EQ(environment_collision_map[0].size(), 0);
+  EXPECT_EQ(environment_collision_map[1].size(), 1);
+  EXPECT_TRUE(environment_collision_map[1].find(0) != environment_collision_map[1].end());
   EXPECT_EQ(environment_collision_map[2].size(), 0);
   EXPECT_EQ(environment_collision_map[3].size(), 0);
 }

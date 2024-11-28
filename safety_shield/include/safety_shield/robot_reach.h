@@ -45,6 +45,7 @@ class RobotReach {
   struct SE3Vel {
     SE3Vel() {}
     SE3Vel(const Eigen::Vector3d& v, const Eigen::Vector3d& w) : v(v), w(w) {}
+    ~SE3Vel() {}
     /**
      * @brief Linear velocity.
      */
@@ -61,6 +62,7 @@ class RobotReach {
   struct CapsuleVelocity {
     CapsuleVelocity() {}
     CapsuleVelocity(const SE3Vel& v1, const SE3Vel& v2) : v1(v1), v2(v2) {}
+    ~CapsuleVelocity() {}
     /**
      * @brief SE3 velocity of the first point.
      */
@@ -142,7 +144,10 @@ class RobotReach {
   /**
    * @brief A robot empty constructor
    */
-  RobotReach() {}
+  RobotReach() {
+    robot_capsules_for_velocity_.resize(0);
+    robot_capsules_.resize(0);
+  }
 
   /**
    * @brief A robot basic constructor
