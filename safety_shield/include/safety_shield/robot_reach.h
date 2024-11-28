@@ -219,14 +219,16 @@ class RobotReach {
 
   inline Eigen::Matrix4d xyzrpy2transformationMatrix(double x, double y, double z, double roll, double pitch, double yaw) const {
     Eigen::Matrix4d T;
-    double cr = cos(roll);
-    double sr = sin(roll);
-    double cp = cos(pitch);
-    double sp = sin(pitch);
-    double cy = cos(yaw);
-    double sy = sin(yaw);
-    T << cr * cp, cr * sp * sy - sr * cy, cr * sp * cy + sr * sy, x, sr * cp,
-        sr * sp * sy + cr * cy, sr * sp * cy - cr * sy, y, -sp, cp * sy, cp * cy, z, 0, 0, 0, 1;
+    double cg = cos(roll);
+    double sg = sin(roll);
+    double cb = cos(pitch);
+    double sb = sin(pitch);
+    double ca = cos(yaw);
+    double sa = sin(yaw);
+    T << ca * cb, ca * sb * sg - sa * cg, ca * sb * cg + sa * sg, x, 
+        sa * cb, sa * sb * sg + ca * cg, sa * sb * cg - ca * sg, y, 
+        -sb, cb * sg, cb * cg, z, 
+        0, 0, 0, 1;
     return T;
   }
 
