@@ -253,19 +253,19 @@ TEST_F(VerifyIsoTest, BuildHumanContactGraphTest) {
     {6, {7}}
   };
   int current_body_part = 0;
-  std::vector<int> human_contact_graph = {current_body_part};
+  std::unordered_set<int> human_contact_graph;
+  human_contact_graph.insert(current_body_part);
   std::unordered_set<int> visited_body_parts = {current_body_part};
   buildHumanContactGraph(current_body_part, human_capsules, unclampable_body_part_map, visited_body_parts, human_contact_graph);
   // check if the human contact graph size is 3 and print the graph if not.
   std::string debug_out = "Human contact graph contents: ";
-  for (int i = 0; i < human_contact_graph.size(); i++) {
-    debug_out += std::to_string(human_contact_graph[i]) + ", ";
+  for (const auto& body : human_contact_graph) {
+    debug_out += std::to_string(body) + ", ";
   }
   EXPECT_EQ(human_contact_graph.size(), 3) << debug_out;
-  EXPECT_EQ(human_contact_graph[0], 0) << debug_out;
-  EXPECT_TRUE(human_contact_graph[1] == 1 || human_contact_graph[1] == 6) << debug_out;
-  EXPECT_TRUE(human_contact_graph[2] == 1 || human_contact_graph[2] == 6) << debug_out;
-  EXPECT_TRUE(human_contact_graph[1] != human_contact_graph[2]) << debug_out;
+  EXPECT_TRUE(human_contact_graph.find(0) != human_contact_graph.end()) << debug_out;
+  EXPECT_TRUE(human_contact_graph.find(1) != human_contact_graph.end()) << debug_out;
+  EXPECT_TRUE(human_contact_graph.find(6) != human_contact_graph.end()) << debug_out;
   EXPECT_EQ(visited_body_parts.size(), 3);
   EXPECT_FALSE(visited_body_parts.find(0) == visited_body_parts.end());
   EXPECT_FALSE(visited_body_parts.find(1) == visited_body_parts.end());
@@ -275,8 +275,8 @@ TEST_F(VerifyIsoTest, BuildHumanContactGraphTest) {
   visited_body_parts.insert(current_body_part);
   buildHumanContactGraph(current_body_part, human_capsules, unclampable_body_part_map, visited_body_parts, human_contact_graph);
   EXPECT_EQ(human_contact_graph.size(), 2);
-  EXPECT_EQ(human_contact_graph[0], 2);
-  EXPECT_EQ(human_contact_graph[1], 3);
+  EXPECT_TRUE(human_contact_graph.find(2) != human_contact_graph.end());
+  EXPECT_TRUE(human_contact_graph.find(3) != human_contact_graph.end());
   EXPECT_EQ(visited_body_parts.size(), 5);
   EXPECT_FALSE(visited_body_parts.find(2) == visited_body_parts.end());
   EXPECT_FALSE(visited_body_parts.find(3) == visited_body_parts.end());
@@ -285,7 +285,7 @@ TEST_F(VerifyIsoTest, BuildHumanContactGraphTest) {
   visited_body_parts.insert(current_body_part);
   buildHumanContactGraph(current_body_part, human_capsules, unclampable_body_part_map, visited_body_parts, human_contact_graph);
   EXPECT_EQ(human_contact_graph.size(), 1);
-  EXPECT_EQ(human_contact_graph[0], 4);
+  EXPECT_TRUE(human_contact_graph.find(4) != human_contact_graph.end());
   EXPECT_EQ(visited_body_parts.size(), 6);
   EXPECT_FALSE(visited_body_parts.find(4) == visited_body_parts.end());
   current_body_part = 5;
@@ -293,8 +293,8 @@ TEST_F(VerifyIsoTest, BuildHumanContactGraphTest) {
   visited_body_parts.insert(current_body_part);
   buildHumanContactGraph(current_body_part, human_capsules, unclampable_body_part_map, visited_body_parts, human_contact_graph);
   EXPECT_EQ(human_contact_graph.size(), 2);
-  EXPECT_EQ(human_contact_graph[0], 5);
-  EXPECT_EQ(human_contact_graph[1], 7);
+  EXPECT_TRUE(human_contact_graph.find(5) != human_contact_graph.end());
+  EXPECT_TRUE(human_contact_graph.find(7) != human_contact_graph.end());
   EXPECT_EQ(visited_body_parts.size(), 8);
 }
 
@@ -316,29 +316,24 @@ TEST_F(VerifyIsoTest, BuildHumanContactGraphsTest) {
     {4, {5}},
     {6, {7}}
   };
-  std::vector<std::vector<int>> human_contact_graphs = buildHumanContactGraphs(human_capsules, unclampable_body_part_map);
+  std::vector<std::unordered_set<int>> human_contact_graphs = buildHumanContactGraphs(human_capsules, unclampable_body_part_map);
   EXPECT_EQ(human_contact_graphs.size(), 4);
   // [0]: 0, 1, 6 (any order)
   EXPECT_EQ(human_contact_graphs[0].size(), 3);
-  EXPECT_TRUE(human_contact_graphs[0][0] == 0 || human_contact_graphs[0][0] == 1 || human_contact_graphs[0][0] == 6);
-  EXPECT_TRUE(human_contact_graphs[0][1] == 0 || human_contact_graphs[0][1] == 1 || human_contact_graphs[0][1] == 6);
-  EXPECT_TRUE(human_contact_graphs[0][2] == 0 || human_contact_graphs[0][2] == 1 || human_contact_graphs[0][2] == 6);
-  EXPECT_TRUE(human_contact_graphs[0][0] != human_contact_graphs[0][1]);
-  EXPECT_TRUE(human_contact_graphs[0][0] != human_contact_graphs[0][2]);
-  EXPECT_TRUE(human_contact_graphs[0][1] != human_contact_graphs[0][2]);
+  EXPECT_TRUE(human_contact_graphs[0].find(0) != human_contact_graphs[0].end());
+  EXPECT_TRUE(human_contact_graphs[0].find(1) != human_contact_graphs[0].end());
+  EXPECT_TRUE(human_contact_graphs[0].find(6) != human_contact_graphs[0].end());
   // [1]: 2, 3 (any order)
   EXPECT_EQ(human_contact_graphs[1].size(), 2);
-  EXPECT_TRUE(human_contact_graphs[1][0] == 2 || human_contact_graphs[1][0] == 3);
-  EXPECT_TRUE(human_contact_graphs[1][1] == 2 || human_contact_graphs[1][1] == 3);
-  EXPECT_TRUE(human_contact_graphs[1][0] != human_contact_graphs[1][1]);
+  EXPECT_TRUE(human_contact_graphs[1].find(2) != human_contact_graphs[0].end());
+  EXPECT_TRUE(human_contact_graphs[1].find(3) != human_contact_graphs[0].end());
   // [2]: 4
   EXPECT_EQ(human_contact_graphs[2].size(), 1);
-  EXPECT_EQ(human_contact_graphs[2][0], 4);
+  EXPECT_TRUE(human_contact_graphs[2].find(4) != human_contact_graphs[0].end());
   // [3]: 5, 7 (any order)
   EXPECT_EQ(human_contact_graphs[3].size(), 2);
-  EXPECT_TRUE(human_contact_graphs[3][0] == 5 || human_contact_graphs[3][0] == 7);
-  EXPECT_TRUE(human_contact_graphs[3][1] == 5 || human_contact_graphs[3][1] == 7);
-  EXPECT_TRUE(human_contact_graphs[3][0] != human_contact_graphs[3][1]);
+  EXPECT_TRUE(human_contact_graphs[3].find(5) != human_contact_graphs[0].end());
+  EXPECT_TRUE(human_contact_graphs[3].find(7) != human_contact_graphs[0].end());
 }
 
 TEST_F(VerifyIsoTest, CombineContactMapsTest) {
