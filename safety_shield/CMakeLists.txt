@@ -92,6 +92,10 @@ target_link_libraries(unconstrained_collision_debug ${PROJECT_NAME} long_term_pl
 
 add_executable(hrgym_scenario_debug src/hrgym_scenario_debug.cc)
 target_link_libraries(hrgym_scenario_debug ${PROJECT_NAME} long_term_planner spdlog yaml-cpp)
+
+add_executable(debug_real_world_setup src/debug_real_world_setup.cc)
+target_link_libraries(debug_real_world_setup ${PROJECT_NAME} long_term_planner spdlog yaml-cpp)
+
 #############
 ## GTest ##
 #############
