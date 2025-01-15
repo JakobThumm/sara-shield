@@ -45,6 +45,7 @@ class RobotReach {
   struct SE3Vel {
     SE3Vel() {}
     SE3Vel(const Eigen::Vector3d& v, const Eigen::Vector3d& w) : v(v), w(w) {}
+    ~SE3Vel() {}
     /**
      * @brief Linear velocity.
      */
@@ -61,6 +62,7 @@ class RobotReach {
   struct CapsuleVelocity {
     CapsuleVelocity() {}
     CapsuleVelocity(const SE3Vel& v1, const SE3Vel& v2) : v1(v1), v2(v2) {}
+    ~CapsuleVelocity() {}
     /**
      * @brief SE3 velocity of the first point.
      */
@@ -142,7 +144,10 @@ class RobotReach {
   /**
    * @brief A robot empty constructor
    */
-  RobotReach() {}
+  RobotReach() {
+    robot_capsules_for_velocity_.resize(0);
+    robot_capsules_.resize(0);
+  }
 
   /**
    * @brief A robot basic constructor
@@ -219,14 +224,16 @@ class RobotReach {
 
   inline Eigen::Matrix4d xyzrpy2transformationMatrix(double x, double y, double z, double roll, double pitch, double yaw) const {
     Eigen::Matrix4d T;
-    double cr = cos(roll);
-    double sr = sin(roll);
-    double cp = cos(pitch);
-    double sp = sin(pitch);
-    double cy = cos(yaw);
-    double sy = sin(yaw);
-    T << cr * cp, cr * sp * sy - sr * cy, cr * sp * cy + sr * sy, x, sr * cp,
-        sr * sp * sy + cr * cy, sr * sp * cy - cr * sy, y, -sp, cp * sy, cp * cy, z, 0, 0, 0, 1;
+    double cg = cos(roll);
+    double sg = sin(roll);
+    double cb = cos(pitch);
+    double sb = sin(pitch);
+    double ca = cos(yaw);
+    double sa = sin(yaw);
+    T << ca * cb, ca * sb * sg - sa * cg, ca * sb * cg + sa * sg, x, 
+        sa * cb, sa * sb * sg + ca * cg, sa * sb * cg - ca * sg, y, 
+        -sb, cb * sg, cb * cg, z, 
+        0, 0, 0, 1;
     return T;
   }
 
@@ -330,6 +337,13 @@ class RobotReach {
   std::vector<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic>> calculateAllInertiaMatrices() const;
 
   /**
+   * @brief Calculate the inverse translational mass matrix of the EEF for a specific robot configuration.
+   * @assumption calculateAllTransformationMatricesAndCapsules() was called before
+   * @return Eigen::Matrix<double, 3, 3> The inverse translational mass matrix of the EEF.
+   */
+  Eigen::Matrix<double, 3, 3> calculateInvMassMatrixEEF() const;
+
+  /**
    * @brief Calculate all inverse translational mass matrices for a specific robot configuration.
    * @assumption calculateAllTransformationMatricesAndCapsules() was called before
    * @return std::vector<Eigen::Matrix<double, 3, 3>> The inverse translational mass matrices of the links.
@@ -337,11 +351,28 @@ class RobotReach {
   std::vector<Eigen::Matrix<double, 3, 3>> calculateAllInvMassMatrices() const;
 
   /**
+   * @brief Calculate the reflected mass of the end effector along a contact normal. From Khatib 1995: Inertial Properties in Robotic Manipulation: An Object-Level Framework.
+   * @assumption calculateAllTransformationMatricesAndCapsules() was called before
+   * @param inv_mass_matrix The inverse mass matrix calculated using calculateInvMassMatrixEEF().
+   * @param normal The contact normal along which the reflected mass should be calculated.
+   * @return double reflected mass of the end effector.
+   */
+  double calculateReflectedMass(Eigen::Matrix<double, 3, 3> inv_mass_matrix, Eigen::Vector3d normal) const;
+
+  /**
    * @brief Calculate all maximum reflected masses for a specific robot configuration.
    * @assumption calculateAllTransformationMatricesAndCapsules() was called before
    * @return std::vector<double> Maximum reflected masses of the links.
    */
   std::vector<double> calculateAllMaxReflectedMasses() const;
+
+  /**
+   * @brief Calculate the kinetic energy of the robot end effector for a specific robot configuration and joint velocities.
+   * @assumption calculateAllTransformationMatricesAndCapsules() was called before
+   * @param dq robot joint velocities
+   * @return double robot kinetic energy at the end effector
+   */
+  double calculateEEFKineticEnergy(Eigen::Vector<double, Eigen::Dynamic> dq) const;
 
   /**
    * @brief Calculate the cartesian velocity of both defining point of a specific capsule

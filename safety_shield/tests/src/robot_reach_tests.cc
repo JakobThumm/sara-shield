@@ -676,6 +676,25 @@ TEST_F(RobotReachTestVelocity, LinkInertiaMatrixTest0) {
   EXPECT_DOUBLE_EQ(inertia_matrix_2(2, 2), 6.0);
 }
 
+TEST_F(RobotReachSchunkTest, ReflectedMassTest) {
+  std::vector<double> q = {0, 1.5, -0.4, 1.6, -1.5, 0.0};
+  robot_reach_->calculateAllTransformationMatricesAndCapsules(q);
+  Eigen::Matrix<double, 3, 3> inv_mass_matrix = robot_reach_->calculateInvMassMatrixEEF();
+  Eigen::Matrix<double, 3, 3> mass_matrix = inv_mass_matrix.inverse();
+  double reflected_mass = robot_reach_->calculateReflectedMass(inv_mass_matrix, Eigen::Vector3d(1.0, 0.0, 0.0));
+  double expected_reflected_mass = 4.26141;
+  EXPECT_NEAR(reflected_mass, expected_reflected_mass, 1e-4);
+}
+
+TEST_F(RobotReachSchunkTest, RobotEnergyTest) {
+  std::vector<double> q = {0, 1.5, -0.4, 1.6, -1.5, 0.0};  // Some value that is no singularity
+  robot_reach_->calculateAllTransformationMatricesAndCapsules(q);
+  Eigen::Vector<double, Eigen::Dynamic> dq = Eigen::Vector<double, Eigen::Dynamic>::Zero(6);
+  dq[0] = 0.65;
+  double robot_energy = robot_reach_->calculateEEFKineticEnergy(dq);
+  EXPECT_NEAR(robot_energy, 0.3838269, 1e-4);
+}
+
 TEST_F(RobotReachSchunkTest, MaxReflectedMassTest) {
   std::vector<double> q = {0.2, 0.4, -0.32, 0.86, 0.926, 1.3};  // Some value that is no singularity
   robot_reach_->calculateAllTransformationMatricesAndCapsules(q);

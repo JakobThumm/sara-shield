@@ -142,7 +142,7 @@ class RobotReachSchunkTest : public ::testing::Test {
   void SetUp() override {
     std::filesystem::path config_file =
         std::filesystem::current_path().parent_path() / "config/robot_parameters_schunk.yaml";
-    robot_reach_ = buildRobotReach(config_file.string(), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+    robot_reach_ = buildRobotReach(config_file.string(), 0.0, 0.0, -0.054, 0.0, 0.0, -M_PI_2);
   }
 };
 

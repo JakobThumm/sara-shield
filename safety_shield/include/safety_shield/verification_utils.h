@@ -139,7 +139,7 @@ void buildHumanContactGraph(
     const std::vector<reach_lib::Capsule>& human_capsules,
     const std::unordered_map<int, std::set<int>>& unclampable_body_part_map,
     std::unordered_set<int>& visited_body_parts,
-    std::vector<int>& human_contact_graph);
+    std::unordered_set<int>& human_contact_graph);
 
 /**
  * @brief Build the graphs of human contact. 
@@ -148,7 +148,7 @@ void buildHumanContactGraph(
  * @param[in] unclampable_body_part_map List of pairs of human body parts that cannot cause clamping because they are part of the same body chain.
  * @return std::vector<std::vector<int>> List of connected circles of human body parts in contact.
  */
-std::vector<std::vector<int>> buildHumanContactGraphs(
+std::vector<std::unordered_set<int>> buildHumanContactGraphs(
   const std::vector<reach_lib::Capsule>& human_capsules,
   const std::unordered_map<int, std::set<int>>& unclampable_body_part_map
 );

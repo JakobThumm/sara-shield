@@ -9,6 +9,9 @@ SafetyShield::SafetyShield()
       j_max_allowed_({0, 0, 0}),
       a_max_ltt_({0, 0, 0}),
       j_max_ltt_({0, 0, 0}) {
+  robot_reach_ = new RobotReach();
+  human_reach_ = new HumanReach();
+  verify_ = new VerifyISO();
   spdlog::info("Safety shield created.");
 }
 

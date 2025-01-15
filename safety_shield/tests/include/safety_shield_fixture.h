@@ -45,6 +45,8 @@ class SafetyShieldExposed : public SafetyShield {
                                ShieldType shield_type = ShieldType::SSM)
       : SafetyShield(sample_time, trajectory_config_file, robot_config_file, mocap_config_file, init_x, init_y, init_z,
                      init_roll, init_pitch, init_yaw, init_qpos, environment_elements, shield_type) {}
+
+  ~SafetyShieldExposed() {}
 };
 
 /**
@@ -55,7 +57,7 @@ class SafetyShieldTest : public ::testing::Test {
   /**
    * @brief The safety shield object
    */
-  SafetyShieldExposed shield_;
+  SafetyShieldExposed* shield_;
 
   /**
    * @brief Create the safety shield object
@@ -75,7 +77,7 @@ class SafetyShieldTest : public ::testing::Test {
     reach_lib::AABB table = reach_lib::AABB({-1.0, -1.0, -0.1}, {1.0, 1.0, 0.0});
     std::vector<reach_lib::AABB> environment_elements = {table};
     ShieldType shield_type = ShieldType::SSM;
-    shield_ = SafetyShieldExposed(
+    shield_ = new SafetyShieldExposed(
       sample_time, 
       trajectory_config_file,
       robot_config_file,
@@ -89,6 +91,10 @@ class SafetyShieldTest : public ::testing::Test {
       init_qpos,
       environment_elements,
       shield_type);
+  }
+
+  void TearDown() override {
+    delete shield_;
   }
 };
 }  // namespace safety_shield
