@@ -371,8 +371,12 @@ void separateConstrainedCollisions(
     std::unordered_set<int> combined_environment_collisions_set;
     for (const auto& idx : human_contact_graph) {
       combined_human_radius += human_radii[idx];
-      combined_robot_collisions_set.insert(robot_collision_map[idx].begin(), robot_collision_map[idx].end());
-      combined_environment_collisions_set.insert(environment_collision_map[idx].begin(), environment_collision_map[idx].end());
+      if (robot_collision_map.find(idx) != robot_collision_map.end()) {
+        combined_robot_collisions_set.insert(robot_collision_map.at(idx).begin(), robot_collision_map.at(idx).end());
+      }
+      if (environment_collision_map.find(idx) != environment_collision_map.end()) {
+        combined_environment_collisions_set.insert(environment_collision_map.at(idx).begin(), environment_collision_map.at(idx).end());
+      }
     }
     std::vector<int> combined_robot_collisions_vec(combined_robot_collisions_set.begin(), combined_robot_collisions_set.end());
     std::vector<int> combined_environment_collisions_vec(combined_environment_collisions_set.begin(), combined_environment_collisions_set.end());
