@@ -31,14 +31,14 @@ bodies:
       unconstrained: 
         link: 0.11  # We assume blunt contacts for robot links
         blunt: 0.11  # From ISO/TS 15066:2016
-        wedge: 0.077  # From Duma et al. 2005: Determination of significant parameters for eye injury risk from projectiles
-        edge: 0.077  # From Duma et al. 2005: Determination of significant parameters for eye injury risk from projectiles
-        sheet: 0.077  # From Duma et al. 2005: Determination of significant parameters for eye injury risk from projectiles
+        wedge: 0.11  # From ISO/TS 15066:2016
+        edge: 0.11  # From ISO/TS 15066:2016
+        sheet: 0.11  # From ISO/TS 15066:2016
       constrained:
         link: 0.0  # We don't want to allow clamping for robot links.
         blunt: 0.11  # From ISO/TS 15066:2016
-        wedge: 0.077  # From Duma et al. 2005: Determination of significant parameters for eye injury risk from projectiles
-        edge: 0.077  # From Duma et al. 2005: Determination of significant parameters for eye injury risk from projectiles
-        sheet: 0.077  # From Duma et al. 2005: Determination of significant parameters for eye injury risk from projectiles
+        wedge: 0.05  # From Kirschner 2024: Towards Safe Robot Use with Edged or Pointed Objects: A Surrogate Study Assembling a Human Hand Injury Protection Database
+        edge: 0.02  # From Kirschner 2024: Towards Safe Robot Use with Edged or Pointed Objects: A Surrogate Study Assembling a Human Hand Injury Protection Database
+        sheet: 0.11  # From Kirschner 2024: Towards Safe Robot Use with Edged or Pointed Objects: A Surrogate Study Assembling a Human Hand Injury Protection Database
 
 extremities:
