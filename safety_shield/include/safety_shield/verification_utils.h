@@ -198,17 +198,17 @@ bool selfConstrainedCollisionCheck(const std::vector<int>& robot_collisions,
     double d_human);
 
 /**
- * @brief Calculate the normal vector of the AABB surface pointing towards the robot capsule.
+ * @brief Calculate the normal vectors of the AABB surface pointing towards the robot capsule.
  * 
  * @param[in] robot_capsule Robot capsule.
  * @param[in] environment_element Environment element as axis-aligned bounding box.
- * @param[out] normal Normal vector of the AABB surface pointing towards the robot capsule.
+ * @param[out] normals Normal vectors of the AABB surface pointing towards the robot capsule.
  * @return true calculation successful
  * @return false calculation failed
  */
-bool calculateNormalVector(const reach_lib::Capsule& robot_capsule,
+bool calculateNormalVectors(const reach_lib::Capsule& robot_capsule,
     const reach_lib::AABB& environment_element,
-    Eigen::Vector3d& normal);
+    std::vector<Eigen::Vector3d>& normals);
 
 /**
  * @brief Check if the given robot capsule is moving towards the given element in one time step.
