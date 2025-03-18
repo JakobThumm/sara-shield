@@ -179,7 +179,7 @@ bool selfConstrainedCollisionCheck(const std::vector<int>& robot_collisions,
       if (linkPairUnclampable(link1, link2, unclampable_enclosures_map)) {
         continue;
       }
-      // Check if the two links can cause a self-constrained collision
+      // Check if the two links have a distance smaller than the diameter of the human body part.
       reach_lib::Capsule expanded_robot_capsule = createExpandedCapsule(robot_capsules[link1], d_human);
       if (capsuleCollisionCheck(expanded_robot_capsule, robot_capsules[link2])) {
         // Self-constrained collision detected
@@ -191,11 +191,10 @@ bool selfConstrainedCollisionCheck(const std::vector<int>& robot_collisions,
   return false;
 }
 
-bool calculateNormalVector(const reach_lib::Capsule& robot_capsule,
+bool calculateNormalVectors(const reach_lib::Capsule& robot_capsule,
       const reach_lib::AABB& environment_element,
-      Eigen::Vector3d& normal) {
+      std::vector<Eigen::Vector3d>& normals) {
   // Calculate the normal vectors of the environment element
-  std::vector<Eigen::Vector3d> normals;
   for (int i = 0; i < 3; i++) {
     // Check if robot capsule is left of left face of AABB
     bool left_of_face = false;
@@ -243,12 +242,6 @@ bool calculateNormalVector(const reach_lib::Capsule& robot_capsule,
   if (normals.size() > 3) {
     throw std::length_error("The number of normal vectors is greater than 3.");
   }
-  // Calculate the final normal vector of the environment element
-  normal << 0.0, 0.0, 0.0;
-  for (const Eigen::Vector3d& n : normals) {
-    normal += n;
-  }
-  normal.normalize();
   return true;
 }
 
@@ -309,15 +302,17 @@ bool environmentallyConstrainedCollisionCheck(const std::vector<int>& robot_coll
       // spdlog::info("Collision is possible between link {} and environment element {}", link_index, environment_collision);
       // Check if the link is moving towards the environment element
       // Find normal vector on the environment element pointing towards the link
-      Eigen::Vector3d normal;
-      if (!calculateNormalVector(robot_capsules[link_index], environment_elements[environment_collision], normal)) {
+      std::vector<Eigen::Vector3d> normals;
+      if (!calculateNormalVectors(robot_capsules[link_index], environment_elements[environment_collision], normals)) {
         // If the calculation of the normal vector fails, the velocity criterion fails.
         // spdlog::info("Could not calculate normal vector for link {} and environment element {}", link_index, environment_collision);
         return true;
       }
-      if (capsuleTrajectoryMovingTowardsElement(robot_capsule_velocities_start, robot_capsule_velocities_end, robot_capsules, link_index, normal, velocity_errors[link_index])) {
-        // spdlog::info("Link {} moving towards environment element {}", link_index, environment_collision);
-        return true;
+      for (const auto& normal : normals) {
+        if (capsuleTrajectoryMovingTowardsElement(robot_capsule_velocities_start, robot_capsule_velocities_end, robot_capsules, link_index, normal, velocity_errors[link_index])) {
+          // spdlog::info("Link {} moving towards environment element {}", link_index, environment_collision);
+          return true;
+        }
       }
       /* 
         spdlog::info("Collision between link {} and environment element {} was disregarded: normal [{}, {}, {}], velocity error {}.", 
