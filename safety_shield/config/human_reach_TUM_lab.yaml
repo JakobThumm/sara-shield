@@ -175,7 +175,7 @@ extremities:
     end: "lHand"
     length: 1.0 # See Tabelle 21 — Reichweite nach vorn (Griffachse) - Half a hand length.
     thickness: 0.0
-        max_contact_energy:
+    max_contact_energy:
       unconstrained: 
         link: 0.49  # We assume blunt contacts for robot links
         blunt: 0.49  # From ISO/TS 15066:2016
@@ -194,7 +194,7 @@ extremities:
     end: "rHand"
     length: 1.0 # See Tabelle 21 — Reichweite nach vorn (Griffachse) - Half a hand length.
     thickness: 0.0
-        max_contact_energy:
+    max_contact_energy:
       unconstrained: 
         link: 0.49  # We assume blunt contacts for robot links
         blunt: 0.49  # From ISO/TS 15066:2016
