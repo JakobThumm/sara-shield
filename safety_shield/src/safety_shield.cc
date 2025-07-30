@@ -153,14 +153,14 @@ void SafetyShield::reset(double init_x, double init_y, double init_z, double ini
   new_ltt_ = false;
   new_goal_ = false;
   new_ltt_processed_ = false;
-  recovery_path_correct_ = false;
+  intended_path_correct_ = false;
   path_s_ = 0;
   path_s_discrete_ = 0;
   cycle_begin_time_ = current_time;
-  recovery_path_ = Path();
+  intended_path_ = Path();
   failsafe_path_ = Path();
   failsafe_path_2_ = Path();
-  safe_path_ = Path();
+  verified_path_ = Path();
   // Initialize the long term trajectory
   std::vector<Motion> long_term_traj;
   long_term_traj.push_back(Motion(0.0, init_qpos));
@@ -362,16 +362,16 @@ Motion SafetyShield::computesPotentialTrajectory(bool v, const std::vector<doubl
       }
       path_s_discrete_++;
     }
-    // If verified safe, take the recovery path, otherwise, take the failsafe path
-    if (v && recovery_path_correct_) {
-      recovery_path_.setCurrent(true);
+    // If verified safe, take the intended path, otherwise, take the failsafe path
+    if (v && intended_path_correct_) {
+      intended_path_.setCurrent(true);
       // discard old FailsafePath and replace with new one
       failsafe_path_ = failsafe_path_2_;
       // repair path already incremented
     } else {
       failsafe_path_.setCurrent(true);
       // discard RepairPath
-      recovery_path_.setCurrent(false);
+      intended_path_.setCurrent(false);
       failsafe_path_.increment(sample_time_);
     }
 
@@ -387,36 +387,36 @@ Motion SafetyShield::computesPotentialTrajectory(bool v, const std::vector<doubl
 
     // Desired movement, one timestep
     //  if not already on the repair path, plan a repair path
-    if (!recovery_path_.isCurrent()) {
+    if (!intended_path_.isCurrent()) {
       // plan repair path and replace
-      recovery_path_correct_ =
+      intended_path_correct_ =
           planSafetyShield(failsafe_path_.getPosition(), failsafe_path_.getVelocity(), failsafe_path_.getAcceleration(),
-                           1, a_max_manoeuvre, j_max_manoeuvre, recovery_path_);
+                           1, a_max_manoeuvre, j_max_manoeuvre, intended_path_);
     }
-    // Only plan new failsafe trajectory if the recovery path planning was successful.
-    if (recovery_path_correct_) {
+    // Only plan new failsafe trajectory if the intended path planning was successful.
+    if (intended_path_correct_) {
       // advance one step on repair path
-      recovery_path_.increment(sample_time_);
+      intended_path_.increment(sample_time_);
       bool failsafe_2_planning_success;
       failsafe_2_planning_success =
-          planSafetyShield(recovery_path_.getPosition(), recovery_path_.getVelocity(), recovery_path_.getAcceleration(),
+          planSafetyShield(intended_path_.getPosition(), intended_path_.getVelocity(), intended_path_.getAcceleration(),
                           0, a_max_manoeuvre, j_max_manoeuvre, failsafe_path_2_);
       // Check the validity of the planned path
-      if (!failsafe_2_planning_success || recovery_path_.getPosition() < failsafe_path_.getPosition()) {
-        recovery_path_correct_ = false;
+      if (!failsafe_2_planning_success || intended_path_.getPosition() < failsafe_path_.getPosition()) {
+        intended_path_correct_ = false;
       }
     }
-    // If all planning was correct, use new failsafe path with single recovery step
-    if (recovery_path_correct_) {
-      potential_path_ = failsafe_path_2_;
+    // If all planning was correct, use new failsafe path with single intended step
+    if (intended_path_correct_) {
+      monitored_path_ = failsafe_path_2_;
     } else {
       // If planning failed, use previous failsafe path
-      potential_path_ = failsafe_path_;
+      monitored_path_ = failsafe_path_;
     }
 
     //// Calculate start and goal pos of intended motion
     double s_d, ds_d, dds_d;
-    potential_path_.getFinalMotion(s_d, ds_d, dds_d);
+    monitored_path_.getFinalMotion(s_d, ds_d, dds_d);
     double ddds_d = 0.0;
     // Calculate goal
     Motion goal_motion;
@@ -425,7 +425,7 @@ Motion SafetyShield::computesPotentialTrajectory(bool v, const std::vector<doubl
     } else {
       goal_motion = long_term_trajectory_.interpolate(s_d, ds_d, dds_d, ddds_d);
     } 
-    goal_motion.setTime(potential_path_.getTime(2));
+    goal_motion.setTime(monitored_path_.getTime(2));
     return goal_motion;
   } catch (const std::exception& exc) {
     spdlog::error("Exception in SafetyShield::computesPotentialTrajectory: {}", exc.what());
@@ -441,7 +441,7 @@ bool SafetyShield::planPFLFailsafe(double a_max_manoeuvre, double j_max_manoeuvr
   bool is_under_iso_velocity = false;
   // v_max is maximum of LTT or STP and v_limit is how much path velocity needs to be scaled to be under v_iso
   // First, plan a failsafe path that ends in a complete stop. This is the longest failsafe path possible.
-  bool planning_success = planSafetyShield(recovery_path_.getPosition(), recovery_path_.getVelocity(), recovery_path_.getAcceleration(), 0.0, a_max_manoeuvre, j_max_manoeuvre, failsafe_path_2_);
+  bool planning_success = planSafetyShield(intended_path_.getPosition(), intended_path_.getVelocity(), intended_path_.getAcceleration(), 0.0, a_max_manoeuvre, j_max_manoeuvre, failsafe_path_2_);
   if (!planning_success) {
     return false;
   }
@@ -462,12 +462,12 @@ bool SafetyShield::planPFLFailsafe(double a_max_manoeuvre, double j_max_manoeuvr
       spdlog::error("v_limit not between 0 and 1");
     }
   } else {
-    v_limit = recovery_path_.getVelocity();
+    v_limit = intended_path_.getVelocity();
   }
   // This is the PFL failsafe path that ends in a velocity that is under v_iso.
   double eps_ds = 0.001;
   // Plan to be slightly lower than v_limit to eliminate numerical errors
-  planning_success = planSafetyShield(recovery_path_.getPosition(), recovery_path_.getVelocity(), recovery_path_.getAcceleration(), v_limit - eps_ds, a_max_manoeuvre, j_max_manoeuvre, failsafe_path_2_);
+  planning_success = planSafetyShield(intended_path_.getPosition(), intended_path_.getVelocity(), intended_path_.getAcceleration(), v_limit - eps_ds, a_max_manoeuvre, j_max_manoeuvre, failsafe_path_2_);
   // If the entire long-term trajectory is under iso-velocity, we dont need to check the velocity of the failsafe-path
   if(!is_under_iso_velocity) {
     // Check if the entire failsafe path is under iso-velocity
@@ -509,7 +509,7 @@ Motion SafetyShield::step(double cycle_begin_time) {
     if (new_ltt_ && !new_ltt_processed_) {
       is_safe_ = false;
     }
-    // Compute a new potential trajectory
+    // Compute a new monitored trajectory
     Motion goal_motion = computesPotentialTrajectory(is_safe_, next_motion_.getVelocity());
     is_safe_ = verifySafety(current_motion, goal_motion, alpha_i);
     // update the safe path that we want to continue on
@@ -579,11 +579,11 @@ bool SafetyShield::verifySafety(Motion& current_motion, Motion& goal_motion, con
     return false;
   }
   bool is_safe = false;
-  // Compute the robot reachable set for the potential trajectory
+  // Compute the robot reachable set for the monitored trajectory
   std::vector<double> time_points = calcTimePointsForEquidistantIntervals(current_motion.getTime(), goal_motion.getTime(), reachability_set_duration_);
   std::vector<Motion> interval_edges_motions = getMotionsFromCurrentLTTandPath(time_points);
   robot_capsules_time_intervals_ = robot_reach_->reachTimeIntervals(interval_edges_motions, alpha_i);
-  // Compute the human reachable sets for the potential trajectory
+  // Compute the human reachable sets for the monitored trajectory
   // humanReachabilityAnalysis(t_command, t_brake)
   human_capsules_time_intervals_ = human_reach_->humanReachabilityAnalysisTimeIntervals(cycle_begin_time_, time_points);
   int collision_index = -1;
@@ -719,11 +719,11 @@ bool SafetyShield::verifyConstrainedContactSafety(std::vector<double> time_point
 
 Motion SafetyShield::getCurrentMotion() {
   if (new_ltt_) {
-    return new_long_term_trajectory_.interpolate(safe_path_.getPosition(), safe_path_.getVelocity(),
-                                                 safe_path_.getAcceleration(), safe_path_.getJerk());
+    return new_long_term_trajectory_.interpolate(verified_path_.getPosition(), verified_path_.getVelocity(),
+                                                 verified_path_.getAcceleration(), verified_path_.getJerk());
   } else {
-    return long_term_trajectory_.interpolate(safe_path_.getPosition(), safe_path_.getVelocity(),
-                                             safe_path_.getAcceleration(), safe_path_.getJerk());
+    return long_term_trajectory_.interpolate(verified_path_.getPosition(), verified_path_.getVelocity(),
+                                             verified_path_.getAcceleration(), verified_path_.getJerk());
   }
 }
 
@@ -852,7 +852,7 @@ std::vector<Motion> SafetyShield::getMotionsFromCurrentLTTandPath(const std::vec
   if (new_ltt_) {
     ltt = new_long_term_trajectory_;
   }
-  return getMotionsOfAllTimeStepsFromPath(ltt, potential_path_, time_points);
+  return getMotionsOfAllTimeStepsFromPath(ltt, monitored_path_, time_points);
 }
 
 std::vector<std::vector<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic>>> SafetyShield::getInertiaMatricesFromCurrentLTTandPath(
@@ -862,7 +862,7 @@ std::vector<std::vector<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic>>> 
   if (new_ltt_) {
     ltt = new_long_term_trajectory_;
   }
-  return getInertiaMatricesOfAllTimeStepsFromPath(ltt, potential_path_, time_points);
+  return getInertiaMatricesOfAllTimeStepsFromPath(ltt, monitored_path_, time_points);
 }
 
 }  // namespace safety_shield
