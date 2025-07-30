@@ -66,10 +66,10 @@ class SafetyShieldTest : public ::testing::Test {
     double sample_time = 0.001;
     std::string trajectory_config_file = std::string("../../safety_shield/config/trajectory_parameters_schunk.yaml");
     std::string robot_config_file = std::string("../../safety_shield/config/robot_parameters_schunk.yaml");
-    std::string mocap_config_file = std::string("../../safety_shield/config/cmu_mocap_no_hand.yaml");
+    std::string mocap_config_file = std::string("../../safety_shield/config/mujoco_mocap.yaml");
     double init_x = 0.0;
     double init_y = 0.0;
-    double init_z = 0.0;
+    double init_z = 0.912;
     double init_roll = 0.0;
     double init_pitch = 0.0;
     double init_yaw = 0.0;

@@ -51,7 +51,8 @@ SafetyShield::SafetyShield(int nb_joints, double sample_time, double max_s_stop,
     is_safe_ = false;
   }
   Motion goal_motion = computesPotentialTrajectory(is_safe_, prev_dq);
-  next_motion_ = determineNextMotion(is_safe_);
+  updateSafePath(is_safe_);
+  next_motion_ = getCurrentMotion();
   std::vector<double> q_min(nb_joints, -3.141);
   std::vector<double> q_max(nb_joints, -3.141);
   ltp_ = long_term_planner::LongTermPlanner(nb_joints, sample_time, q_min, q_max, v_max_allowed, a_max_path, j_max_path);
@@ -125,7 +126,8 @@ SafetyShield::SafetyShield(double sample_time, std::string trajectory_config_fil
     is_safe_ = false;
   }
   Motion goal_motion = computesPotentialTrajectory(is_safe_, prev_dq);
-  next_motion_ = determineNextMotion(is_safe_);
+  updateSafePath(is_safe_);
+  next_motion_ = getCurrentMotion();
   spdlog::info("Safety shield created.");
 }
 
@@ -175,7 +177,8 @@ void SafetyShield::reset(double init_x, double init_y, double init_z, double ini
     );
   }
   Motion goal_motion = computesPotentialTrajectory(is_safe_, prev_dq);
-  next_motion_ = determineNextMotion(is_safe_);
+  updateSafePath(is_safe_);
+  next_motion_ = getCurrentMotion();
   spdlog::info("Safety shield resetted.");
 }
 
@@ -486,49 +489,6 @@ bool SafetyShield::checkMotionForJointLimits(Motion& motion) {
   return true;
 }
 
-Motion SafetyShield::determineNextMotion(bool is_safe) {
-  Motion next_motion;
-  double s_d, ds_d, dds_d, ddds_d;
-  if (is_safe) {
-    // Fill potential buffer with position and velocity from recovery path
-    if (recovery_path_.getPosition() >= failsafe_path_.getPosition()) {
-      s_d = recovery_path_.getPosition();
-      ds_d = recovery_path_.getVelocity();
-      dds_d = recovery_path_.getAcceleration();
-      ddds_d = recovery_path_.getJerk();
-    } else {
-      potential_path_.increment(sample_time_);
-      s_d = potential_path_.getPosition();
-      ds_d = potential_path_.getVelocity();
-      dds_d = potential_path_.getAcceleration();
-      ddds_d = potential_path_.getJerk();
-    }
-
-    // Interpolate from new long term buffer
-    if (new_ltt_) {
-      next_motion = new_long_term_trajectory_.interpolate(s_d, ds_d, dds_d, ddds_d);
-    } else {
-      next_motion =
-          long_term_trajectory_.interpolate(s_d, ds_d, dds_d, ddds_d);
-    }
-    // Set potential path as new verified safe path
-    safe_path_ = potential_path_;
-  } else {
-    // interpolate from old safe path
-    safe_path_.increment(sample_time_);
-    s_d = safe_path_.getPosition();
-    ds_d = safe_path_.getVelocity();
-    dds_d = safe_path_.getAcceleration();
-    ddds_d = safe_path_.getJerk();
-    next_motion =
-        long_term_trajectory_.interpolate(s_d, ds_d, dds_d, ddds_d);
-  }
-  /// !!! Set s to the new path position !!!
-  path_s_ = s_d;
-  // Return the calculated next motion
-  return next_motion;
-}
-
 Motion SafetyShield::step(double cycle_begin_time) {
   cycle_begin_time_ = cycle_begin_time;
   try {
@@ -552,8 +512,10 @@ Motion SafetyShield::step(double cycle_begin_time) {
     // Compute a new potential trajectory
     Motion goal_motion = computesPotentialTrajectory(is_safe_, next_motion_.getVelocity());
     is_safe_ = verifySafety(current_motion, goal_motion, alpha_i);
-    // Select the next motion based on the verified safety
-    next_motion_ = determineNextMotion(is_safe_);
+    // update the safe path that we want to continue on
+    updateSafePath(is_safe_);
+    // Select the next motion
+    next_motion_ = getCurrentMotion();
     next_motion_.setTime(cycle_begin_time);
     new_ltt_processed_ = true;
     return next_motion_;
@@ -756,15 +718,13 @@ bool SafetyShield::verifyConstrainedContactSafety(std::vector<double> time_point
 }
 
 Motion SafetyShield::getCurrentMotion() {
-  Motion current_pos;
-  if (!recovery_path_.isCurrent()) {
-    current_pos = long_term_trajectory_.interpolate(failsafe_path_.getPosition(), failsafe_path_.getVelocity(),
-                                                    failsafe_path_.getAcceleration(), failsafe_path_.getJerk());
+  if (new_ltt_) {
+    return new_long_term_trajectory_.interpolate(safe_path_.getPosition(), safe_path_.getVelocity(),
+                                                 safe_path_.getAcceleration(), safe_path_.getJerk());
   } else {
-    current_pos = long_term_trajectory_.interpolate(recovery_path_.getPosition(), recovery_path_.getVelocity(),
-                                                    recovery_path_.getAcceleration(), recovery_path_.getJerk());
+    return long_term_trajectory_.interpolate(safe_path_.getPosition(), safe_path_.getVelocity(),
+                                             safe_path_.getAcceleration(), safe_path_.getJerk());
   }
-  return current_pos;
 }
 
 bool SafetyShield::checkCurrentMotionForReplanning(Motion& current_motion) {

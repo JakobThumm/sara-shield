@@ -381,11 +381,19 @@ class SafetyShield {
   bool planPFLFailsafe(double a_max_manoeuvre, double j_max_manoeuvre);
 
   /**
-   * @brief Calculate the next desired joint position based on verification of recovery path.
-   * @param is_safe Last recovery path + potential path are verified safe.
-   * @return next motion
+   * @brief Update the safe path to the monitored path if the verification is successful (safe) or increment the existing safe path otherwise.
+   * 
+   * @param is_safe Whether or not the verification was successful.
    */
-  Motion determineNextMotion(bool is_safe);
+  inline void updateSafePath(bool is_safe) {
+    if (is_safe) {
+      safe_path_ = potential_path_;
+    } else {
+      safe_path_.increment(sample_time_);
+    }
+    // Set s to the new path position
+    path_s_ = safe_path_.getPosition();
+  }
 
   /**
    * @brief Check a given motion if it exceeds the joint limits.
