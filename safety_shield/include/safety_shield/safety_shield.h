@@ -99,7 +99,7 @@ class SafetyShield {
   /**
    * @brief path to go back to the long term plan
    */
-  Path recovery_path_;
+  Path intended_path_;
 
   /**
    * @brief fail-safe path of the current path
@@ -114,12 +114,12 @@ class SafetyShield {
   /**
    * @brief verified safe path
    */
-  Path safe_path_;
+  Path verified_path_;
 
   /**
    * @brief the constructed intended step + failsafe path
    */
-  Path potential_path_;
+  Path monitored_path_;
 
   /**
    * @brief Number of joints of the robot
@@ -147,7 +147,7 @@ class SafetyShield {
   bool is_safe_;
 
   /**
-   * @brief Whether or not the potential path is under the safe velocity the entire time.
+   * @brief Whether or not the monitored path is under the safe velocity the entire time.
    *
    */
   bool is_under_v_limit_ = false;
@@ -166,7 +166,7 @@ class SafetyShield {
    * the start of a proposed short-term plan. Again, if this occurs, that particular short-term
    * plan is verified as unsafe and the failsafe trajectory is chosen.
    */
-  bool recovery_path_correct_ = false;
+  bool intended_path_correct_ = false;
 
   /**
    * @brief The last published motion
@@ -387,12 +387,12 @@ class SafetyShield {
    */
   inline void updateSafePath(bool is_safe) {
     if (is_safe) {
-      safe_path_ = potential_path_;
+      verified_path_ = monitored_path_;
     } else {
-      safe_path_.increment(sample_time_);
+      verified_path_.increment(sample_time_);
     }
     // Set s to the new path position
-    path_s_ = safe_path_.getPosition();
+    path_s_ = verified_path_.getPosition();
   }
 
   /**
