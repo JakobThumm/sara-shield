@@ -21,7 +21,7 @@ Changelog:
 """
 import os
 import pytest
-from safety_shield_py import Motion, LongTermTraj, AABB, SafetyShield
+from safety_shield_py import Motion, LongTermTraj, AABB, SafetyShield, ContactType, ShieldType
 
 
 class TestSafetyShield:
@@ -39,6 +39,8 @@ class TestSafetyShield:
         dir_path = os.path.dirname(os.path.realpath(__file__))
         print(dir_path)
         table = AABB([-1.0, -1.0, -0.1], [1.0, 1.0, 0.0])
+        shield_type = ShieldType.SSM
+        contact_type = ContactType.EDGE
         shield = SafetyShield(
             sample_time=0.004,
             trajectory_config_file=dir_path
@@ -52,7 +54,9 @@ class TestSafetyShield:
             init_pitch=0.0,
             init_yaw=0.0,
             init_qpos=[0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
-            environment_elements=[table]
+            environment_elements=[table],
+            shield_type=shield_type,
+            contact_type=contact_type
         )
         return shield
 
@@ -68,6 +72,8 @@ class TestSafetyShield:
         dir_path = os.path.dirname(os.path.realpath(__file__))
         print(dir_path)
         table = AABB([-1.0, -1.0, -0.1], [1.0, 1.0, 0.0])
+        shield_type = ShieldType.SSM
+        contact_type = ContactType.EDGE
         shield = SafetyShield(
             sample_time=0.004,
             trajectory_config_file=dir_path
@@ -81,7 +87,9 @@ class TestSafetyShield:
             init_pitch=0.0,
             init_yaw=0.0,
             init_qpos=[0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
-            environment_elements=[table]
+            environment_elements=[table],
+            shield_type=shield_type,
+            contact_type=contact_type
         )
         return shield
 
@@ -92,6 +100,8 @@ class TestSafetyShield:
     def test_reset_safety_shield(self, shield):
         """Test the reset function."""
         table = AABB([-1.0, -1.0, -0.1], [1.0, 1.0, 0.0])
+        shield_type = ShieldType.SSM
+        contact_type = ContactType.EDGE
         shield.reset(init_x=0.0,
                      init_y=0.0,
                      init_z=0.0,
@@ -100,7 +110,9 @@ class TestSafetyShield:
                      init_yaw=0.0,
                      init_qpos=[0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
                      current_time=0.0,
-                     environment_elements=[table]
+                     environment_elements=[table],
+                     shield_type=shield_type,
+                     contact_type=contact_type
                     )
         assert shield is not None   
 
