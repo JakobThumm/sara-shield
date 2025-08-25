@@ -1,0 +1,31 @@
+[build-system]
+requires = [
+  "scikit-build-core>=0.9.0",
+  "pybind11>=2.12",        # for bindings
+]
+build-backend = "scikit_build_core.build"
+
+[project]
+name = "safety_shield_py"
+version = "1.0.0"
+description = "Safety shield"
+readme = "README.md"
+requires-python = ">=3.8"
+authors = [{ name = "Jakob Thumm", email = "jakob.thumm@tum.de" }]
+
+dependencies = []
+
+[project.optional-dependencies]
+test = ["pytest>=8"]
+
+[tool.scikit-build]
+minimum-version = "0.9"
+wheel.expand-macos-universal-tags = true
+cmake.source-dir = "safety_shield"
+
+[tool.scikit-build.cmake.define]
+# Provide Eigen hints from env if present (will be ignored if empty/nonexistent)
+Eigen3_DIR = { env = "EIGEN3_DIR", default = "" }
+EIGEN3_INCLUDE_DIR = { env = "EIGEN3_INCLUDE_DIR", default = "" }
+CMAKE_BUILD_TYPE = { env = "CMAKE_BUILD_TYPE", default = "Release" }
+BUILD_PYTHON_BINDINGS = { env = "BUILD_PYTHON_BINDINGS", default="ON" }

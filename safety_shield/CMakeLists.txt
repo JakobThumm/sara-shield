@@ -1,10 +1,11 @@
-cmake_minimum_required(VERSION 3.0.2)
+cmake_minimum_required(VERSION 3.16)
+cmake_policy(SET CMP0057 NEW)
+
 project(safety_shield)
 
-## Compile as C++17
-add_compile_options(-std=c++17)
-
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 if(ENABLE_COVERAGE)
   # set compiler flags
@@ -27,12 +28,25 @@ endif()
 #find_package(Eigen3 3.4 REQUIRED NO_MODULE)
 INCLUDE_DIRECTORIES ( "$ENV{EIGEN3_INCLUDE_DIR}" )
 # Find Python
-# IF YOU DON'T WANT TO USE CONDA, DISABLE THESE THREE LINES
-#set(PYTHON_EXECUTABLE "$ENV{CONDA_PREFIX}/bin/python")
-#set(PYTHON_INCLUDE_DIR "$ENV{CONDA_PREFIX}/include/python3.8")
-#set(PYTHON_LIBRARY "$ENV{CONDA_PREFIX}/lib/libpython3.8.so")
-#set(PYTHON_LIBRARY_DEBUG "$ENV{CONDA_PREFIX}/lib/libpython3.8.so")
-#find_package(Python3 COMPONENTS Interpreter Development REQUIRED)
+option(BUILD_PYTHON_BINDINGS "Build Python bindings" OFF)
+
+if(BUILD_PYTHON_BINDINGS)
+    find_package(Python3 COMPONENTS Interpreter Development.Module QUIET)
+    find_package(pybind11 QUIET)
+
+    if(Python3_FOUND AND pybind11_FOUND)
+        message(STATUS "Building Python bindings")
+        pybind11_add_module(safety_shield_py MODULE bindings/safety_shield_bindings.cpp)
+        target_link_libraries(safety_shield_py PRIVATE ${PROJECT_NAME} long_term_planner spdlog yaml-cpp Python3::Module)
+        set_target_properties(safety_shield_py PROPERTIES
+            INSTALL_RPATH "$ORIGIN/../lib"
+            BUILD_WITH_INSTALL_RPATH TRUE)
+        install(TARGETS safety_shield_py DESTINATION ${SKBUILD_PROJECT_NAME})
+        install(FILES __init__.py DESTINATION ${SKBUILD_PROJECT_NAME})
+    else()
+        message(WARNING "Python or pybind11 not found. Skipping Python bindings.")
+    endif()
+endif()
 
 include_directories(
         include
@@ -56,14 +70,14 @@ add_library(${PROJECT_NAME}
         )
 
 # Add external subdirectories
-add_subdirectory(external/pybind11)
+# add_subdirectory(external/pybind11)
 add_subdirectory(external/SaRA/ReachLib)
 add_subdirectory(external/LongTermPlanner)
 add_subdirectory(external/spdlog)
 add_subdirectory(external/yaml-cpp)
 
 target_include_directories(${PROJECT_NAME}
-        PUBLIC external/pybind11/include
+        # PUBLIC external/pybind11/include
         PUBLIC external/SaRA/ReachLib/include
         PUBLIC external/LongTermPlanner/include
         PUBLIC external/spdlog/include
@@ -79,7 +93,16 @@ target_link_directories(${PROJECT_NAME}
 
 target_link_libraries(${PROJECT_NAME} SaRA long_term_planner spdlog yaml-cpp)
 
-install(TARGETS ${PROJECT_NAME} DESTINATION /usr/lib)
+if(BUILD_PYTHON_BINDINGS)
+  # Python module is already installed via the pybind11 target above
+else()
+  include(GNUInstallDirs)
+  install(TARGETS ${PROJECT_NAME}
+          ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+          LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+          RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+endif()
+
 
 add_executable(debug src/debug.cc)
 target_link_libraries(debug ${PROJECT_NAME} long_term_planner spdlog yaml-cpp)
@@ -148,8 +171,3 @@ configure_file(${CMAKE_SOURCE_DIR}/CTestCustom.cmake ${CMAKE_BINARY_DIR})
 #catkin_add_gtest(long_term_traj_tests tests/long_term_traj_tests.cc tests/long_term_traj_fixture.h)
 #target_link_libraries(long_term_traj_tests ${catkin_LIBRARIES} ${PROJECT_NAME}_lib)
 
-##############
-## Bindings ##
-##############
-pybind11_add_module(safety_shield_py MODULE bindings/safety_shield_bindings.cpp)
-target_link_libraries(safety_shield_py PRIVATE ${PROJECT_NAME} long_term_planner spdlog yaml-cpp)
