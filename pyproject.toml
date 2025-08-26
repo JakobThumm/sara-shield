@@ -29,3 +29,4 @@ Eigen3_DIR = { env = "EIGEN3_DIR", default = "" }
 EIGEN3_INCLUDE_DIR = { env = "EIGEN3_INCLUDE_DIR", default = "" }
 CMAKE_BUILD_TYPE = { env = "CMAKE_BUILD_TYPE", default = "Release" }
 BUILD_PYTHON_BINDINGS = { env = "BUILD_PYTHON_BINDINGS", default="ON" }
+BUILD_TESTS = { env = "BUILD_TESTS", default = "ON" }
